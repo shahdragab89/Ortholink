@@ -7,7 +7,6 @@ export default function DoctorDashboard() {
     const [selectedScan, setSelectedScan] = useState(null);
     const [reportText, setReportText] = useState('');
 
-    // 1. Updated Sample Data with new statuses, reasons, and notes
     const appointments = [
         { id: 1, date: '24 Feb 2024', time: '10:00 AM', patientName: 'Sarah Johnson', reason: 'Annual Physical', notes: 'Prev history of asthma', status: 'scheduled' },
         { id: 2, date: '24 Feb 2024', time: '11:30 AM', patientName: 'Michael Brown', reason: 'Knee Pain Consultation', notes: 'Injury during sports', status: 'completed' },
@@ -16,29 +15,10 @@ export default function DoctorDashboard() {
         { id: 5, date: '25 Feb 2024', time: '10:30 AM', patientName: 'Lisa Anderson', reason: 'Shoulder pain', notes: 'Persistent pain for 2 weeks', status: 'scheduled' }
     ];
 
-    // 2. Updated Scan Data with better images
     const pendingScans = [
-        { 
-            id: 1, 
-            scanType: 'MRI Brain', 
-            patientName: 'Robert Wilson', 
-            scanImage: 'mri_brain.jpg', 
-            date: '23 Feb 2024' 
-        },
-        { 
-            id: 2, 
-            scanType: 'CT Chest', 
-            patientName: 'Lisa Anderson', 
-            scanImage: 'ct_chest.jpg', 
-            date: '23 Feb 2024' 
-        },
-        { 
-            id: 3, 
-            scanType: 'X-Ray Knee', 
-            patientName: 'Michael Brown', 
-            scanImage: 'xray.jpg', 
-            date: '22 Feb 2024' 
-        }
+        { id: 1, scanType: 'MRI Brain', patientName: 'Robert Wilson', scanImage: 'mri_brain.jpg', date: '23 Feb 2024' },
+        { id: 2, scanType: 'CT Chest', patientName: 'Lisa Anderson', scanImage: 'ct_chest.jpg', date: '23 Feb 2024' },
+        { id: 3, scanType: 'X-Ray Knee', patientName: 'Michael Brown', scanImage: 'xray.jpg', date: '22 Feb 2024' }
     ];
 
     const handleOpenReport = (scan) => {
@@ -58,12 +38,56 @@ export default function DoctorDashboard() {
         console.log('Clicked patient:', patientName);
     };
 
+    const getStatusStyle = (status) => {
+        switch(status) {
+            case 'scheduled': return styles.statusScheduled;
+            case 'completed': return styles.statusCompleted;
+            case 'cancelled': return styles.statusCancelled;
+            case 'no-show': return styles.statusNoShow;
+            default: return styles.statusScheduled;
+        }
+    };
+
     const styles = {
         container: {
             display: 'flex',
+            flexDirection: 'column',
             minHeight: '100vh',
             backgroundColor: '#ffffff',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        },
+        header: {
+            height: '80px',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 32px',
+            backgroundColor: 'white'
+        },
+        headerLogo: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+        },
+        headerLogoIcon: {
+            width: '32px',
+            height: '32px',
+            borderRadius: '12px',
+            backgroundColor: '#0a586c',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '16px'
+        },
+        headerLogoText: {
+            fontSize: '24px',
+            fontWeight: '600',
+            color: '#0a586c'
+        },
+        mainWrapper: {
+            display: 'flex',
+            flex: 1
         },
         sidebar: {
             width: '240px',
@@ -72,35 +96,9 @@ export default function DoctorDashboard() {
             display: 'flex',
             flexDirection: 'column',
             borderTopRightRadius: '60px',
-            borderBottomRightRadius: '0px', 
             paddingTop: '40px',
             paddingBottom: '30px',
             position: 'relative'
-        },
-        logo: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px',
-            marginBottom: '60px',
-            paddingLeft: '30px'
-        },
-        logoIcon: {
-            width: '32px',
-            height: '32px',
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold',
-            fontSize: '18px'
-        },
-        logoText: {
-            fontSize: '22px',
-            fontWeight: '600',
-            color: 'white',
-            letterSpacing: '0.5px'
         },
         nav: {
             flex: 1,
@@ -151,7 +149,6 @@ export default function DoctorDashboard() {
             overflowY: 'auto',
             backgroundColor: '#ffffff'
         },
-        // 3. Updated Greeting Styles based on image
         greeting: {
             marginBottom: '40px',
             display: 'flex',
@@ -165,7 +162,7 @@ export default function DoctorDashboard() {
             marginBottom: '16px'
         },
         greetingHighlight: {
-            color: '#3b82f6' // Blue color for the name
+            color: '#3b82f6'
         },
         greetingBody: {
             fontSize: '18px',
@@ -174,11 +171,11 @@ export default function DoctorDashboard() {
             maxWidth: '600px'
         },
         greetingIconContainer: {
-             fontSize: '100px',
-             lineHeight: 1,
-             marginTop: '-20px',
-             transform: 'rotate(-15deg)',
-             opacity: 0.9
+            fontSize: '100px',
+            lineHeight: 1,
+            marginTop: '-20px',
+            transform: 'rotate(-15deg)',
+            opacity: 0.9
         },
         section: {
             marginBottom: '40px'
@@ -206,7 +203,6 @@ export default function DoctorDashboard() {
             color: '#02505F',
             borderBottom: '1px solid #e2e8f0'
         },
-        // 4. Updated Grid Layout for Appointments (added Reason, Notes; removed Action)
         appointmentHeader: {
             gridTemplateColumns: '0.8fr 0.8fr 1.2fr 1.5fr 1.5fr 1fr'
         },
@@ -221,7 +217,6 @@ export default function DoctorDashboard() {
             fontSize: '15px',
             color: '#475569'
         },
-        // 5. Style for clickable patient names
         clickablePatientName: {
             color: '#02505F',
             fontWeight: '600',
@@ -242,12 +237,10 @@ export default function DoctorDashboard() {
             fontWeight: '600',
             textTransform: 'capitalize'
         },
-        // 6. New Status Styles
-        statusScheduled: { backgroundColor: '#E0F2F1', color: '#00897B' }, // Teal
-        statusCompleted: { backgroundColor: '#F0FDF4', color: '#166534' }, // Green
-        statusCancelled: { backgroundColor: '#FEF2F2', color: '#B91C1C' }, // Red
-        statusNoShow:    { backgroundColor: '#FFF7ED', color: '#C2410C' }, // Orange
-
+        statusScheduled: { backgroundColor: '#E0F2F1', color: '#00897B' },
+        statusCompleted: { backgroundColor: '#F0FDF4', color: '#166534' },
+        statusCancelled: { backgroundColor: '#FEF2F2', color: '#B91C1C' },
+        statusNoShow: { backgroundColor: '#FFF7ED', color: '#C2410C' },
         scanImageContainer: {
             width: '60px',
             height: '60px',
@@ -313,148 +306,154 @@ export default function DoctorDashboard() {
         modalButtonSecondary: { backgroundColor: '#f1f5f9', color: '#475569' }
     };
 
-    // Helper function to get status style
-    const getStatusStyle = (status) => {
-        switch(status) {
-            case 'scheduled': return styles.statusScheduled;
-            case 'completed': return styles.statusCompleted;
-            case 'cancelled': return styles.statusCancelled;
-            case 'no-show': return styles.statusNoShow;
-            default: return styles.statusScheduled;
-        }
-    };
-
     return (
         <div style={styles.container}>
-            {/* Sidebar (No changes requested here) */}
-            <div style={styles.sidebar}>
-                <div style={styles.logo}>
-                    <div style={styles.logoIcon}>O</div>
-                    <div style={styles.logoText}>Ortholink</div>
+            {/* Header */}
+            <header style={styles.header}>
+                <div style={styles.headerLogo}>
+                    <div style={styles.headerLogoIcon}>O</div>
+                    <span style={styles.headerLogoText}>Ortholink</span>
                 </div>
-                <nav style={styles.nav}>
-                    <button style={{...styles.navItem, ...(activeTab === 'home' ? styles.navItemActive : {})}} onClick={() => setActiveTab('home')}>
-                        <Home size={20} /> <span>Home</span>
+            </header>
+
+            <div style={styles.mainWrapper}>
+                {/* Sidebar */}
+                <div style={styles.sidebar}>
+                    <nav style={styles.nav}>
+                        <button 
+                            style={{...styles.navItem, ...(activeTab === 'home' ? styles.navItemActive : {})}} 
+                            onClick={() => setActiveTab('home')}
+                            onMouseEnter={(e) => activeTab !== 'home' && (e.target.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                            onMouseLeave={(e) => activeTab !== 'home' && (e.target.style.backgroundColor = 'transparent')}
+                        >
+                            <Home size={20} /> <span>Home</span>
+                        </button>
+                        <button 
+                            style={{...styles.navItem, ...(activeTab === 'profile' ? styles.navItemActive : {})}} 
+                            onClick={() => setActiveTab('profile')}
+                            onMouseEnter={(e) => activeTab !== 'profile' && (e.target.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                            onMouseLeave={(e) => activeTab !== 'profile' && (e.target.style.backgroundColor = 'transparent')}
+                        >
+                            <User size={20} /> <span>Profile</span>
+                        </button>
+                        <button 
+                            style={{...styles.navItem, ...(activeTab === 'patients' ? styles.navItemActive : {})}} 
+                            onClick={() => setActiveTab('patients')}
+                            onMouseEnter={(e) => activeTab !== 'patients' && (e.target.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                            onMouseLeave={(e) => activeTab !== 'patients' && (e.target.style.backgroundColor = 'transparent')}
+                        >
+                            <Users size={20} /> <span>Patients</span>
+                        </button>
+                    </nav>
+                    <button 
+                        style={styles.logout}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                        <LogOut size={20} /> <span>Logout</span>
                     </button>
-                    <button style={{...styles.navItem, ...(activeTab === 'profile' ? styles.navItemActive : {})}} onClick={() => setActiveTab('profile')}>
-                        <User size={20} /> <span>Profile</span>
-                    </button>
-                     <button style={{...styles.navItem, ...(activeTab === 'patients' ? styles.navItemActive : {})}} onClick={() => setActiveTab('patients')}>
-                        <Users size={20} /> <span>Patients</span>
-                    </button>
-                </nav>
-                <button style={styles.logout}>
-                    <LogOut size={20} /> <span>Logout</span>
-                </button>
+                </div>
+
+                {/* Main Content */}
+                <div style={styles.main}>
+                    <div style={styles.greeting}>
+                        <div>
+                            <h1 style={styles.greetingTitle}>
+                                Welcome <span style={styles.greetingHighlight}>Mary!</span>
+                            </h1>
+                            <div style={styles.greetingBody}>
+                                <p>You have <strong>{appointments.filter(a => a.status === 'scheduled').length} patients</strong> remaining today!</p>
+                                <p>Remember to check documentation before call.</p>
+                            </div>
+                        </div>
+                        <div style={styles.greetingIconContainer}>🩺</div>
+                    </div>
+
+                    {/* Appointments */}
+                    <div style={styles.section}>
+                        <h2 style={styles.sectionTitle}>Today's Appointments</h2>
+                        <div style={styles.table}>
+                            <div style={{...styles.tableHeader, ...styles.appointmentHeader}}>
+                                <div>Date</div>
+                                <div>Time</div>
+                                <div>Patient</div>
+                                <div>Reason</div>
+                                <div>Notes</div>
+                                <div>Status</div>
+                            </div>
+                            {appointments.map((apt) => (
+                                <div key={apt.id} style={{...styles.tableRow, ...styles.appointmentHeader}}>
+                                    <div>{apt.date}</div>
+                                    <div>{apt.time}</div>
+                                    <div>
+                                        <button 
+                                            style={styles.clickablePatientName} 
+                                            onClick={() => handlePatientClick(apt.patientName)}
+                                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        >
+                                            {apt.patientName}
+                                        </button>
+                                    </div>
+                                    <div>{apt.reason}</div>
+                                    <div style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={apt.notes}>{apt.notes}</div>
+                                    <div>
+                                        <span style={{...styles.statusBadge, ...getStatusStyle(apt.status)}}>
+                                            {apt.status.replace('-', ' ')}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Scans */}
+                    <div style={styles.section}>
+                        <h2 style={styles.sectionTitle}>Pending Scan Reports</h2>
+                        <div style={styles.table}>
+                            <div style={{...styles.tableHeader, ...styles.scanHeader}}>
+                                <div>Scan</div>
+                                <div>Modality</div>
+                                <div>Patient</div>
+                                <div>Date</div>
+                                <div>Action</div>
+                            </div>
+                            {pendingScans.map((scan) => (
+                                <div key={scan.id} style={{...styles.tableRow, ...styles.scanHeader}}>
+                                    <div style={styles.scanImageContainer}>
+                                        <img src={scan.scanImage} alt={scan.scanType} style={styles.scanImg} />
+                                    </div>
+                                    <div>{scan.scanType}</div>
+                                    <div>
+                                        <button 
+                                            style={styles.clickablePatientName} 
+                                            onClick={() => handlePatientClick(scan.patientName)}
+                                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                                        >
+                                            {scan.patientName}
+                                        </button>
+                                    </div>
+                                    <div>{scan.date}</div>
+                                    <div>
+                                        <button
+                                            style={styles.actionButton}
+                                            onClick={() => handleOpenReport(scan)}
+                                            onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = '#02505F'; e.currentTarget.style.color = 'white';}}
+                                            onMouseLeave={(e) => {e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#02505F';}}
+                                        >
+                                            <Eye size={16} />
+                                            View
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Main Content */}
-            <div style={styles.main}>
-                
-                {/* 7. New Greeting Section matching the image layout */}
-                <div style={styles.greeting}>
-                    <div>
-                        <h1 style={styles.greetingTitle}>
-                            Welcome <span style={styles.greetingHighlight}>Mary!</span>
-                        </h1>
-                        <div style={styles.greetingBody}>
-                            <p>You have <strong>{appointments.filter(a => a.status === 'scheduled').length} patients</strong> remaining today!</p>
-                            <p>Remember to check documentation before call.</p>
-                        </div>
-                    </div>
-                    {/* Using an emoji as a placeholder for the stethoscope illustration */}
-                    <div style={styles.greetingIconContainer}>
-                        🩺
-                    </div>
-                </div>
-
-                {/* Upcoming Appointments */}
-                <div style={styles.section}>
-                    <h2 style={styles.sectionTitle}>Today's Appointments</h2>
-                    <div style={styles.table}>
-                        {/* Updated Header: Patient, Reason, Notes added. Action removed. */}
-                        <div style={{...styles.tableHeader, ...styles.appointmentHeader}}>
-                            <div>Date</div>
-                            <div>Time</div>
-                            <div>Patient</div>
-                            <div>Reason</div>
-                            <div>Notes</div>
-                            <div>Status</div>
-                        </div>
-                        {appointments.map((apt) => (
-                            <div key={apt.id} style={{...styles.tableRow, ...styles.appointmentHeader}}>
-                                <div>{apt.date}</div>
-                                <div>{apt.time}</div>
-                                <div>
-                                    {/* 8. Clickable Patient Name in Appointments */}
-                                    <button 
-                                        style={styles.clickablePatientName} 
-                                        onClick={() => handlePatientClick(apt.patientName)}
-                                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                                    >
-                                        {apt.patientName}
-                                    </button>
-                                </div>
-                                <div>{apt.reason}</div>
-                                <div style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={apt.notes}>{apt.notes}</div>
-                                <div>
-                                    <span style={{...styles.statusBadge, ...getStatusStyle(apt.status)}}>
-                                        {apt.status.replace('-', ' ')}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Pending Scans */}
-                <div style={styles.section}>
-                    <h2 style={styles.sectionTitle}>Pending Scan Reports</h2>
-                    <div style={styles.table}>
-                        <div style={{...styles.tableHeader, ...styles.scanHeader}}>
-                            <div>Scan</div>
-                            <div>Modality</div>
-                            <div>Patient</div>
-                            <div>Date</div>
-                            <div>Action</div>
-                        </div>
-                        {pendingScans.map((scan) => (
-                            <div key={scan.id} style={{...styles.tableRow, ...styles.scanHeader}}>
-                                <div style={styles.scanImageContainer}>
-                                    <img src={scan.scanImage} alt={scan.scanType} style={styles.scanImg} />
-                                </div>
-                                <div>{scan.scanType}</div>
-                                <div>
-                                    {/* 9. Clickable Patient Name in Scans */}
-                                    <button 
-                                        style={styles.clickablePatientName} 
-                                        onClick={() => handlePatientClick(scan.patientName)}
-                                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                                    >
-                                        {scan.patientName}
-                                    </button>
-                                </div>
-                                <div>{scan.date}</div>
-                                <div>
-                                    <button
-                                        style={styles.actionButton}
-                                        onClick={() => handleOpenReport(scan)}
-                                        onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = '#02505F'; e.currentTarget.style.color = 'white';}}
-                                        onMouseLeave={(e) => {e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#02505F';}}
-                                    >
-                                        <Eye size={16} />
-                                        View
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Report Modal (No major changes here, just style tweaks) */}
+            {/* Modal */}
             {showReportModal && selectedScan && (
                 <div style={styles.modal} onClick={() => setShowReportModal(false)}>
                     <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -462,7 +461,7 @@ export default function DoctorDashboard() {
                         
                         <div style={styles.modalSection}>
                             <div style={styles.scanImagePlaceholder}>
-                                <img src={selectedScan.scanImage} alt="Scan Full View" style={{height: '100%', width: 'auto', objectFit: 'contain'}} />
+                                <img src={selectedScan.scanImage} alt="Scan" style={{height: '100%', width: 'auto', objectFit: 'contain'}} />
                             </div>
                         </div>
 
