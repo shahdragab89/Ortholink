@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { patientStyles } from '../styles/patientStyles';
 
 export default function PatientPage() {
   const NAV_ITEMS = [
@@ -79,171 +80,25 @@ useEffect(() => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const styles = {
-    container: {
-      minHeight: "100vh",
-      backgroundColor: "white",
-      display: "flex",
-      flexDirection: "column",
-    },
-    header: {
-      height: 80,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 32px",
-    },
-    logo: { display: "flex", alignItems: "center", gap: 12 },
-    logoIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 12,
-      backgroundColor: "#0a586c",
-      color: "white",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      fontWeight: 700,
-    },
-    logoText: { fontWeight: 600, color: "#0f172a" },
-    layout: { display: "flex", flex: 1 },
-    sidebar: {
-      width: 250,
-      backgroundColor: "#0a586c",
-      padding: "24px 20px",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      borderTopRightRadius: "24px",
-    },
-    sidebarNav: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 12,
-      marginTop: 30,
-    },
-    sidebarItem: (active) => ({
-      padding: "10px 12px",
-      borderRadius: 12,
-      cursor: "pointer",
-      fontSize: 14,
-      color: "white",
-      backgroundColor: active ? "#083f4d" : "transparent",
-    }),
-    sidebarFooter: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      gap: 10,
-      paddingTop: 16,
-      marginTop: 24,
-    },
-    profilePic: {
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      backgroundColor: "rgba(255,255,255,0.3)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      fontWeight: 600,
-      textTransform: "uppercase",
-      color: "white",
-    },
-    main: { flex: 1, padding: "24px 32px" },
-    grid: {
-      display: "grid",
-      gridTemplateColumns: "2fr 1fr",
-      gridTemplateRows: "auto auto",
-      gap: 24,
-      position: "relative",
-    },
-    card: {
-      background: "white",
-      border: "1px solid #f1f5f9",
-      borderRadius: 16,
-      padding: 16,
-      height: 240,
-      overflowY: "auto",
-      display: "flex",
-      flexDirection: "column",
-    },
-    cardHeader: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 24,
-    },
-    cardTitle: { margin: 0 },
-    table: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
-    thead: {
-      backgroundColor: "#d0f2fb",
-      color: "#0a586c",
-      position: "sticky",
-      top: 0,
-    },
-    th: { padding: "8px 16px", textAlign: "left" },
-    td: { padding: "8px 16px", borderTop: "1px solid #f1f5f9" },
-    medCard: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      border: "1px solid #f1f5f9",
-      padding: 12,
-      borderRadius: 12,
-      marginBottom: 10,
-    },
-    medIcon: {
-      width: 35,
-      height: 35,
-      borderRadius: 10,
-      background: "rgba(10,88,108,0.1)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 18,
-    },
-    testBtn: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      padding: 12,
-      borderRadius: 12,
-      border: "1px solid #f1f5f9",
-      marginBottom: 10,
-      cursor: "pointer",
-    },
-    overlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0,0,0,0.25)",
-      zIndex: 40,
-    },
-  };
-
   const handleTestResultClick = (r) =>
     alert(`Opening ${r.title} from ${r.date}`);
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <div style={styles.logo}>
-          <div style={styles.logoIcon}>OL</div>
-          <div style={styles.logoText}>OrthoLink</div>
+    <div style={patientStyles.container}>
+      <header style={patientStyles.header}>
+        <div style={patientStyles.logo}>
+          <div style={patientStyles.logoIcon}>OL</div>
+          <div style={patientStyles.logoText}>OrthoLink</div>
         </div>
       </header>
 
-      <div style={styles.layout}>
-        <aside style={styles.sidebar}>
-          <div style={styles.sidebarNav}>
+      <div style={patientStyles.layout}>
+        <aside style={patientStyles.sidebar}>
+          <div style={patientStyles.sidebarNav}>
             {NAV_ITEMS.map((item) => (
               <div
                 key={item.id}
-                style={styles.sidebarItem(active === item.id)}
+                style={patientStyles.sidebarItem(active === item.id)}
                 onClick={() => setActive(item.id)}
               >
                 {item.label}
@@ -251,8 +106,8 @@ useEffect(() => {
             ))}
           </div>
 
-          <div style={styles.sidebarFooter}>
-            <div style={styles.profilePic}>
+          <div style={patientStyles.sidebarFooter}>
+            <div style={patientStyles.profilePic}>
               {patientPicture ? (
                 <img
                   src={patientPicture}
@@ -267,13 +122,13 @@ useEffect(() => {
           </div>
         </aside>
 
-        <main style={styles.main}>
+        <main style={patientStyles.main}>
           {active === "home" && (
-            <div style={styles.grid}>
+            <div style={patientStyles.grid}>
               {/* Top-left */}
-              <div style={styles.card} ref={leftCardRef}>
-                <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>Upcoming Appointments</h3>
+              <div style={patientStyles.card} ref={leftCardRef}>
+                <div style={patientStyles.cardHeader}>
+                  <h3 style={patientStyles.cardTitle}>Upcoming Appointments</h3>
                   <button
                     onClick={() => setShowReserveModal(true)}
                     style={{
@@ -289,20 +144,20 @@ useEffect(() => {
                     Reserve an Appointment
                   </button>
                 </div>
-                <table style={styles.table}>
-                  <thead style={styles.thead}>
+                <table style={patientStyles.table}>
+                  <thead style={patientStyles.thead}>
                     <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Time</th>
-                      <th style={styles.th}>Doctor</th>
+                      <th style={patientStyles.th}>Date</th>
+                      <th style={patientStyles.th}>Time</th>
+                      <th style={patientStyles.th}>Doctor</th>
                     </tr>
                   </thead>
                   <tbody>
                     {appointments.map((a) => (
                       <tr key={a.id}>
-                        <td style={styles.td}>{a.date}</td>
-                        <td style={styles.td}>{a.time}</td>
-                        <td style={styles.td}>{a.doctor}</td>
+                        <td style={patientStyles.td}>{a.date}</td>
+                        <td style={patientStyles.td}>{a.time}</td>
+                        <td style={patientStyles.td}>{a.doctor}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -310,13 +165,13 @@ useEffect(() => {
               </div>
 
               {/* Top-right */}
-              <div style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>Medication</h3>
+              <div style={patientStyles.card}>
+                <div style={patientStyles.cardHeader}>
+                  <h3 style={patientStyles.cardTitle}>Medication</h3>
                 </div>
                 {medications.map((m) => (
-                  <div key={m.id} style={styles.medCard}>
-                    <div style={styles.medIcon}>💊</div>
+                  <div key={m.id} style={patientStyles.medCard}>
+                    <div style={patientStyles.medIcon}>💊</div>
                     <div>
                       <div>{m.name}</div>
                       <div style={{ fontSize: 12, color: "#64748b" }}>
@@ -328,24 +183,24 @@ useEffect(() => {
               </div>
 
               {/* Bottom-left */}
-              <div style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>Upcoming Scans</h3>
+              <div style={patientStyles.card}>
+                <div style={patientStyles.cardHeader}>
+                  <h3 style={patientStyles.cardTitle}>Upcoming Scans</h3>
                 </div>
-                <table style={styles.table}>
-                  <thead style={styles.thead}>
+                <table style={patientStyles.table}>
+                  <thead style={patientStyles.thead}>
                     <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Time</th>
-                      <th style={styles.th}>Modality</th>
+                      <th style={patientStyles.th}>Date</th>
+                      <th style={patientStyles.th}>Time</th>
+                      <th style={patientStyles.th}>Modality</th>
                     </tr>
                   </thead>
                   <tbody>
                     {scans.map((s) => (
                       <tr key={s.id}>
-                        <td style={styles.td}>{s.date}</td>
-                        <td style={styles.td}>{s.time}</td>
-                        <td style={styles.td}>{s.modality}</td>
+                        <td style={patientStyles.td}>{s.date}</td>
+                        <td style={patientStyles.td}>{s.time}</td>
+                        <td style={patientStyles.td}>{s.modality}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -353,17 +208,17 @@ useEffect(() => {
               </div>
 
               {/* Bottom-right */}
-              <div style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>Test Results</h3>
+              <div style={patientStyles.card}>
+                <div style={patientStyles.cardHeader}>
+                  <h3 style={patientStyles.cardTitle}>Test Results</h3>
                 </div>
                 {testResults.map((r) => (
                   <button
                     key={r.id}
-                    style={styles.testBtn}
+                    style={patientStyles.testBtn}
                     onClick={() => handleTestResultClick(r)}
                   >
-                    <div style={styles.medIcon}>📋</div>
+                    <div style={patientStyles.medIcon}>📋</div>
                     <div>
                       <div>{r.title}</div>
                       <div style={{ fontSize: 12, color: "#64748b" }}>
@@ -391,7 +246,7 @@ useEffect(() => {
                       onClose={() => setShowReserveModal(false)}
                     />
                   </div>
-                  <div style={styles.overlay} />
+                  <div style={patientStyles.overlay} />
                 </>
               )}
             </div>
