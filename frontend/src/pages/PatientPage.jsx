@@ -15,6 +15,15 @@ export default function PatientPage() {
   const patientName = "Eman";
   const patientPicture = null;
   const leftCardRef = useRef(null);
+  const [activePopup, setActivePopup] = useState(null);
+  const [visitDetails, setVisitDetails] = useState(null);
+  const [billingDetails, setBillingDetails] = useState(null);
+  const [scanPhotos, setScanPhotos] = useState([]);
+  const [currentScanIndex, setCurrentScanIndex] = useState(0);
+  const [reportText, setReportText] = useState("");
+
+
+
 
   const appointments = [
     { id: 1, date: "12 Feb 2020", time: "10:00 AM", doctor: "Dr. Smith" },
@@ -33,6 +42,80 @@ export default function PatientPage() {
     { id: 1, title: "CT Scan - Full Body", date: "12 Feb 2020" },
     { id: 2, title: "Lumbar MRI", date: "13 Feb 2020" },
   ];
+
+  // Example: fetched from DB later
+const pastVisits = [
+  {
+    date: "12 Nov 2025",
+    doctor: "Dr. Smith",
+    diagnosis: "Back pain",
+    summary: "View",
+    billing: "Paid",
+  },
+  {
+    date: "02 Dec 2025",
+    doctor: "Dr. Johnson",
+    diagnosis: "Shoulder pain",
+    summary: "View",
+    billing: "Pending",
+  },
+  {
+    date: "02 Dec 2025",
+    doctor: "Dr. Johnson",
+    diagnosis: "Shoulder pain",
+    summary: "View",
+    billing: "Pending",
+  },{
+    date: "02 Dec 2025",
+    doctor: "Dr. Johnson",
+    diagnosis: "Shoulder pain",
+    summary: "View",
+    billing: "Pending",
+  },{
+    date: "02 Dec 2025",
+    doctor: "Dr. Johnson",
+    diagnosis: "Shoulder pain",
+    summary: "View",
+    billing: "Pending",
+  },
+];
+
+const previousScans = [
+  {
+    date: "08 Nov 2025",
+    radiologist: "Dr. Emily",
+    scan: "MRI",
+    report: "Normal",
+    billing: "Paid",
+  },
+  {
+    date: "29 Oct 2025",
+    radiologist: "Dr. Omar",
+    scan: "CT",
+    report: "Mild lesion",
+    billing: "Pending",
+  },
+  {
+    date: "29 Oct 2025",
+    radiologist: "Dr. Omar",
+    scan: "CT",
+    report: "Mild lesion",
+    billing: "Pending",
+  },{
+    date: "29 Oct 2025",
+    radiologist: "Dr. Omar",
+    scan: "CT",
+    report: "Mild lesion",
+    billing: "Pending",
+  },{
+    date: "29 Oct 2025",
+    radiologist: "Dr. Omar",
+    scan: "CT",
+    report: "Mild lesion",
+    billing: "Pending",
+  },
+];
+
 
  // set scrollbar color exactly to the image shade (#C9F1FB)
 useEffect(() => {
@@ -251,13 +334,339 @@ useEffect(() => {
               )}
             </div>
           )}
-          
-        </main>
+
+{active === "visits" && (
+  <div style={patientStyles.visitsContainer}>
+    {/* ---- Past Visits ---- */}
+    <h3 style={{ ...patientStyles.visitsTitle, color: "black" }}>Past Visits</h3>
+    <div style={patientStyles.scrollableTableWrapper}>
+      <table style={patientStyles.visitsTable}>
+        <thead style={patientStyles.fixedThead}>
+          <tr>
+            <th style={patientStyles.visitsTh}>Date</th>
+            <th style={patientStyles.visitsTh}>Doctor</th>
+            <th style={patientStyles.visitsTh}>Diagnosis</th>
+            <th style={patientStyles.visitsTh}>Visit Summary</th>
+            <th style={patientStyles.visitsTh}>Billing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pastVisits.map((visit, index) => (
+            <tr key={index}>
+              <td style={patientStyles.visitsTd}>{visit.date}</td>
+              <td style={patientStyles.visitsTd}>{visit.doctor}</td>
+              <td style={patientStyles.visitsTd}>{visit.diagnosis}</td>
+              <td
+                style={patientStyles.clickableCell}
+                onClick={() => {
+                  setActivePopup({
+                    type: "summary",
+                    doctor: visit.doctor,
+                    date: visit.date,
+                  });
+                  setVisitDetails({
+                    complaint: "Lower back pain radiating to right leg",
+                    physicalExam:
+                      "Normal reflexes, mild tenderness on L4-L5 palpation",
+                    treatmentPlan:
+                      "Physiotherapy twice a week + posture correction",
+                    medication: "Panadol 500 mg, twice daily",
+                    scansOrdered: "MRI Lumbar spine",
+                  });
+                }}
+              >
+                {visit.summary}
+              </td>
+              <td
+                style={patientStyles.clickableCell}
+                onClick={() => {
+                  setActivePopup({
+                    type: "billing",
+                    doctor: visit.doctor,
+                    date: visit.date,
+                  });
+                  setBillingDetails({
+                    total: 800,
+                    paid: 500,
+                    remaining: 300,
+                    history: [
+                      { date: "12 Nov 2025", amount: 300, method: "Cash" },
+                      { date: "13 Nov 2025", amount: 200, method: "Visa" },
+                    ],
+                  });
+                }}
+              >
+                {visit.billing}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {/* ---- Previous Scans ---- */}
+    <h3
+      style={{
+        ...patientStyles.visitsTitle,
+        color: "black",
+        marginTop: 32,
+      }}
+    >
+      Previous Scans
+    </h3>
+    <div style={patientStyles.scrollableTableWrapper}>
+      <table style={patientStyles.visitsTable}>
+        <thead style={patientStyles.fixedThead}>
+          <tr>
+            <th style={patientStyles.visitsTh}>Date</th>
+            <th style={patientStyles.visitsTh}>Radiologist</th>
+            <th style={patientStyles.visitsTh}>Scans</th>
+            <th style={patientStyles.visitsTh}>Report</th>
+            <th style={patientStyles.visitsTh}>Billing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {previousScans.map((scan, index) => (
+            <tr key={index}>
+              <td style={patientStyles.visitsTd}>{scan.date}</td>
+              <td style={patientStyles.visitsTd}>{scan.radiologist}</td>
+              <td
+                style={patientStyles.clickableCell}
+                onClick={() => {
+                  setActivePopup({
+                    type: "scan",
+                    doctor: scan.radiologist,
+                    date: scan.date,
+                  });
+                  setScanPhotos([
+                    "/Background.png",
+                    "/xray.jpg",
+                  ]);
+                  setCurrentScanIndex(0);
+                }}
+              >
+                {scan.scan}
+              </td>
+              <td
+                style={patientStyles.clickableCell}
+                onClick={() => {
+                  setActivePopup({
+                    type: "report",
+                    doctor: scan.radiologist,
+                    date: scan.date,
+                  });
+                  setReportText(
+                    "Scan report shows no abnormal findings. Normal spinal alignment and disc hydration preserved."
+                  );
+                }}
+              >
+                {scan.report}
+              </td>
+              <td
+                style={patientStyles.clickableCell}
+                onClick={() => {
+                  setActivePopup({
+                    type: "billing",
+                    doctor: scan.radiologist,
+                    date: scan.date,
+                  });
+                  setBillingDetails({
+                    total: 600,
+                    paid: 600,
+                    remaining: 0,
+                    history: [
+                      { date: "09 Nov 2025", amount: 600, method: "Cash" },
+                    ],
+                  });
+                }}
+              >
+                {scan.billing}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {/* ---- Popup ---- */}
+   {activePopup && (
+  <>
+    <div style={patientStyles.overlay} />
+    <div
+      style={{
+        ...patientStyles.popupContainer,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          ...patientStyles.popup,
+          width: activePopup.type === "scan" ? 800 : 500,
+          minHeight: activePopup.type === "scan" ? 500 : 350,
+        }}
+      >
+        <button
+          onClick={() => setActivePopup(null)}
+          style={patientStyles.closeBtn}
+        >
+          ✕
+        </button>
+
+        <h2 style={{ color: "#0a586c", marginBottom: 20 }}>
+          {activePopup.type === "summary"
+            ? "Visit Summary"
+            : activePopup.type === "billing"
+            ? "Billing Details"
+            : activePopup.type === "scan"
+            ? "Scan Viewer"
+            : "Report Details"}
+        </h2>
+
+        {/* ---- Summary ---- */}
+        {activePopup.type === "summary" && visitDetails && (
+          <div style={patientStyles.viewArea}>
+            <p style={{ marginBottom: 16 }}>
+              <strong>Complaint:</strong><br />
+              {visitDetails.complaint}
+            </p>
+            <p style={{ marginBottom: 16 }}>
+              <strong>Physical Examination:</strong><br />
+              {visitDetails.physicalExam}
+            </p>
+            <p style={{ marginBottom: 16 }}>
+              <strong>Treatment Plan:</strong><br />
+              {visitDetails.treatmentPlan}
+            </p>
+            <p style={{ marginBottom: 16 }}>
+              <strong>Medication:</strong><br />
+              {visitDetails.medication}
+            </p>
+            <p>
+              <strong>Scans Ordered:</strong><br />
+              {visitDetails.scansOrdered}
+            </p>
+          </div>
+        )}
+
+        {/* ---- Billing ---- */}
+        {activePopup.type === "billing" && billingDetails && (
+          <>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <strong>Total Amount:</strong>
+                <div>{billingDetails.total} EGP</div>
+              </div>
+              <div>
+                <strong>Paid Amount:</strong>
+                <div>{billingDetails.paid} EGP</div>
+              </div>
+              <div>
+                <strong>Remaining:</strong>
+                <div>{billingDetails.remaining} EGP</div>
+              </div>
+            </div>
+
+            <div style={patientStyles.scrollableTableWrapper}>
+              <table style={patientStyles.visitsTable}>
+                <thead style={patientStyles.fixedThead}>
+                  <tr>
+                    <th style={patientStyles.visitsTh}>Date</th>
+                    <th style={patientStyles.visitsTh}>Paid Amount</th>
+                    <th style={patientStyles.visitsTh}>Way of Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billingDetails.history.map((p, i) => (
+                    <tr key={i}>
+                      <td style={patientStyles.visitsTd}>{p.date}</td>
+                      <td style={patientStyles.visitsTd}>{p.amount}</td>
+                      <td style={patientStyles.visitsTd}>{p.method}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ---- Scan Viewer ---- */}
+        {/* ---- Scan Viewer ---- */}
+{activePopup.type === "scan" && scanPhotos && (
+  <div
+    style={{
+      textAlign: "center",
+      position: "relative",
+      width: "100%",
+      height: "420px", // fixed height for image box
+      background: "#f8fafc", // light neutral background
+      borderRadius: 12,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      overflow: "hidden",
+    }}
+  >
+    <img
+      src={scanPhotos[currentScanIndex] || "/xray.jpg"}
+      alt="Scan"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain", // ✅ ensures full image fits without cropping
+        borderRadius: 12,
+      }}
+    />
+
+    {/* Navigation arrows */}
+    <button
+      style={patientStyles.arrowLeft}
+      onClick={() =>
+        setCurrentScanIndex((i) =>
+          i === 0 ? scanPhotos.length - 1 : i - 1
+        )
+      }
+    >
+      ◀
+    </button>
+    <button
+      style={patientStyles.arrowRight}
+      onClick={() =>
+        setCurrentScanIndex((i) =>
+          i === scanPhotos.length - 1 ? 0 : i + 1
+        )
+      }
+    >
+      ▶
+    </button>
+  </div>
+)}
+
+        {/* ---- Report ---- */}
+        {activePopup.type === "report" && reportText && (
+          <div style={patientStyles.viewArea}>
+            <p>{reportText}</p>
+          </div>
+        )}
       </div>
     </div>
-  );
-}
+  </>
+)} 
 
+</div> 
+)} 
+
+</main>
+</div>
+</div>
+);
+} 
 
 
 function ReserveAppointmentModal({ onClose }) {

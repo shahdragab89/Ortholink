@@ -142,4 +142,138 @@ export const patientStyles = {
       background: "rgba(0,0,0,0.25)",
       zIndex: 40,
     },
+    visitsContainer: {
+  background: "white",
+  border: "1px solid #f1f5f9",
+  borderRadius: 16,
+  padding: 24,
+  display: "flex",
+  flexDirection: "column",
+  gap: 24,
+  maxHeight: "calc(100vh - 150px)", // keeps it within viewport
+  overflow: "auto", // ensures it doesn’t leave blank white space
+},
+
+visitsTitle: {
+  color: "#0a586c",
+  marginBottom: 16,
+},
+visitsTable: {
+  width: "100%",
+  borderCollapse: "collapse",
+  fontSize: 14,
+  border: "1px solid #f1f5f9",
+  tableLayout: "fixed", // ensure equal column alignment
+},
+
+visitsThead: {
+  position: "sticky",
+  top: 0,
+  background: "#d0f2fb",
+  color: "#0a586c",
+  zIndex: 2,
+},
+
+visitsTh: {
+  padding: "10px 16px",
+  textAlign: "left",
+},
+visitsTd: {
+  padding: "10px 16px",
+  borderTop: "1px solid #f1f5f9",
+},
+clickableCell: {
+  padding: "10px 16px",
+  borderTop: "1px solid #f1f5f9",
+  cursor: "pointer",
+  color: "#0f172a", // same text color as table
+},
+popupContainer: {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 60,
+},
+popup: {
+  background: "white",
+  borderRadius: 16,
+  padding: 24,
+  width: 500,
+  minHeight: 200,
+  boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+  position: "relative",
+},
+closeBtn: {
+  position: "absolute",
+  top: 12,
+  right: 12,
+  border: "none",
+  background: "none",
+  fontSize: 22,
+  cursor: "pointer",
+  color: "#64748b",
+},
+scrollableTableWrapper: {
+  maxHeight: "220px", // roughly fits ~5 rows depending on font size
+  overflowY: "auto",
+  position: "relative",
+},
+
+fixedThead: {
+  position: "sticky",
+  top: 0,
+  background: "#d0f2fb",
+  color: "#0a586c",
+  zIndex: 2,
+},
+arrowLeft: {
+  position: "absolute",
+  top: "50%",
+  left: 10,
+  transform: "translateY(-50%)",
+  background: "rgba(10,88,108,0.6)",
+  color: "white",
+  border: "none",
+  borderRadius: "50%",
+  width: 35,
+  height: 35,
+  cursor: "pointer",
+},
+arrowRight: {
+  position: "absolute",
+  top: "50%",
+  right: 10,
+  transform: "translateY(-50%)",
+  background: "rgba(10,88,108,0.6)",
+  color: "white",
+  border: "none",
+  borderRadius: "50%",
+  width: 35,
+  height: 35,
+  cursor: "pointer",
+},
+scrollableTableWrapper: {
+  maxHeight: "250px",
+  overflowY: "auto",
+  borderRadius: 12,
+  border: "1px solid #f1f5f9",
+},
+popupContainer: {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 60,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
 };
+
