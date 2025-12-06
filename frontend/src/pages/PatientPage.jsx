@@ -3,9 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 export default function PatientPage() {
   const NAV_ITEMS = [
     { id: "home", label: "Home" },
+    { id: "visits", label: "Visits" },
     { id: "profile", label: "Profile" },
-    { id: "appointments", label: "Appointments" },
-    { id: "scan-results", label: "Scan Results" },
+    
   ];
 
   const [active, setActive] = useState("home");
@@ -396,11 +396,14 @@ useEffect(() => {
               )}
             </div>
           )}
+          
         </main>
       </div>
     </div>
   );
 }
+
+
 
 function ReserveAppointmentModal({ onClose }) {
   const [reason, setReason] = useState("");
