@@ -274,6 +274,64 @@ popupContainer: {
   justifyContent: "center",
   alignItems: "center",
 },
+profileContainer: {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 24,
+  padding: "0 16px",
+},
+
+profileCard: {
+  background: "white",
+  border: "1px solid #f1f5f9",
+  borderRadius: 16,
+  padding: 24,
+  display: "flex",
+  flexDirection: "column",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+},
+
+profileHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+},
+
+editButton: {
+  background: "#0a586c",
+  color: "white",
+  border: "none",
+  borderRadius: 12,
+  padding: "6px 14px",
+  fontSize: 13,
+  cursor: "pointer",
+},
+
+profileContent: {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+},
+
+infoRow: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  fontSize: 14,
+  borderBottom: "1px solid #f1f5f9",
+  paddingBottom: 6,
+},
+
+inputField: {
+  border: "1px solid #d0f2fb",
+  borderRadius: 8,
+  padding: "4px 8px",
+  fontSize: 14,
+  width: "50%",
+  outline: "none",
+},
+
 
 };
 
