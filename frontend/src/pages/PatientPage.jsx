@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
+import { PiHouseSimpleBold, PiUserBold, PiSignOutBold } from "react-icons/pi";
+import { MdOutlineAssignment } from "react-icons/md"; // report/test icon
+
+
 import { patientStyles } from '../styles/patientStyles';
 
 export default function PatientPage() {
-  const NAV_ITEMS = [
-    { id: "home", label: "Home" },
-    { id: "visits", label: "Visits" },
-    { id: "profile", label: "Profile" },
-    
-  ];
+ const NAV_ITEMS = [
+  { id: "home", label: "Home", icon: <PiHouseSimpleBold size={22} color="#FFFFFF" /> },
+  { id: "visits", label: "Visits", icon: <MdOutlineAssignment size={22} color="#FFFFFF" /> },
+  { id: "profile", label: "Profile", icon: <PiUserBold size={22} color="#FFFFFF" /> },
+  { id: "logout", label: "Logout", icon: <PiSignOutBold size={22} color="#FFFFFF" /> },
+];
+
 
   const [active, setActive] = useState("home");
   const [showReserveModal, setShowReserveModal] = useState(false);
@@ -21,6 +26,40 @@ export default function PatientPage() {
   const [scanPhotos, setScanPhotos] = useState([]);
   const [currentScanIndex, setCurrentScanIndex] = useState(0);
   const [reportText, setReportText] = useState("");
+  const [editingPersonal, setEditingPersonal] = useState(false);
+const [editingContact, setEditingContact] = useState(false);
+const [editingEmergency, setEditingEmergency] = useState(false);
+const [editingInsurance, setEditingInsurance] = useState(false);
+
+const [personalInfo, setPersonalInfo] = useState({
+  name: "Eman Khaled",
+  personalId: "P-12345",
+  hospitalId: "HSP-4556",
+  gender: "Female",
+  dob: "1992-05-18",
+  bloodType: "A+",
+  allergies: "Penicillin",
+  chronic: "Osteoarthritis",
+  photo: "/default-avatar.png",
+});
+
+const [contactInfo, setContactInfo] = useState({
+  phone: "+20 1012345678",
+  address: "Cairo, Egypt",
+});
+
+const [emergencyInfo, setEmergencyInfo] = useState({
+  name: "Ahmed Khaled",
+  number: "+20 1023456789",
+});
+
+const [insuranceInfo, setInsuranceInfo] = useState({
+  provider: "Misr Life Insurance",
+  id: "INS-0458-7895",
+  coverage: "Orthopedic treatments up to 80%",
+  validUntil: "2026-12-31",
+});
+
 
 
 
@@ -170,7 +209,7 @@ useEffect(() => {
     <div style={patientStyles.container}>
       <header style={patientStyles.header}>
         <div style={patientStyles.logo}>
-          <div style={patientStyles.logoIcon}>OL</div>
+          <div style={patientStyles.logoIcon}>O</div>
           <div style={patientStyles.logoText}>OrthoLink</div>
         </div>
       </header>
@@ -178,15 +217,37 @@ useEffect(() => {
       <div style={patientStyles.layout}>
         <aside style={patientStyles.sidebar}>
           <div style={patientStyles.sidebarNav}>
-            {NAV_ITEMS.map((item) => (
-              <div
-                key={item.id}
-                style={patientStyles.sidebarItem(active === item.id)}
-                onClick={() => setActive(item.id)}
-              >
-                {item.label}
-              </div>
-            ))}
+         {NAV_ITEMS.map((item) => (
+  <div
+    key={item.id}
+    style={{
+      ...patientStyles.sidebarItem(active === item.id),
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      color: "white",
+      fontSize: 15,
+      fontWeight: 500,
+      cursor: "pointer",
+      padding: "12px 26px",
+      marginLeft: "10px",
+      transition: "all 0.2s ease",
+    }}
+    onClick={() => {
+      if (item.id === "logout") {
+        alert("Logging out...");
+        return;
+      }
+      setActive(item.id);
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+  >
+    <span style={{ width: 24, display: "flex", justifyContent: "center" }}>{item.icon}</span>
+    <span>{item.label}</span>
+  </div>
+))}
+
           </div>
 
           <div style={patientStyles.sidebarFooter}>
@@ -661,7 +722,240 @@ useEffect(() => {
 
 </div> 
 )} 
+{active === "profile" && (
+  <>
+    {/* Profile Title Bar */}
+    <div style={patientStyles.profileHeader}>
+      <h2 style={patientStyles.profileTitle}>Profile</h2>
 
+      {!(
+        editingPersonal ||
+        editingContact ||
+        editingEmergency ||
+        editingInsurance
+      ) ? (
+        <button
+          onClick={() => {
+            setEditingPersonal(true);
+            setEditingContact(true);
+            setEditingEmergency(true);
+            setEditingInsurance(true);
+          }}
+          style={patientStyles.editButton}
+        >
+          Edit
+        </button>
+      ) : (
+        <button
+          onClick={() => {
+            setEditingPersonal(false);
+            setEditingContact(false);
+            setEditingEmergency(false);
+            setEditingInsurance(false);
+            alert("Changes saved successfully!");
+          }}
+          style={patientStyles.editButton}
+        >
+          Save Changes
+        </button>
+      )}
+    </div>
+
+    <div style={patientStyles.profilePage}>
+      {/* (keep your left & right column code here unchanged) */}
+    </div>
+  </>
+)}
+
+
+{active === "profile" && (
+  <div style={patientStyles.profilePage}>
+    
+    {/* Left column */}
+    <div style={patientStyles.leftColumn}>
+      {/* Profile Photo */}
+      <div style={patientStyles.profileCard}>
+        <h3 style={patientStyles.cardTitle}>Profile Photo</h3>
+        <img
+          src={personalInfo.photo || "/default-avatar.png"}
+          alt="Profile"
+          style={patientStyles.profilePhoto}
+        />
+        <label htmlFor="photoUpload" style={patientStyles.uploadBtn}>
+          Upload New Photo
+        </label>
+        <input
+          id="photoUpload"
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = () =>
+                setPersonalInfo({ ...personalInfo, photo: reader.result });
+              reader.readAsDataURL(file);
+            }
+          }}
+          style={{ display: "none" }}
+        />
+      </div>
+
+      {/* Contact Information */}
+      <div style={patientStyles.profileCard}>
+        <div style={patientStyles.sectionHeader}>
+          <h3 style={patientStyles.cardTitle}>Contact Information</h3>
+          <i
+            className="pi pi-pencil"
+            style={patientStyles.editIcon}
+            onClick={() => setEditingContact(!editingContact)}
+          ></i>
+        </div>
+        <div style={patientStyles.infoRow}>
+          <strong>Mobile Number:</strong>
+          {editingContact ? (
+            <input
+              value={contactInfo.phone}
+              onChange={(e) =>
+                setContactInfo({ ...contactInfo, phone: e.target.value })
+              }
+              style={patientStyles.inputField}
+            />
+          ) : (
+            <span>{contactInfo.phone}</span>
+          )}
+        </div>
+        <div style={patientStyles.infoRow}>
+          <strong>Address:</strong>
+          {editingContact ? (
+            <input
+              value={contactInfo.address}
+              onChange={(e) =>
+                setContactInfo({ ...contactInfo, address: e.target.value })
+              }
+              style={patientStyles.inputField}
+            />
+          ) : (
+            <span>{contactInfo.address}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Emergency Contact */}
+      <div style={patientStyles.profileCard}>
+        <div style={patientStyles.sectionHeader}>
+          <h3 style={patientStyles.cardTitle}>Emergency Contact</h3>
+          <i
+            className="pi pi-pencil"
+            style={patientStyles.editIcon}
+            onClick={() => setEditingEmergency(!editingEmergency)}
+          ></i>
+        </div>
+        <div style={patientStyles.infoRow}>
+          <strong>Contact Name:</strong>
+          {editingEmergency ? (
+            <input
+              value={emergencyInfo.name}
+              onChange={(e) =>
+                setEmergencyInfo({ ...emergencyInfo, name: e.target.value })
+              }
+              style={patientStyles.inputField}
+            />
+          ) : (
+            <span>{emergencyInfo.name}</span>
+          )}
+        </div>
+        <div style={patientStyles.infoRow}>
+          <strong>Contact Number:</strong>
+          {editingEmergency ? (
+            <input
+              value={emergencyInfo.number}
+              onChange={(e) =>
+                setEmergencyInfo({ ...emergencyInfo, number: e.target.value })
+              }
+              style={patientStyles.inputField}
+            />
+          ) : (
+            <span>{emergencyInfo.number}</span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Right column */}
+    <div style={patientStyles.rightColumn}>
+      {/* Personal Information */}
+      <div style={patientStyles.profileCard}>
+        <div style={patientStyles.sectionHeader}>
+          <h3 style={patientStyles.cardTitle}>Personal Information</h3>
+          <i
+            className="pi pi-pencil"
+            style={patientStyles.editIcon}
+            onClick={() => setEditingPersonal(!editingPersonal)}
+          ></i>
+        </div>
+        {[
+          ["Full Name", "name"],
+          ["Personal ID", "personalId"],
+          ["Hospital ID", "hospitalId"],
+          ["Gender", "gender"],
+          ["Birth Date", "dob"],
+          ["Blood Type", "bloodType"],
+          ["Allergies", "allergies"],
+          ["Chronic Conditions", "chronic"],
+        ].map(([label, key]) => (
+          <div key={key} style={patientStyles.infoRow}>
+            <strong>{label}:</strong>
+            {editingPersonal ? (
+              <input
+                value={personalInfo[key]}
+                onChange={(e) =>
+                  setPersonalInfo({ ...personalInfo, [key]: e.target.value })
+                }
+                style={patientStyles.inputField}
+              />
+            ) : (
+              <span>{personalInfo[key]}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Insurance Info */}
+      <div style={patientStyles.profileCard}>
+        <div style={patientStyles.sectionHeader}>
+          <h3 style={patientStyles.cardTitle}>Insurance Information</h3>
+          <i
+            className="pi pi-pencil"
+            style={patientStyles.editIcon}
+            onClick={() => setEditingInsurance(!editingInsurance)}
+          ></i>
+        </div>
+        {[
+          ["Provider", "provider"],
+          ["Insurance ID", "id"],
+          ["Coverage", "coverage"],
+          ["Valid Until", "validUntil"],
+        ].map(([label, key]) => (
+          <div key={key} style={patientStyles.infoRow}>
+            <strong>{label}:</strong>
+            {editingInsurance ? (
+              <input
+                value={insuranceInfo[key]}
+                onChange={(e) =>
+                  setInsuranceInfo({ ...insuranceInfo, [key]: e.target.value })
+                }
+                style={patientStyles.inputField}
+              />
+            ) : (
+              <span>{insuranceInfo[key]}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
 
 </main>

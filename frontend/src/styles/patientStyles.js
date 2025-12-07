@@ -27,14 +27,21 @@ export const patientStyles = {
     logoText: { fontWeight: 600, color: "#0f172a" },
     layout: { display: "flex", flex: 1 },
     sidebar: {
-      width: 250,
-      backgroundColor: "#0a586c",
-      padding: "24px 20px",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      borderTopRightRadius: "24px",
-    },
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "90px",
+  height: "100vh",
+  background: "#0A586C",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  paddingTop: "20px",
+  overflow: "hidden", // no scroll inside
+  zIndex: 100,
+},
+
     sidebarNav: {
       display: "flex",
       flexDirection: "column",
@@ -331,7 +338,243 @@ inputField: {
   width: "50%",
   outline: "none",
 },
+// === PROFILE PAGE ===
+profilePage: {
+  display: "flex",
+  gap: "24px",
+  width: "100%",
+  height: "100%",
+  overflowY: "auto",
+  padding: "32px",
+  backgroundColor: "#F9FAFB",
+  boxSizing: "border-box",
+},
 
+leftColumn: {
+  flex: "0 0 35%",
+  display: "flex",
+  flexDirection: "column",
+  gap: "24px",
+},
+
+rightColumn: {
+  flex: "0 0 65%",
+  display: "flex",
+  flexDirection: "column",
+  gap: "24px",
+},
+
+profileCard: {
+  background: "#FFFFFF",
+  borderRadius: "16px",
+  padding: "24px",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+  border: "1px solid #E2E8F0",
+},
+
+cardTitle: {
+  color: "#0A586C",
+  fontWeight: 700,
+  fontSize: "18px",
+  marginBottom: "16px",
+},
+
+sectionHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "12px",
+},
+
+editIcon: {
+  cursor: "pointer",
+  fontSize: "18px",
+  color: "#0A586C",
+},
+
+profilePhoto: {
+  width: "120px",
+  height: "120px",
+  borderRadius: "50%",
+  objectFit: "cover",
+  display: "block",
+  margin: "0 auto 16px auto",
+  border: "2px solid #C9F1FB",
+},
+
+uploadBtn: {
+  display: "inline-block",
+  background: "#0A586C",
+  color: "#FFFFFF",
+  border: "none",
+  borderRadius: "8px",
+  padding: "8px 16px",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: 500,
+  margin: "0 auto",
+  textAlign: "center",
+},
+
+infoRow: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "12px",
+  fontSize: "15px",
+  color: "#0F172A",
+  borderBottom: "1px solid #E2E8F0",
+  paddingBottom: "6px",
+},
+
+inputField: {
+  flex: 1,
+  marginLeft: "12px",
+  border: "1px solid #CBD5E1",
+  borderRadius: "8px",
+  padding: "6px 8px",
+  fontSize: "14px",
+  outline: "none",
+},
+
+profilePage: {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 24,
+  padding: "0 16px",
+  color: "#0a586c",
+},
+
+leftColumn: { display: "flex", flexDirection: "column", gap: 24 },
+rightColumn: { display: "flex", flexDirection: "column", gap: 24 },
+
+profileCard: {
+  background: "white",
+  borderRadius: 16,
+  padding: 24,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+},
+
+cardTitle: { fontWeight: 600, color: "#0a586c", fontSize: 18 },
+
+sectionHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 12,
+},
+
+editIcon: {
+  fontSize: 16,
+  color: "#0a586c",
+  cursor: "pointer",
+},
+
+profilePhoto: {
+  width: 120,
+  height: 120,
+  borderRadius: "50%",
+  objectFit: "cover",
+  margin: "12px auto",
+  border: "3px solid #d0f2fb",
+  display: "block",
+},
+
+uploadBtn: {
+  display: "block",
+  textAlign: "center",
+  margin: "0 auto",
+  background: "#0a586c",
+  color: "white",
+  border: "none",
+  borderRadius: 10,
+  padding: "8px 16px",
+  cursor: "pointer",
+  fontSize: 13,
+},
+
+infoRow: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  fontSize: 14,
+  borderBottom: "1px solid #f1f5f9",
+  padding: "8px 0",
+},
+
+inputField: {
+  border: "1px solid #d0f2fb",
+  borderRadius: 8,
+  padding: "4px 8px",
+  fontSize: 14,
+  width: "50%",
+},
+
+sidebar: {
+  background: "#0a586c",
+  color: "white",
+  width: 240,
+  height: "100vh",
+  borderTopRightRadius: 20,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  padding: "20px 0",
+},
+
+nav: { display: "flex", flexDirection: "column", gap: 12 },
+
+navItem: {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "10px 20px",
+  border: "none",
+  background: "transparent",
+  color: "white",
+  fontSize: 15,
+  cursor: "pointer",
+},
+
+icon: { fontSize: 18 },
+iconImg: { width: 18, height: 18, filter: "invert(1)" },
+logoutBtn: {
+  marginLeft: 20,
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  background: "transparent",
+  color: "white",
+  border: "none",
+  cursor: "pointer",
+},
+
+profileHeader: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  width: "100%",
+  marginBottom: "25px",
+  padding: "0 40px",
+},
+
+profileTitle: {
+  color: "black",
+  fontSize: 26,
+  fontWeight: 600,
+  margin: 0,
+},
+
+editButton: {
+  background: "#0a586c",
+  color: "white",
+  border: "none",
+  borderRadius: 16,
+  padding: "8px 20px",
+  fontSize: 14,
+  cursor: "pointer",
+},
 
 };
 
