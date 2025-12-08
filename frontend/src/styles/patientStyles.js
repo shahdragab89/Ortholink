@@ -1,17 +1,50 @@
+
 export const patientStyles = {
     container: {
       minHeight: "100vh",
       backgroundColor: "white",
       display: "flex",
       flexDirection: "column",
+      overflow: "hidden", 
     },
     header: {
-      height: 80,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 32px",
-    },
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 70,
+  background: "white",
+  display: "flex",
+  alignItems: "center",
+  padding: "0 24px",
+  borderBottom: "1px solid #E2E8F0",
+  zIndex: 100,
+},
+
+logoContainer: {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+},
+
+logoCircle: {
+  width: 34,
+  height: 34,
+  borderRadius: 10,
+  background: "#0A586C",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: 700,
+  fontSize: 18,
+},
+
+logoWord: {
+  color: "#0A586C",
+  fontSize: 20,
+  fontWeight: 600,
+},
     logo: { display: "flex", alignItems: "center", gap: 12 },
     logoIcon: {
       width: 32,
@@ -26,33 +59,36 @@ export const patientStyles = {
     },
     logoText: { fontWeight: 600, color: "#0f172a" },
     layout: { display: "flex", flex: 1 },
-    sidebar: {
+    
+  sidebar: {
   position: "fixed",
-  top: 0,
+  top: 70,
   left: 0,
-  width: "90px",
-  height: "100vh",
+  width: "230px",
+  height: "calc(100vh - 70px)",
   background: "#0A586C",
+  borderTopRightRadius: "40px", // ⬅ curved corner
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  alignItems: "flex-start",
-  paddingTop: "20px",
-  overflow: "hidden", // no scroll inside
-  zIndex: 100,
+  padding: "20px 0",
+  zIndex: 150,
+  overflow: "hidden",
 },
 
     sidebarNav: {
       display: "flex",
       flexDirection: "column",
       gap: 12,
-      marginTop: 30,
+      marginTop: 55,
+      alignItems: "flex-start", // ⬅️ aligns items to the left
+  paddingLeft: "20px",     
     },
     sidebarItem: (active) => ({
       padding: "10px 12px",
       borderRadius: 12,
       cursor: "pointer",
-      fontSize: 14,
+      fontSize: 19,
       color: "white",
       backgroundColor: active ? "#083f4d" : "transparent",
     }),
@@ -62,12 +98,12 @@ export const patientStyles = {
       alignItems: "center",
       justifyContent: "flex-start",
       gap: 10,
-      paddingTop: 16,
-      marginTop: 24,
+      marginBottom: 20,
+      marginLeft: 40,
     },
     profilePic: {
-      width: 40,
-      height: 40,
+      width: 70,
+      height: 70,
       borderRadius: "50%",
       backgroundColor: "rgba(255,255,255,0.3)",
       display: "flex",
@@ -77,7 +113,15 @@ export const patientStyles = {
       textTransform: "uppercase",
       color: "white",
     },
-    main: { flex: 1, padding: "24px 32px" },
+   main: {
+  flex: 1,
+  marginLeft: "230px", // directly beside sidebar
+  marginTop: "80px",  // below header
+  height: "calc(100vh - 70px)",
+  overflowY: "auto",
+  backgroundColor: "white",
+  padding: " 24px 32px",
+},
     grid: {
       display: "grid",
       gridTemplateColumns: "2fr 1fr",
@@ -195,17 +239,7 @@ clickableCell: {
   cursor: "pointer",
   color: "#0f172a", // same text color as table
 },
-popupContainer: {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 60,
-},
+
 popup: {
   background: "white",
   borderRadius: 16,
@@ -225,11 +259,7 @@ closeBtn: {
   cursor: "pointer",
   color: "#64748b",
 },
-scrollableTableWrapper: {
-  maxHeight: "220px", // roughly fits ~5 rows depending on font size
-  overflowY: "auto",
-  position: "relative",
-},
+
 
 fixedThead: {
   position: "sticky",
@@ -270,17 +300,20 @@ scrollableTableWrapper: {
   borderRadius: 12,
   border: "1px solid #f1f5f9",
 },
+
 popupContainer: {
   position: "fixed",
   top: 0,
   left: 0,
-  right: 0,
-  bottom: 0,
-  zIndex: 60,
+  width: "100vw",
+  height: "100vh",
+  zIndex: 9999,
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  background: "rgba(0,0,0,0.25)",
 },
+
 profileContainer: {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
@@ -288,88 +321,10 @@ profileContainer: {
   padding: "0 16px",
 },
 
-profileCard: {
-  background: "white",
-  border: "1px solid #f1f5f9",
-  borderRadius: 16,
-  padding: 24,
-  display: "flex",
-  flexDirection: "column",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-},
-
-profileHeader: {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 20,
-},
-
-editButton: {
-  background: "#0a586c",
-  color: "white",
-  border: "none",
-  borderRadius: 12,
-  padding: "6px 14px",
-  fontSize: 13,
-  cursor: "pointer",
-},
-
 profileContent: {
   display: "flex",
   flexDirection: "column",
   gap: 12,
-},
-
-infoRow: {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  fontSize: 14,
-  borderBottom: "1px solid #f1f5f9",
-  paddingBottom: 6,
-},
-
-inputField: {
-  border: "1px solid #d0f2fb",
-  borderRadius: 8,
-  padding: "4px 8px",
-  fontSize: 14,
-  width: "50%",
-  outline: "none",
-},
-// === PROFILE PAGE ===
-profilePage: {
-  display: "flex",
-  gap: "24px",
-  width: "100%",
-  height: "100%",
-  overflowY: "auto",
-  padding: "32px",
-  backgroundColor: "#F9FAFB",
-  boxSizing: "border-box",
-},
-
-leftColumn: {
-  flex: "0 0 35%",
-  display: "flex",
-  flexDirection: "column",
-  gap: "24px",
-},
-
-rightColumn: {
-  flex: "0 0 65%",
-  display: "flex",
-  flexDirection: "column",
-  gap: "24px",
-},
-
-profileCard: {
-  background: "#FFFFFF",
-  borderRadius: "16px",
-  padding: "24px",
-  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-  border: "1px solid #E2E8F0",
 },
 
 cardTitle: {
@@ -402,40 +357,19 @@ profilePhoto: {
   border: "2px solid #C9F1FB",
 },
 
-uploadBtn: {
-  display: "inline-block",
-  background: "#0A586C",
-  color: "#FFFFFF",
-  border: "none",
-  borderRadius: "8px",
-  padding: "8px 16px",
-  cursor: "pointer",
-  fontSize: "14px",
-  fontWeight: 500,
-  margin: "0 auto",
-  textAlign: "center",
-},
-
-infoRow: {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: "12px",
-  fontSize: "15px",
-  color: "#0F172A",
-  borderBottom: "1px solid #E2E8F0",
-  paddingBottom: "6px",
-},
-
-inputField: {
-  flex: 1,
-  marginLeft: "12px",
-  border: "1px solid #CBD5E1",
-  borderRadius: "8px",
-  padding: "6px 8px",
-  fontSize: "14px",
-  outline: "none",
-},
+// uploadBtn: {
+//   display: "inline-block",
+//   background: "#0A586C",
+//   color: "#FFFFFF",
+//   border: "none",
+//   borderRadius: "6px",
+//   padding: "5px 10px",
+//   cursor: "pointer",
+//   fontSize: "13px",
+//   fontWeight: 500,
+//   margin: "0 auto",
+//   textAlign: "center",
+// },
 
 profilePage: {
   display: "grid",
@@ -472,8 +406,8 @@ editIcon: {
 },
 
 profilePhoto: {
-  width: 120,
-  height: 120,
+  width: 140,
+  height: 140,
   borderRadius: "50%",
   objectFit: "cover",
   margin: "12px auto",
@@ -481,18 +415,32 @@ profilePhoto: {
   display: "block",
 },
 
+// uploadBtn: {
+//   display: "block",
+//   textAlign: "center",
+//   margin: "0 auto",
+//   background: "#0a586c",
+//   color: "white",
+//   border: "none",
+//   borderRadius: 10,
+//   padding: "8px 16px",
+//   cursor: "pointer",
+//   fontSize: 13,
+// },
 uploadBtn: {
-  display: "block",
-  textAlign: "center",
-  margin: "0 auto",
-  background: "#0a586c",
-  color: "white",
+  display: "inline-block",
+  background: "#0A586C",
+  color: "#FFFFFF",
   border: "none",
-  borderRadius: 10,
-  padding: "8px 16px",
+  borderRadius: "6px",
+  padding: "5px 10px", // ⬅️ smaller colored area
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "13px",
+  fontWeight: 500,
+  margin: "0 200px",
+  textAlign: "center",
 },
+
 
 infoRow: {
   display: "flex",
@@ -511,17 +459,7 @@ inputField: {
   width: "50%",
 },
 
-sidebar: {
-  background: "#0a586c",
-  color: "white",
-  width: 240,
-  height: "100vh",
-  borderTopRightRadius: 20,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
-  padding: "20px 0",
-},
+
 
 nav: { display: "flex", flexDirection: "column", gap: 12 },
 
@@ -575,6 +513,168 @@ editButton: {
   fontSize: 14,
   cursor: "pointer",
 },
+
+changePasswordCard: {
+  background: "white",
+  border: "1px solid #e2e8f0",
+  borderRadius: 16,
+  padding: 24,
+  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+  width: "100%",
+  maxWidth: 500,
+  margin: "20px auto",
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+},
+
+passwordInput: {
+  border: "1px solid #d0f2fb",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 14,
+  width: "100%",
+  outline: "none",
+},
+
+changePasswordButton: {
+  background: "#0a586c",
+  color: "white",
+  border: "none",
+  borderRadius: 12,
+  padding: "10px 20px",
+  fontSize: 14,
+  cursor: "pointer",
+  alignSelf: "flex-end",
+},
+changePasswordTrigger: {
+  color: "#0A586C",
+  fontWeight: 600,
+  cursor: "pointer",
+  marginTop: 10,
+  textAlign: "left",
+  padding: "8px 0",
+},
+
+changePasswordCard: {
+  background: "white",
+  border: "1px solid #e2e8f0",
+  borderRadius: 16,
+  padding: 24,
+  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+  width: "100%",
+  marginTop: 16,
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+},
+
+passwordRow: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 12,
+},
+
+passwordLabel: {
+  flex: "0 0 160px",
+  fontSize: 14,
+  color: "#0F172A",
+  fontWeight: 500,
+},
+
+passwordInput: {
+  flex: 1,
+  border: "1px solid #D0F2FB",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 14,
+  outline: "none",
+},
+
+changePasswordButton: {
+  background: "#0A586C",
+  color: "white",
+  border: "none",
+  borderRadius: 12,
+  padding: "8px 20px",
+  fontSize: 14,
+  cursor: "pointer",
+  alignSelf: "flex-end",
+  marginTop: 10,
+},
+
+errorText: {
+  color: "#E53E3E",
+  fontSize: 13,
+  marginTop: 4,
+},
+
+scanPopup: {
+  display: "flex",
+  flexDirection: "row",
+  width: "80%",
+  height: "70%",
+  background: "white",
+  borderRadius: 16,
+  overflow: "hidden",
+  boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+  zIndex: 10000,
+},
+
+scanLeft: {
+  flex: 1,
+  position: "relative",
+  background: "#f9fafb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+scanRight: {
+  flex: 1,
+  padding: 24,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  color: "#0a586c",
+},
+
+scanImage: {
+  maxWidth: "90%",
+  maxHeight: "90%",
+  borderRadius: 12,
+  objectFit: "contain",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+},
+
+scanTitle: {
+  fontSize: 20,
+  fontWeight: 700,
+  marginBottom: 12,
+},
+
+scanReport: {
+  fontSize: 15,
+  lineHeight: 1.5,
+  color: "#334155",
+},
+
+arrowBtn: {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  background: "rgba(10,88,108,0.7)",
+  color: "white",
+  border: "none",
+  borderRadius: "50%",
+  width: 40,
+  height: 40,
+  fontSize: 22,
+  cursor: "pointer",
+  zIndex: 10,
+},
+
 
 };
 

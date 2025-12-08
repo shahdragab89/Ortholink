@@ -30,6 +30,15 @@ export default function PatientPage() {
 const [editingContact, setEditingContact] = useState(false);
 const [editingEmergency, setEditingEmergency] = useState(false);
 const [editingInsurance, setEditingInsurance] = useState(false);
+const [showChangePassword, setShowChangePassword] = useState(false);
+const [currentPassword, setCurrentPassword] = useState("");
+const [newPassword, setNewPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
+const [passwordError, setPasswordError] = useState("");
+const [selectedTest, setSelectedTest] = useState(null);
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+
 
 const [personalInfo, setPersonalInfo] = useState({
   name: "Eman Khaled",
@@ -78,9 +87,21 @@ const [insuranceInfo, setInsuranceInfo] = useState({
     { id: 2, name: "Voltaren", dosage: "50 mg", duration: "5 days" },
   ];
   const testResults = [
-    { id: 1, title: "CT Scan - Full Body", date: "12 Feb 2020" },
-    { id: 2, title: "Lumbar MRI", date: "13 Feb 2020" },
-  ];
+  {
+    id: 1,
+    title: "CT Scan - Full Body",
+    date: "12 Feb 2020",
+    images: ["/Background.png", "/xray.jpg"],
+    report: "CT scan shows no abnormality detected.",
+  },
+  {
+    id: 2,
+    title: "Lumbar MRI",
+    date: "13 Feb 2020",
+    images: ["/scans/mri1.png", "/scans/mri2.png"],
+    report: "MRI reveals mild disc dehydration at L4-L5, no herniation.",
+  },
+];
 
   // Example: fetched from DB later
 const pastVisits = [
@@ -207,12 +228,13 @@ useEffect(() => {
 
   return (
     <div style={patientStyles.container}>
-      <header style={patientStyles.header}>
-        <div style={patientStyles.logo}>
-          <div style={patientStyles.logoIcon}>O</div>
-          <div style={patientStyles.logoText}>OrthoLink</div>
-        </div>
-      </header>
+     <header style={patientStyles.header}>
+  <div style={patientStyles.logoContainer}>
+    <div style={patientStyles.logoCircle}>o</div>
+    <div style={patientStyles.logoWord}>OrthoLink</div>
+  </div>
+</header>
+
 
       <div style={patientStyles.layout}>
         <aside style={patientStyles.sidebar}>
@@ -360,7 +382,17 @@ useEffect(() => {
                   <button
                     key={r.id}
                     style={patientStyles.testBtn}
-                    onClick={() => handleTestResultClick(r)}
+                   onClick={() => {
+  setSelectedTest({
+    ...r,
+    images: ["/Background.png", "/xray.jpg"], // same as scans
+    report:
+      r.report ||
+      "Scan report shows no abnormal findings. Normal spinal alignment and disc hydration preserved.",
+  });
+  setCurrentImageIndex(0);
+}}
+
                   >
                     <div style={patientStyles.medIcon}>📋</div>
                     <div>
@@ -880,7 +912,72 @@ useEffect(() => {
           )}
         </div>
       </div>
+     {/* ---- Change Password Box ---- */}
+<div style={patientStyles.changePasswordCard}>
+  {!showChangePassword ? (
+    <div
+      style={{ cursor: "pointer", color: "#0A586C", fontWeight: 600 }}
+      onClick={() => setShowChangePassword(true)}
+    >
+      Change Password
     </div>
+  ) : (
+    <>
+      <div style={patientStyles.passwordRow}>
+        <span style={patientStyles.passwordLabel}>Current Password:</span>
+        <input
+          type="password"
+          style={patientStyles.passwordInput}
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+        />
+      </div>
+      <div style={patientStyles.passwordRow}>
+        <span style={patientStyles.passwordLabel}>New Password:</span>
+        <input
+          type="password"
+          style={patientStyles.passwordInput}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+      </div>
+      <div style={patientStyles.passwordRow}>
+        <span style={patientStyles.passwordLabel}>Confirm Password:</span>
+        <input
+          type="password"
+          style={patientStyles.passwordInput}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+      </div>
+
+      {passwordError && (
+        <div style={patientStyles.errorText}>{passwordError}</div>
+      )}
+
+      <button
+        style={patientStyles.changePasswordButton}
+        onClick={() => {
+          if (newPassword !== confirmPassword) {
+            setPasswordError("Passwords don't match");
+          } else {
+            setPasswordError("");
+            alert("Password updated successfully!");
+            setShowChangePassword(false);
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+          }
+        }}
+      >
+        Update Password
+      </button>
+    </>
+  )}
+</div>
+
+    </div>
+    
 
     {/* Right column */}
     <div style={patientStyles.rightColumn}>
@@ -951,10 +1048,167 @@ useEffect(() => {
               <span>{insuranceInfo[key]}</span>
             )}
           </div>
-        ))}
+        ))
+        }
+        
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+)}
+{/* ---- END of profile section ---- */}
+
+{/* ---- Scan + Report Popup ---- */}
+{selectedTest && (
+  <>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        zIndex: 999,
+      }}
+      onClick={() => setSelectedTest(null)}
+    />
+
+    <div
+      style={{
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "80%",        // 🔼 was 70%
+        maxWidth: 1100,       // 🔼 was 900
+        background: "white",
+        borderRadius: 16,
+        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+        zIndex: 1000,
+        display: "flex",
+        overflow: "hidden",
+        height: 560,          // 🔼 was 420 (taller constant size)
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Left - Image Viewer */}
+      <div
+        style={{
+          flex: "70%",
+          background: "#f8fafc",
+          position: "relative",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <img
+          src={
+            selectedTest.images?.[currentImageIndex] ||
+            "/xray.jpg"
+          }
+          alt="Scan"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            borderRadius: 12,
+          }}
+        />
+
+        {/* Navigation arrows */}
+        <button
+          style={{
+            position: "absolute",
+            left: 14,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "#0a586c",
+            color: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: 42,
+            height: 42,
+            fontSize: 20,
+            cursor: "pointer",
+          }}
+          onClick={() =>
+            setCurrentImageIndex((i) =>
+              i === 0
+                ? selectedTest.images.length - 1
+                : i - 1
+            )
+          }
+        >
+          ‹
+        </button>
+        <button
+          style={{
+            position: "absolute",
+            right: 14,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "#0a586c",
+            color: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: 42,
+            height: 42,
+            fontSize: 20,
+            cursor: "pointer",
+          }}
+          onClick={() =>
+            setCurrentImageIndex((i) =>
+              i === selectedTest.images.length - 1
+                ? 0
+                : i + 1
+            )
+          }
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Right - Report */}
+      <div
+        style={{
+          flex: "30%",
+          padding: 28,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <h3 style={{ color: "#0a586c", marginBottom: 16 }}>
+            {selectedTest.title || "Scan Report"}
+          </h3>
+          <p style={{ color: "#333", lineHeight: 1.6 }}>
+            {selectedTest.report}
+          </p>
+        </div>
+        <button
+          onClick={() => setSelectedTest(null)}
+          style={{
+            alignSelf: "flex-end",
+            background: "#0a586c",
+            color: "white",
+            border: "none",
+            borderRadius: 10,
+            padding: "10px 20px",
+            cursor: "pointer",
+            fontSize: 15,
+          }}
+        >
+          Close
+        </button>
       </div>
     </div>
-  </div>
+  </>
 )}
 
 
