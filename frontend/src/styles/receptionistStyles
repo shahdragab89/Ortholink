@@ -1,0 +1,136 @@
+// ========================================
+// RECEPTIONIST PAGE STYLES
+// Independent from patientStyles
+// ========================================
+
+export const receptionistStyles = {
+  // --- Page Layout ---
+  page: {
+    background: "#f9fafb",
+    minHeight: "100vh",
+    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    color: "#1e293b",
+  },
+  main: {
+    padding: "30px 50px",
+  },
+
+  // --- Header (OrthoLink + Receptionist Info) ---
+  header: {
+    background: "#0A586C",
+    color: "white",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "14px 32px",
+    position: "sticky",
+    top: 0,
+    zIndex: 100,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  },
+  logoContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoCircle: {
+    background: "white",
+    color: "#0A586C",
+    fontWeight: 900,
+    borderRadius: "50%",
+    width: 36,
+    height: 36,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontSize: 18,
+  },
+  logoWord: {
+    margin: 0,
+    fontWeight: 700,
+    fontSize: 22,
+    letterSpacing: 0.4,
+  },
+  receptionistInfo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+  },
+  receptionistPhoto: {
+    width: 38,
+    height: 38,
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+  receptionistName: {
+    fontSize: 16,
+    fontWeight: 600,
+  },
+  logoutIcon: {
+    cursor: "pointer",
+    transition: "opacity 0.2s ease",
+  },
+
+  // --- Section Headers (Appointments / Scans) ---
+  sectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: "#0A586C",
+    margin: 0,
+    fontSize: 18,
+    fontWeight: 700,
+  },
+  searchInput: {
+    padding: "6px 10px",
+    borderRadius: 8,
+    border: "1px solid #cbd5e1",
+    width: 240,
+    fontSize: 14,
+  },
+
+  // --- Table Styles ---
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    background: "white",
+    borderRadius: 10,
+    overflow: "hidden",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  },
+  thead: {
+    background: "#0A586C",
+    color: "white",
+    textAlign: "left",
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
+  },
+  th: {
+    padding: "12px 18px",
+    fontSize: 14,
+    fontWeight: 600,
+    borderBottom: "2px solid #e2e8f0",
+  },
+  td: {
+    padding: "10px 18px",
+    fontSize: 14,
+    borderBottom: "1px solid #e2e8f0",
+    color: "#1e293b",
+  },
+  select: {
+    borderRadius: 6,
+    padding: "4px 8px",
+    border: "1px solid #cbd5e1",
+    cursor: "pointer",
+    fontSize: 14,
+  },
+
+  // --- Section Spacing ---
+  section: {
+    marginBottom: 50,
+  },
+};
