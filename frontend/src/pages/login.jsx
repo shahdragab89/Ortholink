@@ -5,9 +5,48 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleSubmit = () => {
-        console.log('Login:', { email, password });
-    };
+    const handleSubmit = async () => {
+    if (!email || !password) {
+        alert("Please enter email and password");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+
+        const result = await response.json();
+
+if (response.ok) {
+    localStorage.setItem("token", result.access_token);
+    localStorage.setItem("role", result.role);
+
+    if (result.role === "patient") {
+        window.location.href = "/patient/dashboard";
+    } else if (result.role === "doctor") {
+        window.location.href = "/doctor/dashboard";
+    } else if (result.role === "radiologist") {
+        window.location.href = "/radiologist/dashboard";
+    } else {
+        window.location.href = "/";
+    }
+
+} else {
+    alert(`Login failed: ${result.message}`);
+}
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Something went wrong");
+    }
+};
+
 
     const handleSignUp = () => {
         window.location.href = '/signup';

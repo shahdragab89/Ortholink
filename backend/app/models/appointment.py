@@ -1,13 +1,16 @@
 from ..extensions import db
+from .patient import Patient
+from .staff import Staff
 
 class Appointment(db.Model):
-    appointment_id = db.Column(db.Integer, primary_key=True)
-    appointment_type = db.Column(db.String(50), nullable=False, unique=True)
-    appointment_time = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(50), nullable=False, unique=True)
-    reason = db.Column(db.String(50), nullable=False, unique=True)
-    notes = db.Column(db.Text, nullable=False, unique=False)
-    duration_minutes = db.Column(db.Integer, nullable=False, unique=False)
-    staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"))
+    __tablename__ = 'appointment'
 
-    staff = db.relationship("Staff", back_populates="appointments", uselist=False)
+    appointment_id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.patient_id'))
+    staff_id = db.Column(db.Integer, db.ForeignKey('staff.staff_id'))
+    appointment_date = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+
+    # define relationships
+    patient = db.relationship('Patient', back_populates='appointments')
+    staff = db.relationship('Staff', back_populates='appointments')
