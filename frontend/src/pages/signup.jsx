@@ -32,13 +32,73 @@ export default function SignUpPage() {
         });
     };
 
-    const handleSubmit = () => {
-        if (formData.password !== formData.confirmPassword) {
-            alert('Passwords do not match!');
-            return;
-        }
-        console.log('Sign Up:', formData);
+    // const handleSubmit = () => {
+    //     if (formData.password !== formData.confirmPassword) {
+    //         alert('Passwords do not match!');
+    //         return;
+    //     }
+    //     console.log('Sign Up:', formData);
+    // };
+
+   const handleSubmit = async () => {
+    if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+    }
+
+    const genderValue = formData.gender
+
+
+    const dataToSend = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        birth_date: formData.birthDate,
+        gender: genderValue,
+        phone: formData.phone,
+        address: formData.address,
+        blood_type: formData.bloodType || null,
+        allergies: hasAllergies ? formData.allergies : null,
+        chronic_conditions: hasChronicConditions ? formData.chronicCondition : null,
+        insurance_provider: formData.insuranceProvider || null,
+        insurance_number: formData.insuranceNumber || null,
+        emergency_contact_name: formData.emergencyContactName,
+        emergency_contact_phone: formData.emergencyContactPhone
     };
+
+    console.log('Sending signup data:', dataToSend);
+
+    try {
+    const response = await fetch('http://127.0.0.1:5000/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
+    });
+
+    console.log('Response status:', response.status);
+
+ 
+    const result = await response.json();
+    console.log('Server response:', result);
+
+    if (!response.ok) {
+        alert(`Signup failed: ${result.message || JSON.stringify(result)}`);
+        return;
+    }
+
+    alert('Signup successful!');
+    window.location.href = `/patient/${result.patient_id}`;
+
+} catch (error) {
+    console.error('Error during signup:', error);
+    
+}
+
+
+};
+
 
     const handleLoginClick = () => {
         window.location.href = '/';
