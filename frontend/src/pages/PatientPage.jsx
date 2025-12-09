@@ -6,6 +6,89 @@ import { MdOutlineAssignment } from "react-icons/md"; // report/test icon
 import { patientStyles } from '../styles/patientStyles';
 
 export default function PatientPage() {
+
+  const [personalInfo, setPersonalInfo] = useState({});
+  const [contactInfo, setContactInfo] = useState({});
+  const [emergencyInfo, setEmergencyInfo] = useState({});
+  const [insuranceInfo, setInsuranceInfo] = useState({});
+  const savePatientEdits = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("user_id");
+
+      const payload = {
+        first_name: personalInfo.name.split(" ")[0],
+        last_name: personalInfo.name.split(" ")[1] || "",
+        phone: contactInfo.phone,
+        address: contactInfo.address,
+        blood_type: personalInfo.bloodType,
+        allergies: personalInfo.allergies,
+        chronic_conditions: personalInfo.chronic,
+        insurance_provider: insuranceInfo.provider,
+        insurance_number: insuranceInfo.id,
+        emergency_contact_name: emergencyInfo.name,
+        emergency_contact_phone: emergencyInfo.number,
+      };
+
+      const res = await fetch(`http://127.0.0.1:5000/api/auth/edit_patient/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+      } else {
+        alert("Error: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      try {
+        const token = localStorage.getItem("token"); 
+        const userId = localStorage.getItem("user_id");
+
+        if (!token || !userId) return;
+
+        const res = await fetch(`http://127.0.0.1:5000/api/auth/patient/${userId}`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        console.log("Fetched data:", data); 
+
+        setPersonalInfo({
+          name: data.name,
+          personalId: `P-${userId}`,
+          hospitalId: "HSP-4556",
+          gender: data.gender.toUpperCase(),
+          dob: data.birth_date,
+          bloodType: data.blood_type,
+          allergies: data.allergies || "N/A",
+          chronic: data.chronic_conditions || "N/A",
+          photo: "/default-avatar.png"
+        });
+
+        setContactInfo({ phone: data.phone, address: data.address });
+        setEmergencyInfo({ name: data.emergency_contact_name, number: data.emergency_contact_phone });
+        setInsuranceInfo({ provider: data.insurance_provider, id: data.insurance_number, coverage: "N/A", validUntil: "N/A" });
+
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+      }
+    };
+
+    fetchPatientData();
+  }, []);
+
  const NAV_ITEMS = [
   { id: "home", label: "Home", icon: <PiHouseSimpleBold size={22} color="#FFFFFF" /> },
   { id: "visits", label: "Visits", icon: <MdOutlineAssignment size={22} color="#FFFFFF" /> },
@@ -17,7 +100,7 @@ export default function PatientPage() {
   const [active, setActive] = useState("home");
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [leftWidth, setLeftWidth] = useState("auto");
-  const patientName = "Eman Khaled";
+  const patientName = personalInfo.name || "loading.." ;
   const patientPicture = null;
   const leftCardRef = useRef(null);
   const [activePopup, setActivePopup] = useState(null);
@@ -40,34 +123,34 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
 
-const [personalInfo, setPersonalInfo] = useState({
-  name: "Eman Khaled",
-  personalId: "P-12345",
-  hospitalId: "HSP-4556",
-  gender: "Female",
-  dob: "1992-05-18",
-  bloodType: "A+",
-  allergies: "Penicillin",
-  chronic: "Osteoarthritis",
-  photo: "/default-avatar.png",
-});
+// const [personalInfo, setPersonalInfo] = useState({
+//   name: "Eman Khaled",
+//   personalId: "P-12345",
+//   hospitalId: "HSP-4556",
+//   gender: "Female",
+//   dob: "1992-05-18",
+//   bloodType: "A+",
+//   allergies: "Penicillin",
+//   chronic: "Osteoarthritis",
+//   photo: "/default-avatar.png",
+// });
 
-const [contactInfo, setContactInfo] = useState({
-  phone: "+20 1012345678",
-  address: "Cairo, Egypt",
-});
+// const [contactInfo, setContactInfo] = useState({
+//   phone: "+20 1012345678",
+//   address: "Cairo, Egypt",
+// });
 
-const [emergencyInfo, setEmergencyInfo] = useState({
-  name: "Ahmed Khaled",
-  number: "+20 1023456789",
-});
+// const [emergencyInfo, setEmergencyInfo] = useState({
+//   name: "Ahmed Khaled",
+//   number: "+20 1023456789",
+// });
 
-const [insuranceInfo, setInsuranceInfo] = useState({
-  provider: "Misr Life Insurance",
-  id: "INS-0458-7895",
-  coverage: "Orthopedic treatments up to 80%",
-  validUntil: "2026-12-31",
-});
+// const [insuranceInfo, setInsuranceInfo] = useState({
+//   provider: "Misr Life Insurance",
+//   id: "INS-0458-7895",
+//   coverage: "Orthopedic treatments up to 80%",
+//   validUntil: "2026-12-31",
+// });
 
 
 
@@ -763,7 +846,8 @@ useEffect(() => {
         </button>
       ) : (
         <button
-          onClick={() => {
+          onClick={async () => {
+            await savePatientEdits();
             setEditingPersonal(false);
             setEditingContact(false);
             setEditingEmergency(false);

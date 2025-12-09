@@ -12,7 +12,7 @@ export default function LoginPage() {
     }
 
     try {
-        const response = await fetch("http://localhost:5000/api/auth/login", {
+        const response = await fetch("http://127.0.0.1:5000/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -26,6 +26,7 @@ export default function LoginPage() {
 if (response.ok) {
     localStorage.setItem("token", result.access_token);
     localStorage.setItem("role", result.role);
+    localStorage.setItem("user_id", result.user_id);
 
     if (result.role === "patient") {
         window.location.href = "/patient/dashboard";
