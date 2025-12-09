@@ -30,7 +30,7 @@ export default function PatientPage() {
         emergency_contact_phone: emergencyInfo.number,
       };
 
-      const res = await fetch(`http://127.0.0.1:5000/auth/edit_patient/${userId}`, {
+      const res = await fetch(`http://127.0.0.1:5000/api/auth/edit_patient/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -58,7 +58,7 @@ export default function PatientPage() {
 
         if (!token || !userId) return;
 
-        const res = await fetch(`http://127.0.0.1:5000/auth/patient/${userId}`, {
+        const res = await fetch(`http://127.0.0.1:5000/api/auth/patient/${userId}`, {
           headers: { "Authorization": `Bearer ${token}` },
         });
 

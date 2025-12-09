@@ -12,7 +12,7 @@ from .extensions import db
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('api/auth', __name__)
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
@@ -187,6 +187,7 @@ def update_radiologist_profile(user_id):
     
 
 @auth_bp.route('/patient/<int:user_id>', methods=['GET'])
+@jwt_required()
 def get_patient_profile(user_id):
     user = User.query.get(user_id)
     patient = Patient.query.filter_by(user_id=user_id).first()
@@ -208,6 +209,7 @@ def get_patient_profile(user_id):
         "emergency_contact_phone": patient.emergency_contact_phone
     })
 @auth_bp.route('/edit_patient/<int:user_id>',methods=["PUT"])
+@jwt_required()
 def edit_patient_profile(user_id):
     data = request.get_json()
     

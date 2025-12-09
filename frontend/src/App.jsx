@@ -22,17 +22,9 @@ function App() {
 
       } else if (path === '/patient/dashboard') {
         setCurrentPage('patient');
-<<<<<<< HEAD
-
-      } else if (path === '/radiologist/dashboard') {
-        setCurrentPage('radiologist');
-
-      } else if (path === '/receptionist') {
-=======
       } else if (path === '/radiologist/dashboard') { 
         setCurrentPage('radiologist');
       } else if (path === '/receptionist') { 
->>>>>>> 788ab8c202fb416d450e4cd6312edf171faf4979
         setCurrentPage('receptionist');
 
       } else {
