@@ -25,6 +25,7 @@ export default function LoginPage() {
 
 if (response.ok) {
     localStorage.setItem("token", result.access_token);
+    localStorage.setItem("user_id", result.user_id);  // Make sure this is stored
     localStorage.setItem("role", result.role);
 
     if (result.role === "patient") {
