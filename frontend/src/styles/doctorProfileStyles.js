@@ -74,7 +74,7 @@ export const doctorProfileStyles = {
     
     uploadButton: { 
         padding: '8px 16px', 
-        backgroundColor: '#0a586c', 
+        backgroundColor: '#059669', 
         color: 'white', 
         border: 'none', 
         borderRadius: '8px', 
@@ -113,7 +113,7 @@ export const doctorProfileStyles = {
     
     saveButton: { 
         padding: '12px 24px', 
-        backgroundColor: '#02505F', 
+        backgroundColor: '#059669', 
         color: 'white', 
         border: 'none', 
         borderRadius: '8px', 

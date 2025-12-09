@@ -392,15 +392,35 @@ const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
                                     <div style={dps.readOnlyField}>{profileData.licenseNumber}</div>
                                 </div>
                                 <div style={dps.infoRow}>
+                                <label style={s.inputLabel}>Doctor ID</label>
+                                <div style={dps.readOnlyField}>{profileData.staffId}</div>
+                                </div>
+                                {/* <div style={dps.infoRow}>
                                     <label style={s.inputLabel}>Department</label>
                                     <div style={dps.readOnlyField}>{profileData.department}</div>
-                                </div>
+                                </div> */}
                             </div>
 
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Staff ID</label>
-                                <div style={dps.readOnlyField}>{profileData.staffId}</div>
+
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Username</label>
+                                    <div style={dps.readOnlyField}>{profileData.username}</div>
+                                </div>
+                                <div style={dps.infoRow}>
+                                <label style={s.inputLabel}>Email</label>
+                                <div style={dps.readOnlyField}>{profileData.email}</div>
+                                </div>
+                                {/* <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Department</label>
+                                    <div style={dps.readOnlyField}>{profileData.department}</div>
+                                </div> */}
                             </div>
+
+                            {/* <div style={dps.infoRow}>
+                                <label style={s.inputLabel}>Doctor ID</label>
+                                <div style={dps.readOnlyField}>{profileData.staffId}</div>
+                            </div> */}
                         </div>
 
                         {/* Security Settings */}
@@ -812,7 +832,7 @@ export default function DoctorDashboard() {
         fullName: 'Dr. Maya Johnson',
         licenseNumber: 'MD-12345-2020',
         professionalTitle: 'Orthopedic Surgeon',
-        department: 'Orthopedics',
+        // department: 'Orthopedics',
         staffId: 'STAFF-001',
         phone: '+1 (555) 123-4567',
         address: '123 Medical Center Drive, Suite 100',
@@ -820,7 +840,9 @@ export default function DoctorDashboard() {
         newPassword: '',
         confirmPassword: '',
         profilePhoto: null,
-        digitalSignature: null
+        digitalSignature: null,
+        email: 'mayaJohnson@ortholink.com',
+        username: 'mayajohnson23'
     });
 
     // --- HANDLERS ---
