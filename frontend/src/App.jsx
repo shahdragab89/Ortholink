@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Import your existing pages
 import LoginPage from './pages/login'; 
 import SignUpPage from './pages/signup';
 import DoctorDashboard from './pages/DoctorDashboard';
@@ -17,11 +16,14 @@ function App() {
   useEffect(() => {
     const handlePathChange = () => {
       const path = window.location.pathname;
+
       if (path === '/signup') {
         setCurrentPage('signup');
-      } else if (path === '/doctor') {
+
+      } else if (path === '/doctor/dashboard') {
         setCurrentPage('doctor');
-      } else if (path === '/patient') {
+
+      } else if (path === '/patient/dashboard') {
         setCurrentPage('patient');
       } else if (path === '/radiologist') { // <--- Check for radiologist path
         setCurrentPage('radiologist');}
@@ -37,7 +39,6 @@ function App() {
     return () => window.removeEventListener('popstate', handlePathChange);
   }, []);
 
-  // --- Render Logic ---
   if (currentPage === 'signup') return <SignUpPage />;
   if (currentPage === 'doctor') return <DoctorDashboard />;
   if (currentPage === 'patient') return <PatientPage />;
