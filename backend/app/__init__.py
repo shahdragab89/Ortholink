@@ -18,6 +18,15 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     
+    # Import models in correct order to avoid circular dependencies
+    # IMPORTANT: Import in this specific order
+    from .models.user import User
+    from .models.staff import Staff
+    from .models.appointment import Appointment
+    from .models.visit_record import VisitRecord  # Import BEFORE patient
+    from .models.patient import Patient
+    from .models.medication import Medication
+    
     # Import and register blueprints
     from .routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')

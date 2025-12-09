@@ -19,7 +19,7 @@ class Medication(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
+    # Relationships - Change backref to back_populates
     patient = db.relationship("Patient", back_populates="medications")
     staff = db.relationship("Staff")
     visit_record = db.relationship("VisitRecord")
