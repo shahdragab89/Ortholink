@@ -26,8 +26,11 @@ function App() {
         setCurrentPage('radiologist');
       } else if (path === '/receptionist') { 
         setCurrentPage('receptionist');
-
-      } else {
+      }
+       else if (path === '/doctor') { 
+        setCurrentPage('doctor');
+      }
+       else {
         setCurrentPage('login');
       }
     };
