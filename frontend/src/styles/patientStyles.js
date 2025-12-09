@@ -67,7 +67,7 @@ logoWord: {
   width: "230px",
   height: "calc(100vh - 70px)",
   background: "#0A586C",
-  borderTopRightRadius: "40px", // ⬅ curved corner
+  borderTopRightRadius: "40px", 
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
@@ -81,7 +81,7 @@ logoWord: {
       flexDirection: "column",
       gap: 12,
       marginTop: 55,
-      alignItems: "flex-start", // ⬅️ aligns items to the left
+      alignItems: "flex-start", 
   paddingLeft: "20px",     
     },
     sidebarItem: (active) => ({
@@ -99,11 +99,11 @@ logoWord: {
       justifyContent: "flex-start",
       gap: 10,
       marginBottom: 20,
-      marginLeft: 40,
+      marginLeft: 20,
     },
     profilePic: {
-      width: 70,
-      height: 70,
+      width: 60,
+      height: 60,
       borderRadius: "50%",
       backgroundColor: "rgba(255,255,255,0.3)",
       display: "flex",
@@ -115,8 +115,8 @@ logoWord: {
     },
    main: {
   flex: 1,
-  marginLeft: "230px", // directly beside sidebar
-  marginTop: "80px",  // below header
+  marginLeft: "230px", 
+  marginTop: "80px", 
   height: "calc(100vh - 70px)",
   overflowY: "auto",
   backgroundColor: "white",
@@ -201,8 +201,8 @@ logoWord: {
   display: "flex",
   flexDirection: "column",
   gap: 24,
-  maxHeight: "calc(100vh - 150px)", // keeps it within viewport
-  overflow: "auto", // ensures it doesn’t leave blank white space
+  maxHeight: "calc(100vh - 150px)", 
+  overflow: "auto", 
 },
 
 visitsTitle: {
@@ -214,7 +214,7 @@ visitsTable: {
   borderCollapse: "collapse",
   fontSize: 14,
   border: "1px solid #f1f5f9",
-  tableLayout: "fixed", // ensure equal column alignment
+  tableLayout: "fixed", 
 },
 
 visitsThead: {
@@ -237,7 +237,7 @@ clickableCell: {
   padding: "10px 16px",
   borderTop: "1px solid #f1f5f9",
   cursor: "pointer",
-  color: "#0f172a", // same text color as table
+  color: "#0f172a", 
 },
 
 popup: {
@@ -357,19 +357,6 @@ profilePhoto: {
   border: "2px solid #C9F1FB",
 },
 
-// uploadBtn: {
-//   display: "inline-block",
-//   background: "#0A586C",
-//   color: "#FFFFFF",
-//   border: "none",
-//   borderRadius: "6px",
-//   padding: "5px 10px",
-//   cursor: "pointer",
-//   fontSize: "13px",
-//   fontWeight: 500,
-//   margin: "0 auto",
-//   textAlign: "center",
-// },
 
 profilePage: {
   display: "grid",
@@ -415,25 +402,13 @@ profilePhoto: {
   display: "block",
 },
 
-// uploadBtn: {
-//   display: "block",
-//   textAlign: "center",
-//   margin: "0 auto",
-//   background: "#0a586c",
-//   color: "white",
-//   border: "none",
-//   borderRadius: 10,
-//   padding: "8px 16px",
-//   cursor: "pointer",
-//   fontSize: 13,
-// },
 uploadBtn: {
   display: "inline-block",
   background: "#0A586C",
   color: "#FFFFFF",
   border: "none",
   borderRadius: "6px",
-  padding: "5px 10px", // ⬅️ smaller colored area
+  padding: "5px 10px", 
   cursor: "pointer",
   fontSize: "13px",
   fontWeight: 500,
