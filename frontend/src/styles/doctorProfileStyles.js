@@ -153,5 +153,49 @@ export const doctorProfileStyles = {
         height: '100%', 
         borderRadius: '2px', 
         transition: 'width 0.3s ease, background-color 0.3s ease' 
+    },
+
+    // ... existing styles ...
+
+    strengthBarFill: { 
+        height: '100%', 
+        borderRadius: '2px', 
+        transition: 'width 0.3s ease, background-color 0.3s ease' 
+    },
+
+    // --- NEW STATS STYLES ---
+    statsGrid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '16px',
+        marginTop: '10px'
+    },
+    
+    statItem: {
+        backgroundColor: '#f1f5f9', // Light Slate/Grey to match doctor theme
+        padding: '20px',
+        borderRadius: '12px',
+        textAlign: 'center',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: '8px'
+    },
+    
+    statNumber: {
+        display: 'block',
+        fontSize: '28px',
+        fontWeight: '800',
+        color: '#059669', // Your specific Doctor Dark Teal
+        lineHeight: '1'
+    },
+    
+    statLabel: {
+        fontSize: '13px',
+        color: '#64748b',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
     }
 };

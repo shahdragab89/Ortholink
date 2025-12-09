@@ -300,6 +300,11 @@ const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
     const strength = getPasswordStrength(profileData.newPassword);
     const strengthColor = strength < 40 ? '#ef4444' : strength < 80 ? '#f59e0b' : '#22c55e';
 
+    const stats = {
+        appointmentsThisMonth: 42,
+        scansMadeThisMonth: 15
+    };
+
     return (
         <div style={s.main}>
             <div style={{marginBottom: '10px'}}>
@@ -395,10 +400,6 @@ const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
                                 <label style={s.inputLabel}>Doctor ID</label>
                                 <div style={dps.readOnlyField}>{profileData.staffId}</div>
                                 </div>
-                                {/* <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Department</label>
-                                    <div style={dps.readOnlyField}>{profileData.department}</div>
-                                </div> */}
                             </div>
 
 
@@ -411,16 +412,22 @@ const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
                                 <label style={s.inputLabel}>Email</label>
                                 <div style={dps.readOnlyField}>{profileData.email}</div>
                                 </div>
-                                {/* <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Department</label>
-                                    <div style={dps.readOnlyField}>{profileData.department}</div>
-                                </div> */}
                             </div>
+                        </div>
 
-                            {/* <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Doctor ID</label>
-                                <div style={dps.readOnlyField}>{profileData.staffId}</div>
-                            </div> */}
+                        {/* ✅ PASTE STATS CARD HERE (Above Security) ✅ */}
+                        <div style={dps.profileCard}>
+                            <h3 style={dps.profileCardTitle}>Monthly Statistics</h3>
+                            <div style={dps.statsGrid}>
+                                <div style={dps.statItem}>
+                                    <span style={dps.statNumber}>{stats.appointmentsThisMonth}</span>
+                                    <span style={dps.statLabel}>Appointments</span>
+                                </div>
+                                <div style={dps.statItem}>
+                                    <span style={dps.statNumber}>{stats.scansMadeThisMonth}</span>
+                                    <span style={dps.statLabel}>Scans Completed</span>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Security Settings */}
