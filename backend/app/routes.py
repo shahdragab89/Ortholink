@@ -7,24 +7,16 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash
 from .models.user import User
-<<<<<<< Updated upstream
 from .models.staff import Staff
-from .extensions import db
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import jwt_required, get_jwt_identity
-
-auth_bp = Blueprint('api/auth', __name__)
-=======
 from .models.appointment import Appointment
 from .models.visit_record import VisitRecord
 from .models.medication import Medication
 from .extensions import db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('api/auth', __name__)
 doctor_bp = Blueprint('doctor', __name__)
 
->>>>>>> Stashed changes
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
@@ -99,124 +91,6 @@ def login():
         }), 200
     else:
         return jsonify({"message": "Invalid email or password"}), 401
-<<<<<<< Updated upstream
-  
-@auth_bp.route('/radiologist/<int:user_id>', methods=['GET'])
-@jwt_required()
-def get_radiologist_profile(user_id):
-    # Get the current user from JWT token
-    current_user_id = get_jwt_identity()
-    
-    # Convert current_user_id to int for comparison
-    try:
-        current_user_id_int = int(current_user_id)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    # Check if the requested user_id matches the current user
-    if current_user_id_int != user_id:
-        return jsonify({"error": f"Unauthorized access. Token user: {current_user_id_int}, Requested user: {user_id}"}), 403
-    
-    # Get user from User table
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    # Get staff record using the foreign key user_id
-    staff = Staff.query.filter_by(user_id=user_id).first()
-    print(f"DEBUG: Looking for staff with user_id={user_id}, found: {staff}")  # Debug print
-    
-    if not staff:
-        return jsonify({"error": "Staff record not found"}), 404
-    
-    print(f"DEBUG: Staff data - staff_id: {staff.staff_id}, license: {staff.license_number}, dept: {staff.department}")  # Debug print
-    
-    return jsonify({
-        "user_id": user.user_id,
-        "username": user.username,
-        "email": user.email,
-        "f_name": user.f_name,
-        "l_name": user.l_name,
-        "phone": user.phone,
-        "address": user.address,
-        "birth_date": user.birth_date.strftime("%Y-%m-%d") if user.birth_date else None,
-        "gender": user.gender.value if user.gender else None,
-        "staff_id": staff.staff_id,  # From Staff table
-        "license_number": staff.license_number,  # From Staff table
-        "staff_phone": staff.phone,  # From Staff table (might be different)
-        "department": staff.department,  # From Staff table
-        "hire_date": staff.hire_date.strftime("%Y-%m-%d") if staff.hire_date else None,
-        "salary": float(staff.salary) if staff.salary else None,
-        "role": user.role.value
-    })
-
-@auth_bp.route('/radiologist/<int:user_id>', methods=['PUT'])
-@jwt_required()
-def update_radiologist_profile(user_id):
-    current_user_id = get_jwt_identity()
-    
-    # Convert current_user_id to int for comparison
-    try:
-        current_user_id_int = int(current_user_id)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    if current_user_id_int != user_id:
-        return jsonify({"error": "Unauthorized access"}), 403
-    
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    # Get staff record
-    staff = Staff.query.filter_by(user_id=user_id).first()
-    if not staff:
-        return jsonify({"error": "Staff record not found"}), 404
-    
-    data = request.json
-    phone = data.get('phone')
-    address = data.get('address')
-    
-    # Update user fields
-    if phone:
-        user.phone = phone
-        # Also update staff phone
-        staff.phone = phone
-    
-    if address:
-        user.address = address
-    
-    db.session.commit()
-    
-    return jsonify({
-        "message": "Profile updated successfully",
-        "user_id": user.user_id,
-        "phone": user.phone,
-        "address": user.address
-    })
-    
-
-@auth_bp.route('/patient/<int:user_id>', methods=['GET'])
-@jwt_required()
-def get_patient_profile(user_id):
-    user = User.query.get(user_id)
-    patient = Patient.query.filter_by(user_id=user_id).first()
-
-    return jsonify({
-        "name": f"{user.f_name} {user.l_name}",
-        
-        "email": user.email,
-        "phone": user.phone,
-        "address": user.address,
-        "birth_date": user.birth_date.strftime("%Y-%m-%d"),
-        "gender": user.gender.value,
-=======
 
 
 
@@ -274,46 +148,10 @@ def patient_info(patient_id):
     return jsonify({
         "patient_id": patient.patient_id,
         "name": f"{patient.user.f_name} {patient.user.l_name}",
->>>>>>> Stashed changes
         "blood_type": patient.blood_type,
         "allergies": patient.allergies,
         "chronic_conditions": patient.chronic_conditions,
         "insurance_provider": patient.insurance_provider,
-<<<<<<< Updated upstream
-        "insurance_number": patient.insurance_number,
-        "emergency_contact_name": patient.emergency_contact_name,
-        "emergency_contact_phone": patient.emergency_contact_phone
-    })
-@auth_bp.route('/edit_patient/<int:user_id>',methods=["PUT"])
-@jwt_required()
-def edit_patient_profile(user_id):
-    data = request.get_json()
-    
-    user = User.query.get(user_id)
-    patient = Patient.query.filter_by(user_id=user_id).first()
-    
-    if not user or not patient:
-        return jsonify({"message": "Patient not found"}), 404
-    
-    # Update User fields
-    user.f_name = data.get("first_name", user.f_name)
-    user.l_name = data.get("last_name", user.l_name)
-    user.phone = data.get("phone", user.phone)
-    user.address = data.get("address", user.address)
-    
-    # Update Patient fields
-    patient.blood_type = data.get("blood_type", patient.blood_type)
-    patient.allergies = data.get("allergies", patient.allergies)
-    patient.chronic_conditions = data.get("chronic_conditions", patient.chronic_conditions)
-    patient.insurance_provider = data.get("insurance_provider", patient.insurance_provider)
-    patient.insurance_number = data.get("insurance_number", patient.insurance_number)
-    patient.emergency_contact_name = data.get("emergency_contact_name", patient.emergency_contact_name)
-    patient.emergency_contact_phone = data.get("emergency_contact_phone", patient.emergency_contact_phone)
-    
-    db.session.commit()
-    
-    return jsonify({"message": "Patient profile updated successfully"})
-=======
         "visit_history": visits
     }), 200
 
@@ -420,4 +258,3 @@ def update_profile():
     db.session.commit()
 
     return jsonify({"message": "Profile updated successfully"}), 200
->>>>>>> Stashed changes
