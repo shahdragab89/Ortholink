@@ -26,6 +26,7 @@ export default function LoginPage() {
 if (response.ok) {
     localStorage.setItem("token", result.access_token);
     localStorage.setItem("role", result.role);
+    localStorage.setItem("user_id", result.user_id);
 
     if (result.role === "patient") {
         window.location.href = "/patient/dashboard";

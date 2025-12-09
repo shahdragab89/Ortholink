@@ -4,6 +4,8 @@ import { radiologistStyles } from '../styles/RadiologistStyles';
 const DEFAULT_AVATAR = "https://via.placeholder.com/150?text=Dr+Image";
 
 export default function RadiologistPage() {
+    
+    
     // --- State ---
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'profile'
     const [searchTerm, setSearchTerm] = useState('');
