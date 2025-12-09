@@ -5,10 +5,7 @@ import SignUpPage from './pages/signup';
 import DoctorDashboard from './pages/DoctorDashboard';
 import PatientPage from './pages/PatientPage';
 import ReceptionistPage from "./pages/ReceptionistPage";
-
-
-// Import the NEW Radiologist Page
-import RadiologistPage from './pages/RadiologistPage'; 
+import RadiologistPage from './pages/RadiologistPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -25,10 +22,13 @@ function App() {
 
       } else if (path === '/patient/dashboard') {
         setCurrentPage('patient');
-      } else if (path === '/radiologist') { // <--- Check for radiologist path
-        setCurrentPage('radiologist');}
-        else if (path === '/receptionist') { 
+
+      } else if (path === '/radiologist/dashboard') {
+        setCurrentPage('radiologist');
+
+      } else if (path === '/receptionist') {
         setCurrentPage('receptionist');
+
       } else {
         setCurrentPage('login');
       }
@@ -42,7 +42,7 @@ function App() {
   if (currentPage === 'signup') return <SignUpPage />;
   if (currentPage === 'doctor') return <DoctorDashboard />;
   if (currentPage === 'patient') return <PatientPage />;
-  if (currentPage === 'radiologist') return <RadiologistPage />; // <--- Render component
+  if (currentPage === 'radiologist') return <RadiologistPage />;
   if (currentPage === 'receptionist') return <ReceptionistPage />;
 
   return <LoginPage />;
