@@ -91,7 +91,44 @@ def test_complete_workflow():
             db.session.commit()
             print(f"   ✅ Patient created: {patient.patient_id}")
             print(f"   ✅ Doctor created: {doctor_staff.staff_id}")
+
+            # 2. Create a radiologist user
+            print("2. Creating RADIOLOGIST user and staff record...")
+            radiologist_user = User(
+                username='dr_btabt',
+                email='btabt@ortholink.com',
+                password_hash=generate_password_hash('radiologist123'),
+                role=Role.RADIOLOGIST,
+                gender=Gender.FEMALE,
+                f_name='Btabt',
+                l_name='Bob',
+                birth_date=datetime(1978, 3, 22).date(),
+                phone='51155-0201',
+                address='456 Oak Ave',
+                is_active=True
+            )
+            db.session.add(radiologist_user)
+            db.session.flush()
             
+            # Create staff record
+            radiologist_staff = Staff(
+                user_id=radiologist_user.user_id,
+                f_name='Btabt',
+                l_name='Bob',
+                license_number='RD123456',
+                phone='51155-0202',
+                department='Radiology',
+                hire_date=datetime(2015, 7, 1).date(),
+                salary=150000.00
+            )
+            db.session.add(radiologist_staff)
+            
+            db.session.commit()
+            print(f"   ✅ Patient created: {patient.patient_id}")
+            print(f"   ✅ Doctor created: {doctor_staff.staff_id}")
+            print(f"   ✅ Radiologist created: {radiologist_staff.staff_id}")
+
+
             # 3. Create an appointment
             print("\n3. Creating appointment...")
             appointment = Appointment(
