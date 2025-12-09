@@ -25,9 +25,9 @@ function App() {
 
       } else if (path === '/patient/dashboard') {
         setCurrentPage('patient');
-      } else if (path === '/radiologist') { // <--- Check for radiologist path
-        setCurrentPage('radiologist');}
-        else if (path === '/receptionist') { 
+      } else if (path === '/radiologist/dashboard') { 
+        setCurrentPage('radiologist');
+      } else if (path === '/receptionist') { 
         setCurrentPage('receptionist');
       } else {
         setCurrentPage('login');
