@@ -186,7 +186,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   },
 ];
 
-  // Example: fetched from DB later
 const pastVisits = [
   {
     date: "12 Nov 2025",
@@ -260,7 +259,6 @@ const previousScans = [
 ];
 
 
- // set scrollbar color exactly to the image shade (#C9F1FB)
 useEffect(() => {
   const style = document.createElement("style");
   style.innerHTML = `
@@ -292,7 +290,6 @@ useEffect(() => {
 }, []);
 
 
-  // measure actual width of upper-left card
   useEffect(() => {
     if (leftCardRef.current) {
       setLeftWidth(`${leftCardRef.current.offsetWidth}px`);
@@ -468,7 +465,7 @@ useEffect(() => {
                    onClick={() => {
   setSelectedTest({
     ...r,
-    images: ["/Background.png", "/xray.jpg"], // same as scans
+    images: ["/Background.png", "/xray.jpg"], 
     report:
       r.report ||
       "Scan report shows no abnormal findings. Normal spinal alignment and disc hydration preserved.",
@@ -488,26 +485,32 @@ useEffect(() => {
                 ))}
               </div>
 
-              {/* Popup */}
               {showReserveModal && (
-                <>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "-40px",
-                      left: 0,
-                      width: leftWidth, // exact same width as upper-left card
-                      height: "calc(240px * 2 + 24px)",
-                      zIndex: 50,
-                    }}
-                  >
-                    <ReserveAppointmentModal
-                      onClose={() => setShowReserveModal(false)}
-                    />
-                  </div>
-                  <div style={patientStyles.overlay} />
-                </>
-              )}
+  <>
+    <div
+      style={{
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        zIndex: 1001,
+      }}
+    >
+      <ReserveAppointmentModal onClose={() => setShowReserveModal(false)} />
+    </div>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(0,0,0,0.25)",
+        zIndex: 1000,
+      }}
+    />
+  </>
+)}
             </div>
           )}
 
@@ -531,7 +534,19 @@ useEffect(() => {
             <tr key={index}>
               <td style={patientStyles.visitsTd}>{visit.date}</td>
               <td style={patientStyles.visitsTd}>{visit.doctor}</td>
-              <td style={patientStyles.visitsTd}>{visit.diagnosis}</td>
+            <td
+  style={patientStyles.clickableCell}
+  onClick={() => {
+    setActivePopup({
+      type: "diagnosis",
+      doctor: visit.doctor,
+      date: visit.date,
+      diagnosis: visit.diagnosis,
+    });
+  }}
+>
+  View
+</td>
               <td
                 style={patientStyles.clickableCell}
                 onClick={() => {
@@ -554,27 +569,21 @@ useEffect(() => {
                 {visit.summary}
               </td>
               <td
-                style={patientStyles.clickableCell}
-                onClick={() => {
-                  setActivePopup({
-                    type: "billing",
-                    doctor: visit.doctor,
-                    date: visit.date,
-                  });
-                  setBillingDetails({
-                    total: 800,
-                    paid: 500,
-                    remaining: 300,
-                    history: [
-                      { date: "12 Nov 2025", amount: 300, method: "Cash" },
-                      { date: "13 Nov 2025", amount: 200, method: "Visa" },
-                    ],
-                  });
-                }}
-              >
-                {visit.billing}
-              </td>
-            </tr>
+  style={patientStyles.clickableCell}
+  onClick={() => {
+    setActivePopup({
+      type: "billingDetailed",
+      doctor: visit.doctor,
+      date: visit.date,
+      time: "10:30 AM",   // ← replace with DB variable
+      amount: "500 EGP",  // ← replace with DB variable
+      method: "Cash",     // ← replace with DB variable
+    });
+  }}
+>
+  View
+</td>         
+   </tr>
           ))}
         </tbody>
       </table>
@@ -639,25 +648,20 @@ useEffect(() => {
                 {scan.report}
               </td>
               <td
-                style={patientStyles.clickableCell}
-                onClick={() => {
-                  setActivePopup({
-                    type: "billing",
-                    doctor: scan.radiologist,
-                    date: scan.date,
-                  });
-                  setBillingDetails({
-                    total: 600,
-                    paid: 600,
-                    remaining: 0,
-                    history: [
-                      { date: "09 Nov 2025", amount: 600, method: "Cash" },
-                    ],
-                  });
-                }}
-              >
-                {scan.billing}
-              </td>
+  style={patientStyles.clickableCell}
+  onClick={() => {
+    setActivePopup({
+      type: "billingDetailed",
+      doctor: scan.radiologist,
+      date: scan.date,
+      time: "09:45 AM",   // ← replace with DB variable
+      amount: "600 EGP",  // ← replace with DB variable
+      method: "Visa",     // ← replace with DB variable
+    });
+  }}
+>
+  View
+</td>
             </tr>
           ))}
         </tbody>
@@ -678,8 +682,14 @@ useEffect(() => {
       <div
         style={{
           ...patientStyles.popup,
-          width: activePopup.type === "scan" ? 800 : 500,
-          minHeight: activePopup.type === "scan" ? 500 : 350,
+          width: activePopup.type === "scan" ? 800 
+          :activePopup.type === "billingDetailed"
+    ? 400
+    : 500,
+          minHeight: activePopup.type === "scan" ? 500 
+          : activePopup.type === "billingDetailed"
+    ? 280
+           :350,
         }}
       >
         <button
@@ -692,10 +702,12 @@ useEffect(() => {
         <h2 style={{ color: "#0a586c", marginBottom: 20 }}>
           {activePopup.type === "summary"
             ? "Visit Summary"
-            : activePopup.type === "billing"
+            : activePopup.type === "billingDetailed"
             ? "Billing Details"
             : activePopup.type === "scan"
             ? "Scan Viewer"
+            : activePopup.type === "diagnosis"
+            ? "Diagnosis Details"
             : "Report Details"}
         </h2>
 
@@ -724,55 +736,27 @@ useEffect(() => {
             </p>
           </div>
         )}
+{/* ---- Diagnosis Popup ---- */}
+{activePopup.type === "diagnosis" && (
+  <div style={patientStyles.viewArea}>
+    <p style={{ marginBottom: 16 }}>
+      <strong>Diagnosis:</strong><br />
+      {activePopup.diagnosis}
+    </p>
+  </div>
+)}
 
-        {/* ---- Billing ---- */}
-        {activePopup.type === "billing" && billingDetails && (
-          <>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 20,
-              }}
-            >
-              <div>
-                <strong>Total Amount:</strong>
-                <div>{billingDetails.total} EGP</div>
-              </div>
-              <div>
-                <strong>Paid Amount:</strong>
-                <div>{billingDetails.paid} EGP</div>
-              </div>
-              <div>
-                <strong>Remaining:</strong>
-                <div>{billingDetails.remaining} EGP</div>
-              </div>
-            </div>
+{/* ---- Billing Detailed Popup ---- */}
+{activePopup.type === "billingDetailed" && (
+  <div style={patientStyles.viewArea}>
+    <p style={{ marginBottom: 16 }}><strong>Date:</strong> {activePopup.date}</p>
+    <p style={{ marginBottom: 16 }}><strong>Time:</strong> {activePopup.time}</p>
+    <p style={{ marginBottom: 16 }}><strong>Amount:</strong> {activePopup.amount}</p>
+    <p style={{ marginBottom: 16 }}><strong>Way of Payment:</strong> {activePopup.method}</p>
+  </div>
+)}
 
-            <div style={patientStyles.scrollableTableWrapper}>
-              <table style={patientStyles.visitsTable}>
-                <thead style={patientStyles.fixedThead}>
-                  <tr>
-                    <th style={patientStyles.visitsTh}>Date</th>
-                    <th style={patientStyles.visitsTh}>Paid Amount</th>
-                    <th style={patientStyles.visitsTh}>Way of Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {billingDetails.history.map((p, i) => (
-                    <tr key={i}>
-                      <td style={patientStyles.visitsTd}>{p.date}</td>
-                      <td style={patientStyles.visitsTd}>{p.amount}</td>
-                      <td style={patientStyles.visitsTd}>{p.method}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
 
-        {/* ---- Scan Viewer ---- */}
         {/* ---- Scan Viewer ---- */}
 {activePopup.type === "scan" && scanPhotos && (
   <div
@@ -780,8 +764,8 @@ useEffect(() => {
       textAlign: "center",
       position: "relative",
       width: "100%",
-      height: "420px", // fixed height for image box
-      background: "#f8fafc", // light neutral background
+      height: "420px", 
+      background: "#f8fafc", 
       borderRadius: 12,
       display: "flex",
       justifyContent: "center",
@@ -795,7 +779,7 @@ useEffect(() => {
       style={{
         width: "100%",
         height: "100%",
-        objectFit: "contain", // ✅ ensures full image fits without cropping
+        objectFit: "contain", 
         borderRadius: 12,
       }}
     />
@@ -878,7 +862,6 @@ useEffect(() => {
     </div>
 
     <div style={patientStyles.profilePage}>
-      {/* (keep your left & right column code here unchanged) */}
     </div>
   </>
 )}
@@ -1167,15 +1150,15 @@ useEffect(() => {
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-        width: "80%",        // 🔼 was 70%
-        maxWidth: 1100,       // 🔼 was 900
+        width: "80%",        
+        maxWidth: 1100,     
         background: "white",
         borderRadius: 16,
         boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
         zIndex: 1000,
         display: "flex",
         overflow: "hidden",
-        height: 560,          // 🔼 was 420 (taller constant size)
+        height: 560,          
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -1362,13 +1345,16 @@ function ReserveAppointmentModal({ onClose }) {
       style={{
         background: "white",
         borderRadius: 16,
-        height: "115%",
-        width: "100%",
+        minHeight: "600px",
+        maxHeight: "90vh",       
+        minWidth: "600px",            
+        maxWidth: "900vh",       
         padding: 24,
         border: "1px solid #e2e8f0",
         boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
         overflowY: "auto",
         position: "relative",
+        transform: "translateX(-10%)",
       }}
     >
       {/* Close */}
@@ -1396,6 +1382,7 @@ function ReserveAppointmentModal({ onClose }) {
             placeholder="Describe your reason..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            rows={3}
             style={{
               width: "100%",
               padding: 10,
@@ -1461,29 +1448,6 @@ function ReserveAppointmentModal({ onClose }) {
               Reserved with {selectedDoc.name} at {selectedDate} {monthName} {year}, {selectedTime}
             </div>
           )}
-
-          {/* billing inline */}
-          <div style={{ marginTop: 25 }}>
-  <h3 style={{ color: "#0a586c", marginBottom: 10 }}>Billing</h3>
-  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-    <label>
-      <input
-        type="radio"
-        checked={billing === "cash"}
-        onChange={() => setBilling("cash")}
-      />{" "}
-      Cash
-    </label>
-    <label>
-      <input
-        type="radio"
-        checked={billing === "card"}
-        onChange={() => setBilling("card")}
-      />{" "}
-      Credit Card
-    </label>
-  </div>
-</div>
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
@@ -1603,6 +1567,7 @@ function ReserveAppointmentModal({ onClose }) {
                 >
                   <div style={{ fontWeight: 600 }}>{day}</div>
                   {isSelected &&
+                  
                     shift?.times.map((t) => (
                       <div
                         key={t}
