@@ -1,4 +1,3 @@
-# backend/app/models/patient.py - Add to existing file
 from ..extensions import db
 from datetime import datetime
 
@@ -16,10 +15,9 @@ class Patient(db.Model):
     emergency_contact_name = db.Column(db.String(100))
     emergency_contact_phone = db.Column(db.String(100))
     
-    # Relationships
+    # Relationships - remove VisitRecord for now (will be added later)
     user = db.relationship("User", back_populates="patient", foreign_keys=[user_id])
     appointments = db.relationship("Appointment", back_populates="patient", cascade="all, delete-orphan")
-    visit_records = db.relationship("VisitRecord", back_populates="patient", cascade="all, delete-orphan")
     medications = db.relationship("Medication", back_populates="patient", cascade="all, delete-orphan")
     
     def __repr__(self):

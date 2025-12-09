@@ -20,7 +20,7 @@ class VisitRecord(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    patient = db.relationship("Patient", back_populates="visit_records")
+    patient = db.relationship("Patient", backref="visit_records", foreign_keys=[patient_id])
     staff = db.relationship("Staff")
     appointment = db.relationship("Appointment")
     

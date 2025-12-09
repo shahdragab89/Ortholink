@@ -29,13 +29,13 @@ def test_complete_workflow():
             # 1. Create a patient user
             print("1. Creating patient user and patient record...")
             patient_user = User(
-                username='john_doe',
-                email='john@example.com',
-                password_hash=generate_password_hash('password123'),
+                username='batyy',
+                email='baty@example.com',
+                password_hash=generate_password_hash('baty123'),
                 role=Role.PATIENT,
                 gender=Gender.MALE,
-                f_name='John',
-                l_name='Doe',
+                f_name='baty',
+                l_name='bob',
                 birth_date=datetime(1985, 6, 15).date(),
                 phone='555-0101',
                 address='123 Main St',
