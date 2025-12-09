@@ -58,29 +58,49 @@ export default function RadiologistPage() {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
 
+                // In the fetchRadiologistData function:
                 const data = await res.json();
                 console.log("Fetched radiologist data:", data);
+                console.log("FULL API RESPONSE STRUCTURE:", JSON.stringify(data, null, 2));
 
-                // Update personal info with ACTUAL data from API
+                // Check specifically for phone and address in user data
+                console.log("User phone from API:", data.phone);
+                console.log("User address from API:", data.address);
+                console.log("User staff_phone from API:", data.staff_phone);
+
+
+                // Check for nested staff data - ADD THIS CHECK
+                const staffData = data.staff || data; // Try nested first, fallback to root
+                console.log("Using staffData:", staffData);
+
+                // Check if staff-specific fields exist in the response
+                console.log("Staff ID from staffData:", staffData.staff_id);
+                console.log("License from staffData:", staffData.license_number);
+                console.log("Department from staffData:", staffData.department);
+
+                // Update personal info with ACTUAL data from API - MODIFY TO USE staffData
                 setPersonalInfo({
-                    username: data.username || 'dr.kareem',
-                    email: data.email || 'kareem.ahmed@ortholink.com',
-                    f_name: data.f_name || 'Kareem',
-                    l_name: data.l_name || 'Ahmed',
-                    full_name: `Dr. ${data.f_name || 'Kareem'} ${data.l_name || 'Ahmed'}`,
-                    staff_id: data.staff_id ? `RAD-${data.staff_id}` : 'RAD-005',
-                    gender: data.gender ? data.gender.toUpperCase() : 'MALE',
-                    license_number: data.license_number || 'Not specified',
-                    department: data.department || 'Radiology',
-                    hire_date: data.hire_date || '2015-07-01',
-                    salary: data.salary ? `$${parseFloat(data.salary).toFixed(2)}` : '$150,000.00',
+                    phone: data.phone || data.staff_phone || '+20 987 654 3210',
+                    username: data.username || 'dr_btabt',
+                    email: data.email || 'btabt@ortholink.com',
+                    f_name: data.f_name || 'Btabt',
+                    l_name: data.l_name || 'Bob',
+                    full_name: `Dr. ${data.f_name || 'Btabt'} ${data.l_name || 'Bob'}`,
+                    staff_id: staffData.staff_id ? `RAD-${staffData.staff_id}` : 'RAD-5',
+                    gender: data.gender ? data.gender.toUpperCase() : 'FEMALE',
+                    license_number: staffData.license_number || 'RD123456',
+                    department: staffData.department || 'Radiology',
+                    hire_date: staffData.hire_date || '2015-07-01',
+                    salary: staffData.salary ? `$${parseFloat(staffData.salary).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$150,000.00',
                     photo: DEFAULT_AVATAR
                 });
 
-                // Update contact info with ACTUAL data
+                // Update contact info
+                // Use phone from user data (staff_phone is separate if needed)
+                //const phone = data.phone || '+20 987 654 3210';
                 setContactInfo({ 
-                    phone: data.phone || data.staff_phone || '+20 123 456 7890', 
-                    address: data.address || 'Cairo, Egypt' 
+                    phone: data.phone || data.staff_phone || '+20 987 654 3210', 
+                    address: data.address || 'Alexandria, Egypt' 
                 });
 
                 // Update localStorage for display
@@ -103,7 +123,7 @@ export default function RadiologistPage() {
         window.location.href = '/login'; 
     };
 
-    // Update profile function
+    // Update profile function - COMPLETE VERSION
     const handleSaveProfileChanges = async () => {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("user_id");
@@ -115,32 +135,120 @@ export default function RadiologistPage() {
         }
 
         try {
-            const response = await fetch(`${API_BASE}/auth/radiologist/${userId}`, {
-                method: 'PUT',
-                headers: { 
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    phone: contactInfo.phone,
-                    address: contactInfo.address
-                })
-            });
-
-            if (response.ok) {
-                alert('Profile updated successfully!');
-                // Update local state with new phone
+            // Prepare update data for USER entity
+            const updateData = {
+                phone: contactInfo.phone,
+                address: contactInfo.address
+            };
+            
+            console.log("Attempting to update USER entity with:", updateData);
+            console.log("User ID:", userId);
+            
+            // Define possible endpoints (prioritize user/profile endpoints)
+            const endpointsToTry = [
+                `${API_BASE}/users/${userId}`,           // Direct user entity endpoint
+                `${API_BASE}/auth/user/${userId}`,       // Auth user endpoint
+                `${API_BASE}/auth/profile`,              // Current user's profile (no ID needed)
+                `${API_BASE}/profile`,                   // Simple profile endpoint
+                `${API_BASE}/auth/update-profile`,       // Common update profile endpoint
+                `${API_BASE}/users/update/${userId}`,    // Alternative user update
+                `${API_BASE}/auth/radiologist/${userId}` // Original endpoint (fallback)
+            ];
+            
+            let successfulEndpoint = null;
+            let responseData = null;
+            
+            // Try each endpoint until one works
+            for (const endpoint of endpointsToTry) {
+                try {
+                    console.log(`Trying endpoint: ${endpoint}`);
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'PUT',
+                        headers: { 
+                            "Authorization": `Bearer ${token}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+                    
+                    console.log(`Endpoint ${endpoint} returned status: ${response.status}`);
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log(`SUCCESS with endpoint: ${endpoint}`, result);
+                        successfulEndpoint = endpoint;
+                        responseData = result;
+                        break; // Stop trying endpoints once one works
+                    } else {
+                        // Try to get error details
+                        const errorText = await response.text();
+                        console.log(`Endpoint ${endpoint} failed: ${response.status} - ${errorText.substring(0, 100)}...`);
+                        
+                        // If it's a 404 or 405, try next endpoint
+                        if (response.status === 404 || response.status === 405) {
+                            continue;
+                        }
+                        
+                        // For other errors, show message
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            alert(`Update failed (${endpoint}): ${errorJson.error || errorJson.message || 'Unknown error'}`);
+                            return;
+                        } catch {
+                            alert(`Update failed (${endpoint}): ${errorText.substring(0, 200)}`);
+                            return;
+                        }
+                    }
+                } catch (networkError) {
+                    console.log(`Network error with endpoint ${endpoint}:`, networkError.message);
+                    // Continue to next endpoint
+                }
+            }
+            
+            if (successfulEndpoint) {
+                // SUCCESS - Update local state
                 setPersonalInfo(prev => ({
                     ...prev,
                     phone: contactInfo.phone
                 }));
+                
+                // Also update localStorage if needed
+                localStorage.setItem("phone", contactInfo.phone);
+                localStorage.setItem("address", contactInfo.address);
+                
+                // Show success message with endpoint info
+                alert(`✅ Profile updated successfully!\n\nPhone: ${contactInfo.phone}\nAddress: ${contactInfo.address}\n\n(Updated via: ${successfulEndpoint.replace(API_BASE, '')})`);
+                
+                // Optional: Re-fetch data to ensure consistency
+                // fetchRadiologistData();
             } else {
-                const errorData = await response.json();
-                alert(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
+                // ALL endpoints failed
+                console.error("All update endpoints failed");
+                
+                // Check if it's a backend issue or frontend issue
+                const diagnosticMessage = `
+    Failed to update profile. Possible issues:
+    1. No PUT endpoint implemented for user updates
+    2. Backend requires different field names
+    3. JWT token doesn't have update permissions
+    4. Database constraints preventing update
+
+    Check your browser Console (F12) for detailed error messages.
+    `;
+                alert(diagnosticMessage);
+                
+                // Open browser console instructions
+                console.log("=== BACKEND DIAGNOSTIC INFO ===");
+                console.log("1. Check your Flask routes for PUT endpoints");
+                console.log("2. Verify the User model has phone/address fields");
+                console.log("3. Check database permissions");
+                console.log("4. Verify JWT token includes update scopes");
             }
+            
         } catch (error) {
-            console.error("Error updating profile:", error);
-            alert('Error updating profile. Please try again.');
+            console.error("Unexpected error in handleSaveProfileChanges:", error);
+            alert(`Unexpected error: ${error.message}\n\nCheck browser console for details.`);
         }
     };
 

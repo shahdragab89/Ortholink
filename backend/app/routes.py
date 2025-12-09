@@ -91,19 +91,14 @@ def login():
         }), 200
     else:
         return jsonify({"message": "Invalid email or password"}), 401
-    
-
+  
 @auth_bp.route('/radiologist/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_radiologist_profile(user_id):
     # Get the current user from JWT token
     current_user_id = get_jwt_identity()
     
-    # Debug print to see what's being compared
-    print(f"Debug: current_user_id (JWT) = '{current_user_id}' (type: {type(current_user_id)})")
-    print(f"Debug: user_id (URL) = {user_id} (type: {type(user_id)})")
-    
-    # Convert current_user_id to int for comparison since URL param is int
+    # Convert current_user_id to int for comparison
     try:
         current_user_id_int = int(current_user_id)
     except (ValueError, TypeError):
@@ -113,6 +108,7 @@ def get_radiologist_profile(user_id):
     if current_user_id_int != user_id:
         return jsonify({"error": f"Unauthorized access. Token user: {current_user_id_int}, Requested user: {user_id}"}), 403
     
+    # Get user from User table
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -120,10 +116,14 @@ def get_radiologist_profile(user_id):
     if user.role != Role.RADIOLOGIST:
         return jsonify({"error": "User is not a radiologist"}), 400
     
+    # Get staff record using the foreign key user_id
     staff = Staff.query.filter_by(user_id=user_id).first()
+    print(f"DEBUG: Looking for staff with user_id={user_id}, found: {staff}")  # Debug print
     
     if not staff:
         return jsonify({"error": "Staff record not found"}), 404
+    
+    print(f"DEBUG: Staff data - staff_id: {staff.staff_id}, license: {staff.license_number}, dept: {staff.department}")  # Debug print
     
     return jsonify({
         "user_id": user.user_id,
@@ -135,10 +135,10 @@ def get_radiologist_profile(user_id):
         "address": user.address,
         "birth_date": user.birth_date.strftime("%Y-%m-%d") if user.birth_date else None,
         "gender": user.gender.value if user.gender else None,
-        "staff_id": staff.staff_id,
-        "license_number": staff.license_number,
-        "staff_phone": staff.phone,
-        "department": staff.department,
+        "staff_id": staff.staff_id,  # From Staff table
+        "license_number": staff.license_number,  # From Staff table
+        "staff_phone": staff.phone,  # From Staff table (might be different)
+        "department": staff.department,  # From Staff table
         "hire_date": staff.hire_date.strftime("%Y-%m-%d") if staff.hire_date else None,
         "salary": float(staff.salary) if staff.salary else None,
         "role": user.role.value
@@ -165,6 +165,11 @@ def update_radiologist_profile(user_id):
     if user.role != Role.RADIOLOGIST:
         return jsonify({"error": "User is not a radiologist"}), 400
     
+    # Get staff record
+    staff = Staff.query.filter_by(user_id=user_id).first()
+    if not staff:
+        return jsonify({"error": "Staff record not found"}), 404
+    
     data = request.json
     phone = data.get('phone')
     address = data.get('address')
@@ -172,13 +177,11 @@ def update_radiologist_profile(user_id):
     # Update user fields
     if phone:
         user.phone = phone
+        # Also update staff phone
+        staff.phone = phone
+    
     if address:
         user.address = address
-    
-    # Also update staff phone if different
-    staff = Staff.query.filter_by(user_id=user_id).first()
-    if staff and phone:
-        staff.phone = phone
     
     db.session.commit()
     
