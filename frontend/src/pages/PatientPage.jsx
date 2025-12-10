@@ -59,7 +59,7 @@ export default function PatientPage() {
 
         if (!token || !userId) return;
 
-        const res = await fetch(`http://127.0.0.1:5000/api/auth/patient/${userId}`, {
+        const res = await fetch(`http://127.0.0.1:5000/api/auth/patient_data/${userId}`, {
           headers: { "Authorization": `Bearer ${token}` },
         });
 
