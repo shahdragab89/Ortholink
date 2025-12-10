@@ -33,6 +33,8 @@ def create_app():
     # Import and register blueprints
     from .routes import auth_bp, doctor_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(doctor_bp, url_prefix='/api/doctor')
+
 
     from .receptionist_routes import reception_bp
     app.register_blueprint(reception_bp, url_prefix="/api/receptionist")

@@ -1098,20 +1098,20 @@ export default function DoctorDashboard() {
       }, []);
 
     const [profileData, setProfileData] = useState({
-        fullName: 'Dr. Maya Johnson',
-        licenseNumber: 'MD-12345-2020',
+        fullName: 'Dr. Mohamed Khalaf',
+        licenseNumber: '12345',
         professionalTitle: 'Orthopedic Surgeon',
         // department: 'Orthopedics',
         staffId: 'STAFF-001',
-        phone: '+1 (555) 123-4567',
+        phone: '+20 106-1123-123',
         address: '123 Medical Center Drive, Suite 100',
         password: '',
         newPassword: '',
         confirmPassword: '',
         profilePhoto: null,
         digitalSignature: null,
-        email: 'mayaJohnson@ortholink.com',
-        username: 'mayajohnson23'
+        email: 'doctor@gmail.com',
+        username: 'firstdoctor'
     });
 
     // --- HANDLERS ---
