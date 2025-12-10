@@ -264,10 +264,10 @@ export default function RadiologistPage() {
 
     // Mock Data
     const [scans, setScans] = useState([
-        { id: 1, did: 'DR-501', date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', age: '34', gender: 'Male', type: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-10' },
-        { id: 2, did: 'DR-512', date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', age: '54', gender: 'Male', type: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed', recordId: 'rec-16' },
-        { id: 3, did: 'DR-501', date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', age: '67', gender: 'Female', type: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-19' },
-        { id: 4, did: 'DR-512', date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', age: '46', gender: 'Male', type: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending', recordId: 'rec-30' },
+        { id: 1, did: 'DR-501', date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', age: '34', gender: 'Male', bodyType: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-10' },
+        { id: 2, did: 'DR-512', date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', age: '54', gender: 'Male', bodyType: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed', recordId: 'rec-16' },
+        { id: 3, did: 'DR-501', date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', age: '67', gender: 'Female', bodyType: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-19' },
+        { id: 4, did: 'DR-512', date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', age: '46', gender: 'Male', bodyType: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending', recordId: 'rec-30' },
     ]);
 
     const [uploadFiles, setUploadFiles] = useState([]);
@@ -415,7 +415,7 @@ export default function RadiologistPage() {
                         <div style={radiologistStyles.searchContainer}>
                             <input 
                                 type="text" 
-                                placeholder="Search patient, ID, Date, Dr, Module, Status or scan type..." 
+                                placeholder="Search patient, ID, Date, Dr, Module or Status..." 
                                 style={radiologistStyles.searchInput}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -437,7 +437,7 @@ export default function RadiologistPage() {
                                         <th style={radiologistStyles.th}>Patient ID</th>
                                         <th style={radiologistStyles.th}>Ref. Doctor</th>
                                         <th style={radiologistStyles.th}>Dr. ID</th>
-                                        <th style={radiologistStyles.th}>Scan Type</th>
+                                        <th style={radiologistStyles.th}>Body Part</th>
                                         <th style={radiologistStyles.th}>Module</th>
                                         <th style={radiologistStyles.th}>Status</th>
                                         <th style={radiologistStyles.th}>Action</th>
@@ -458,7 +458,7 @@ export default function RadiologistPage() {
                                             <td style={radiologistStyles.td}>{scan.pid}</td>
                                             <td style={radiologistStyles.td}>{scan.doctor}</td>
                                             <td style={radiologistStyles.td}>{scan.did}</td>
-                                            <td style={radiologistStyles.td}>{scan.type}</td>
+                                            <td style={radiologistStyles.td}>{scan.bodyType}</td>
                                             <td style={radiologistStyles.td}>{scan.module}</td>
                                             <td style={radiologistStyles.td}>
                                                 <span style={{...radiologistStyles.statusBadge, backgroundColor: statusBg, color: statusColor}}>
@@ -540,11 +540,11 @@ export default function RadiologistPage() {
 
                                 {/* Column 3: Scan Details */}
                                 <div>
-                                    <div style={radiologistStyles.infoLabel}>Scan Type</div>
-                                    <div>{selectedScan.type}</div>
+                                    <div style={radiologistStyles.infoLabel}>Body Part</div>
+                                    <div>{selectedScan.bodyType}</div>
                                 </div>
                                 <div>
-                                    <div style={radiologistStyles.infoLabel}>Body Module</div>
+                                    <div style={radiologistStyles.infoLabel}>Module</div>
                                     <div>{selectedScan.module}</div>
                                 </div>
                                 <div>
