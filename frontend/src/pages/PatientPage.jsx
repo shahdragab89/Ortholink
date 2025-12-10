@@ -77,8 +77,7 @@ export default function PatientPage() {
           chronic: data.chronic_conditions || "N/A",
           photo: "/default-avatar.png"
         });
-
-        setContactInfo({ phone: data.phone, address: data.address });
+       setContactInfo({ phone: data.phone, address: data.address });
         setEmergencyInfo({ name: data.emergency_contact_name, number: data.emergency_contact_phone });
         setInsuranceInfo({ provider: data.insurance_provider, id: data.insurance_number, coverage: "N/A", validUntil: "N/A" });
 
