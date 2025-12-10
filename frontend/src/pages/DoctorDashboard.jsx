@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { sharedStyles as s } from '../styles/sharedStyles';
 import { patientProfileStyles as pps } from '../styles/patientProfileStyles';
 import { doctorProfileStyles as dps } from '../styles/doctorProfileStyles';
+import welcomeDocImage from '../assets/welcome-doc.svg';
 
 import { 
     Home, Users, User, LogOut, Eye, Activity, 
@@ -76,15 +77,91 @@ const allPatientsData = [
 ];
 
 const pendingScans = [
-    { id: 1, scanType: 'MRI Lumbar Spine', patientName: 'Robert Wilson', scanImage: 'mri_brain.jpg', date: '23 Feb 2024', status: 'Pending', modality: 'MRI' },
-    { id: 2, scanType: 'X-Ray Right Wrist', patientName: 'Lisa Anderson', scanImage: 'ct_chest.jpg', date: '23 Feb 2024', status: 'Pending', modality: 'X-Ray' },
-    { id: 3, scanType: 'X-Ray Left Knee', patientName: 'Michael Brown', scanImage: 'xray.jpg', date: '22 Feb 2024', status: 'Pending', modality: 'X-Ray' },
+    { 
+        id: 1, 
+        scanId: 'SCN-1042',
+        scanType: 'MRI', 
+        bodyPart: 'Lumbar Spine',
+        modality: 'MRI', 
+        date: '23 Feb 2024', 
+        time: '09:30 AM',
+        radiologist: 'Dr. Sarah Smith',
+        status: 'Pending', 
+        patientName: 'Robert Wilson', 
+        patientId: 'P-104', 
+        age: 52, gender: 'Male', 
+        recordId: 'REC-001', 
+        scanImage: 'https://via.placeholder.com/150' ,
+    },
+    { 
+        id: 2, 
+        scanId: 'SCN-1043',
+        scanType: 'X-Ray', 
+        bodyPart: 'Right Wrist',
+        modality: 'X-Ray', 
+        date: '23 Feb 2024', 
+        time: '10:15 AM',
+        radiologist: 'Dr. James Chen',
+        status: 'Pending', 
+        patientName: 'Lisa Anderson', 
+        patientId: 'P-105', 
+        age: 61, gender: 'Female', 
+        recordId: 'REC-002', 
+        scanImage: 'https://via.placeholder.com/150' 
+    },
+    { 
+        id: 3, 
+        scanId: 'SCN-1044',
+        scanType: 'CT Scan', 
+        bodyPart: 'Left Knee',
+        modality: 'CT', 
+        date: '22 Feb 2024', 
+        time: '02:45 PM',
+        radiologist: 'Dr. Emily White',
+        status: 'Pending', 
+        patientName: 'Michael Brown', 
+        patientId: 'P-102', 
+        age: 28, gender: 'Male', 
+        recordId: 'REC-003', 
+        scanImage: 'https://via.placeholder.com/150' 
+    },
+     { 
+        id: 4, 
+        scanId: 'SCN-1045',
+        scanType: 'MRI', 
+        bodyPart: 'Cervical Spine',
+        modality: 'MRI', 
+        date: '22 Feb 2024', 
+        time: '04:00 PM',
+        radiologist: 'Dr. Sarah Smith',
+        status: 'Pending', 
+        patientName: 'Emily Davis', 
+        patientId: 'P-103', 
+        age: 22, gender: 'Female', 
+        recordId: 'REC-004', 
+        scanImage: 'https://via.placeholder.com/150' 
+    },
 ];
 
 const patientScansHistory = [
-    { id: 101, name: 'MRI Right Shoulder', modality: 'MRI', date: '10 Jan 2024', status: 'Report Ready', image: 'shoulder_mri.jpg', report: 'Full thickness tear of Supraspinatus tendon. Moderate muscle atrophy.' },
-    { id: 102, name: 'X-Ray Shoulder AP/Lat', modality: 'X-Ray', date: '15 Dec 2023', status: 'Report Ready', image: 'shoulder_xray.jpg', report: 'Acromioclavicular joint osteoarthritis visible. No fracture.' },
-    { id: 103, name: 'CT Scan Cervical Spine', modality: 'CT', date: '20 Nov 2023', status: 'Processing', image: 'c_spine.jpg', report: '' }
+    { 
+        id: 101, name: 'MRI Right Shoulder', modality: 'MRI', date: '10 Jan 2024', status: 'Report Ready', 
+        recordId: 'REC-885', patientId: 'P-101', // These will be merged with selectedPatient data
+        image: 'shoulder_mri.jpg', report: 'Full thickness tear...', radiologist: 'Dr. Sarah Smith', 
+    },
+];
+
+const pendingScansMock = [
+    { 
+        id: 1, scanType: 'MRI Lumbar Spine', modality: 'MRI', date: '23 Feb 2024', status: 'Pending', 
+        patientName: 'Robert Wilson', patientId: 'P-104', age: 52, gender: 'Male', 
+        recordId: 'REC-001', scanImage: 'https://via.placeholder.com/150', radiologist: 'Dr. Shahd Smith',
+    },
+    { 
+        id: 2, scanType: 'X-Ray Right Wrist', modality: 'X-Ray', date: '23 Feb 2024', status: 'Pending', 
+        patientName: 'Lisa Anderson', patientId: 'P-105', age: 61, gender: 'Female', 
+        recordId: 'REC-002', scanImage: 'https://via.placeholder.com/150', radiologist: 'Dr. Ayat Smith',
+    },
 ];
 
 // --- HELPER FUNCTIONS ---
@@ -106,35 +183,64 @@ const getPhaseStyle = (phase) => {
 };
 
 
-// --- SUB-COMPONENTS (Moved OUTSIDE the main component) ---
+
+
+// [DoctorDashboard.jsx]
 
 const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onSubmit }) => {
     if (!show) return null;
+
+    // Download Function
+    const handleDownload = () => {
+        const element = document.createElement("a");
+        const file = new Blob([`REPORT FOR: ${scan?.patientName}\nID: ${scan?.patientId}\n\nFINDINGS:\n${reportText}`], {type: 'text/plain'});
+        element.href = URL.createObjectURL(file);
+        element.download = `Report_${scan?.patientName}_${scan?.date}.txt`;
+        document.body.appendChild(element);
+        element.click();
+    };
+
     return (
         <div style={s.modalOverlay} onClick={onClose}>
-            <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            {/* ✅ FIX 1: Add e.stopPropagation() here so clicking inside doesn't close it */}
+            <div style={{...s.modalBox, width: '700px'}} onClick={(e) => e.stopPropagation()}>
+                
                 <div style={s.modalHeader}>
-                    <h3 style={s.sectionTitle}>Scan Report</h3>
+                    <h3 style={s.sectionTitle}>Scan Report Details</h3>
                     <button onClick={onClose} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
                 </div>
+                
                 <div style={s.modalBody}>
-                    <div style={{height: '250px', backgroundColor: '#000', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                         <img src={scan?.image || scan?.scanImage} alt="Scan" style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}} />
-                    </div>
-                    
-                    <div style={pps.infoGridCentered}>
-                        <div style={{textAlign: 'left'}}>
-                            <div style={s.infoLabel}>Scan Name</div>
-                            <div style={s.infoValue}>{scan?.name || scan?.scanType}</div>
-                        </div>
-                        <div style={{textAlign: 'left'}}>
-                            <div style={s.infoLabel}>Modality</div>
-                            <div style={s.infoValue}>{scan?.modality}</div>
-                        </div>
+                    {/* Patient Info Grid */}
+                    <div style={{
+                        backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '8px', border: '1px solid #bbf7d0',
+                        marginBottom: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '13px'
+                    }}>
+                        <div><div style={s.infoLabel}>Patient Name</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.patientName}</div></div>
+                        <div><div style={s.infoLabel}>Patient ID</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.patientId}</div></div>
+                        <div><div style={s.infoLabel}>Age / Gender</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.age} / {scan?.gender}</div></div>
+                        <div><div style={s.infoLabel}>Scan Type</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.scanType || scan?.name}</div></div>
+                        <div><div style={s.infoLabel}>Record ID</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.recordId || 'N/A'}</div></div>
+                        <div><div style={s.infoLabel}>Radiologist</div><div style={{fontWeight:'600', color:'#1e293b'}}>{scan?.radiologist || 'N/A'}</div></div>
                     </div>
 
-                    <div style={{marginTop: '20px'}}>
-                        <div style={s.inputLabel}>Doctor's Findings & Notes</div>
+                    {/* Scan Image */}
+                    <div style={{height: '250px', backgroundColor: '#000', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                         <img src={scan?.image || scan?.scanImage || 'https://via.placeholder.com/300'} alt="Scan" style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}} />
+                    </div>
+                    
+                    {/* Report Text & Download */}
+                    <div>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                            <div style={s.inputLabel}>Doctor's Findings & Notes</div>
+                            {/* ✅ FIX 2: Download Button */}
+                            {(scan?.isReadOnly || reportText) && (
+                                <button onClick={handleDownload} style={{fontSize:'12px', color:'#02505F', background:'none', border:'none', cursor:'pointer', fontWeight:'600', textDecoration:'underline'}}>
+                                    Download Report
+                                </button>
+                            )}
+                        </div>
+
                         {scan?.isReadOnly ? (
                             <div style={{marginTop: '8px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', lineHeight: '1.5', color: '#334155'}}>
                                 {scan.report || "No report available."}
@@ -476,70 +582,167 @@ const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
     );
 };
 
-const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingScans, handleOpenReport }) => (
-    <div style={s.main}>
-        <div style={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0}}>
-            <div>
-                <h1 style={{fontSize: '32px', fontWeight: '700', color: '#1e293b', marginBottom: '8px'}}>
-                    Welcome <span style={{color: '#4361ee'}}>{doctorName}!</span>
-                </h1>
-                <p style={{fontSize: '16px', color: '#64748b'}}>
-                    You have <strong>{appointments.filter(a => a.status === 'scheduled').length} patients</strong> remaining today!
-                </p>
-            </div>
-            <div style={{fontSize: '80px', lineHeight: 1, marginTop: '-10px', transform: 'rotate(-15deg)', opacity: 0.9}}>🩺</div>
-        </div>
+const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingScans, handleOpenReport }) => {
 
-        <div style={s.contentContainer}>
-            <div style={s.section}>
-                <div style={s.sectionHeaderRow}><h2 style={s.sectionTitle}>Today's Appointments</h2></div>
-                <div style={s.tableContainer}>
-                    <div style={{ ...s.tableHeader, ...s.appointmentGrid }}>
-                        <div>Date</div><div>Time</div><div>Patient</div><div>Reason</div><div>Notes</div><div>Status</div>
+    const [apptSearch, setApptSearch] = useState('');
+    const [scanSearch, setScanSearch] = useState('');
+
+    const filteredAppointments = (appointments || []).filter(apt => {
+        if (!apptSearch) return true;
+        const term = apptSearch.toLowerCase();
+        const combined = `
+            ${apt.date || ''} 
+            ${apt.time || ''} 
+            ${(apt.patientName || '').toLowerCase()} 
+            ${(apt.reason || '').toLowerCase()} 
+            ${(apt.notes || '').toLowerCase()} 
+            ${(apt.status || '').toLowerCase()}
+        `;
+        return combined.includes(term);
+    });
+
+    // --- SAFE FILTER LOGIC: SCANS ---
+    const filteredScans = (pendingScans || []).filter(scan => {
+        if (!scanSearch) return true;
+        const term = scanSearch.toLowerCase();
+        // Concatenate all new fields for search
+        const combined = `
+            ${(scan.scanId || '').toLowerCase()}
+            ${(scan.scanType || '').toLowerCase()} 
+            ${(scan.bodyPart || '').toLowerCase()}
+            ${(scan.modality || '').toLowerCase()} 
+            ${(scan.patientName || '').toLowerCase()} 
+            ${(scan.radiologist || '').toLowerCase()}
+            ${scan.date || ''}
+            ${scan.time || ''}
+        `;
+        return combined.includes(term);
+    });
+
+    const remainingCount = (appointments || []).filter(a => a.status === 'scheduled').length;
+
+    const compactSearchStyle = {
+        padding: '8px 12px 8px 36px', // Left padding for icon
+        borderRadius: '20px',
+        border: '1px solid #e2e8f0',
+        fontSize: '13px',
+        width: '250px', // Fixed width for compact look
+        outline: 'none',
+        backgroundColor: '#f8fafc'
+    };
+
+    const expandedScanGrid = {
+        gridTemplateColumns: '60px 0.9fr 1fr 0.8fr 1.2fr 1.1fr 1.1fr 80px' 
+    };
+        return (
+        <div style={{ ...s.main, overflowY: 'auto' }}>
+            
+            {/* ✅ FIX: Added 'flexShrink: 0' to prevent the banner from getting squashed */}
+            <section style={{ ...dps.welcomeBanner, flexShrink: 0 }}>
+                <div style={dps.decorativeCircle1}></div>
+                <div style={dps.decorativeCircle2}></div>
+                <div style={dps.welcomeTextBox}>
+                    <h1 style={dps.welcomeTitle}>Hello, Dr. {doctorName}!</h1>
+                    <p style={dps.welcomeSubText}>
+                        You have <span style={dps.welcomeHighlight}>{remainingCount} patients remaining</span> today. 
+                        Let's clear the queue!
+                    </p>
+                </div>
+                <img src={welcomeDocImage} alt="Doctor" style={dps.welcomeIllustration} />
+            </section>
+
+            <div style={{ ...s.contentContainer, minHeight: 'fit-content' }}>
+                
+                {/* --- TABLE 1: APPOINTMENTS --- */}
+                <div style={{ ...s.section, flex: 'none', height: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #f1f5f9' }}>
+                        <h2 style={s.sectionTitle}>Today's Appointments</h2>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                            <input type="text" placeholder="Search appointments..." style={compactSearchStyle} value={apptSearch} onChange={(e) => setApptSearch(e.target.value)} />
+                        </div>
                     </div>
-                    <div style={s.scrollableRows}>
-                        {appointments.map((apt) => (
-                            <div key={apt.id} style={{ ...s.tableRow, ...s.appointmentGrid }}>
-                                <div>{apt.date}</div>
-                                <div>{apt.time}</div>
-                                <div><button style={s.clickablePatientName} onClick={() => handlePatientClick(apt.patientName)}>{apt.patientName}</button></div>
-                                <div>{apt.reason}</div>
-                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.notes}</div>
-                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.status}</div>
-                            </div>
-                        ))}
+
+                    <div style={s.tableContainer}>
+                        <div style={{ ...s.tableHeader, ...s.appointmentGrid }}>
+                            <div>Date</div><div>Time</div><div>Patient</div><div>Reason</div><div>Notes</div><div>Status</div>
+                        </div>
+                        
+                        <div style={{ ...s.scrollableRows, height: '100px', minHeight: '100px', overflowY: 'auto' }}>
+                            {filteredAppointments.length > 0 ? (
+                                filteredAppointments.map((apt) => (
+                                    <div key={apt.id} style={{ ...s.tableRow, ...s.appointmentGrid }}>
+                                        <div>{apt.date}</div>
+                                        <div>{apt.time}</div>
+                                        <div><button style={s.clickablePatientName} onClick={() => handlePatientClick(apt.patientName)}>{apt.patientName}</button></div>
+                                        <div>{apt.reason}</div>
+                                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.notes || '-'}</div>
+                                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.status}</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{padding: '40px', textAlign: 'center', color: '#94a3b8'}}>No appointments found.</div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div style={s.section}>
-                <div style={s.sectionHeaderRow}><h2 style={s.sectionTitle}>Pending Scan Reports</h2></div>
-                <div style={s.tableContainer}>
-                    <div style={{ ...s.tableHeader, ...s.scanGrid }}>
-                        <div>Scan</div><div>Modality</div><div>Patient</div><div>Date</div><div>Action</div>
+                {/* --- TABLE 2: PENDING SCANS --- */}
+                <div style={{ ...s.section, flex: 'none', height: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #f1f5f9' }}>
+                        <h2 style={s.sectionTitle}>Pending Scan Reports</h2>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                            <input type="text" placeholder="Search scans..." style={compactSearchStyle} value={scanSearch} onChange={(e) => setScanSearch(e.target.value)} />
+                        </div>
                     </div>
-                    <div style={s.scrollableRows}>
-                        {pendingScans.map((scan) => (
-                            <div key={scan.id} style={{ ...s.tableRow, ...s.scanGrid }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '6px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
-                                    <img src={scan.scanImage} alt="scan" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                                <div>{scan.scanType}</div>
-                                <div><button style={s.clickablePatientName} onClick={() => handlePatientClick(scan.patientName)}>{scan.patientName}</button></div>
-                                <div>{scan.date}</div>
-                                <div>
-                                    <button style={s.actionButton} onClick={() => handleOpenReport(scan, false)}>
-                                        <Eye size={14} /> View
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+
+                    <div style={s.tableContainer}>
+                        <div style={{ ...s.tableHeader, ...expandedScanGrid }}>
+                            <div>Scan</div>
+                            <div>Scan ID</div>
+                            <div>Body Part</div>
+                            <div>Type</div>
+                            <div>Patient</div>
+                            <div>Date/Time</div>
+                            <div>Radiologist</div>
+                            <div>Action</div>
+                        </div>
+                        
+                        <div style={{ ...s.scrollableRows, height: '100px', minHeight: '100px', overflowY: 'auto' }}>
+                            {filteredScans.length > 0 ? (
+                                filteredScans.map((scan) => (
+                                    <div key={scan.id} style={{ ...s.tableRow, ...expandedScanGrid }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '6px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                                            <img src={scan.scanImage} alt="scan" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </div>
+                                        <div style={{ fontWeight: '600', color: '#475569' }}>{scan.scanId}</div>
+                                        <div style={{ color: '#334155' }}>{scan.bodyPart}</div>
+                                        <div><span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', color: '#475569' }}>{scan.scanType}</span></div>
+                                        <div><button style={s.clickablePatientName} onClick={() => handlePatientClick(scan.patientName)}>{scan.patientName}</button></div>
+                                        <div style={{ fontSize: '12px' }}>
+                                            <div style={{ fontWeight: '500' }}>{scan.date}</div>
+                                            <div style={{ color: '#94a3b8' }}>{scan.time}</div>
+                                        </div>
+                                        <div style={{ fontSize: '13px', color: '#02505F' }}>{scan.radiologist}</div>
+                                        <div>
+                                            <button style={s.actionButton} onClick={() => handleOpenReport(scan, false)}>
+                                                <Eye size={14} /> View
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{padding: '40px', textAlign: 'center', color: '#94a3b8'}}>No pending scans found.</div>
+                            )}
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePatientClick }) => {
     const filteredPatients = allPatientsData.filter(p => 
@@ -866,7 +1069,23 @@ export default function DoctorDashboard() {
 
     // --- HANDLERS ---
     const handleOpenReport = (scan, isReadOnly = false) => {
-        setSelectedScan({ ...scan, isReadOnly });
+        // Prepare the scan data
+        let scanData = { ...scan, isReadOnly };
+
+        // IF we are viewing a scan from a specific patient's profile,
+        // we need to merge that patient's info (Age, Gender, ID) into the scan data
+        if (selectedPatient) {
+            scanData = {
+                ...scanData,
+                patientName: selectedPatient.patientName,
+                patientId: `P-${selectedPatient.id}`, // or selectedPatient.patientId if you have it
+                age: selectedPatient.age,
+                gender: selectedPatient.gender,
+                recordId: scan.recordId || `REC-${scan.id + 500}` // Fallback if missing
+            };
+        }
+
+        setSelectedScan(scanData);
         setReportText(scan.report || ''); 
         setShowReportModal(true);
     };
