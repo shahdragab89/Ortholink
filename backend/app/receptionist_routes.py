@@ -5,6 +5,7 @@ from .models.staff import Staff
 from .models.visit_record import VisitRecord
 from .models.user import User
 from .models.dicom_scan import DicomScan
+from .models.patient import Patient
 
 
 
@@ -40,35 +41,35 @@ def get_appointments():
 # -----------------------
 # RESCHEDULE APPOINTMENT
 # -----------------------
+
+
 @reception_bp.route("/appointment/<int:id>/reschedule", methods=["PUT"])
 def reschedule_appointment(id):
     data = request.get_json()
 
-    date = data.get("date")
-    time = data.get("time")
-    doctor_id = data.get("doctor_id")
+    date = data.get("date")        # "2025-02-10"
+    time = data.get("time")        # "14:00:00"
+    staff_id = data.get("staff_id")
 
-    if not (date and time and doctor_id):
+    if not (date and time and staff_id):
         return jsonify({"error": "Missing fields"}), 400
 
     old_app = Appointment.query.get(id)
     if not old_app:
         return jsonify({"error": "Appointment not found"}), 404
 
-    # Create NEW appointment row
     new_app = Appointment(
         patient_id=old_app.patient_id,
-        staff_id=doctor_id,
-        date=date,
-        time=time,
-        status="Pending",
-        billing="Not Paid"
+        staff_id=staff_id,
+        appointment_date=date,
+        appointment_time=time,
+        status="scheduled"
     )
 
     db.session.add(new_app)
     db.session.commit()
 
-    return jsonify({"message": "New appointment created", "new_id": new_app.appointment_id})
+    return jsonify({"message": "New appointment created"})
 
 @reception_bp.route("/doctors", methods=["GET"])
 def get_doctors():
@@ -77,7 +78,8 @@ def get_doctors():
 
     for d in doctors:
         user = User.query.get(d.user_id)
-        if user.role.upper() in ["DOCTOR", "ORTHOPEDIC", "ORTHOPEDICS"]:
+        # if user.role in ["DOCTOR", "Orthopedics", "ORTHOPEDICS"]:
+        if d.department and d.department.lower() in ["orthopedics", "orthopedic"]:
             result.append({
                 "staff_id": d.staff_id,
                 "name": f"Dr. {d.f_name}",
@@ -94,9 +96,12 @@ def get_scans():
 
     for s in scans:
         # Get patient from patient_id → then get user
-        patient = User.query.get(s.patient_id)
+        pat = Patient.query.get(s.patient_id)
+        if not pat:
+            continue
 
-        if not patient:
+        user = User.query.get(pat.user_id)
+        if not user:
             continue
 
         # Get radiologist (staff)
@@ -117,9 +122,9 @@ def get_scans():
 
         data.append({
             "id": s.scan_id,
-            "name": f"{patient.f_name} {patient.l_name}",
+            "name": f"{user.f_name} {user.l_name}",
             "patientId": f"P-{s.patient_id}",
-            "phone": patient.phone,
+            "phone": user.phone,
             "date": scan_date,
             "time": scan_time,
             "modality": s.modality,
@@ -130,14 +135,13 @@ def get_scans():
 
     return jsonify(data), 200
 
-
 @reception_bp.route("/scan/<int:id>/reschedule", methods=["PUT"])
 def reschedule_scan(id):
     data = request.get_json()
 
     date = data.get("date")
     time = data.get("time")
-    staff_id = data.get("staff_id")     # radiologist_id coming from frontend
+    staff_id = data.get("staff_id")
 
     if not (date and time and staff_id):
         return jsonify({"error": "Missing fields"}), 400
@@ -146,18 +150,27 @@ def reschedule_scan(id):
     if not old_scan:
         return jsonify({"error": "Scan not found"}), 404
 
-    # Create NEW scan row
+    # Convert "2025-02-05" + "14:00:00" to one datetime
+    from datetime import datetime
+    try:
+        scan_dt = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M:%S")
+    except:
+        return jsonify({"error": "Invalid date/time"}), 400
+
     new_scan = DicomScan(
         patient_id=old_scan.patient_id,
         staff_id=staff_id,
-        date=date,
-        time=time,
+        scan_date=scan_dt,
         modality=old_scan.modality,
-        status="Pending",
-        billing="Not Paid"
+        body_part=old_scan.body_part,
+        scan_type=old_scan.scan_type,
+        record_id=None,
+        status="pending"
     )
 
     db.session.add(new_scan)
     db.session.commit()
 
-    return jsonify({"message": "New scan created", "new_id": new_scan.scan_id})
+    return jsonify({"message": "New scan created"})
+
+
