@@ -13,7 +13,6 @@ from .models.visit_record import VisitRecord
 from .models.medication import Medication
 from .extensions import db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-
 auth_bp = Blueprint('api/auth', __name__)
 doctor_bp = Blueprint('doctor', __name__)
 
@@ -264,3 +263,4 @@ def update_profile():
     db.session.commit()
 
     return jsonify({"message": "Profile updated successfully"}), 200
+  

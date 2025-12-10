@@ -11,6 +11,7 @@ export default function PatientPage() {
   const [contactInfo, setContactInfo] = useState({});
   const [emergencyInfo, setEmergencyInfo] = useState({});
   const [insuranceInfo, setInsuranceInfo] = useState({});
+  
   const savePatientEdits = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -76,8 +77,7 @@ export default function PatientPage() {
           chronic: data.chronic_conditions || "N/A",
           photo: "/default-avatar.png"
         });
-
-        setContactInfo({ phone: data.phone, address: data.address });
+       setContactInfo({ phone: data.phone, address: data.address });
         setEmergencyInfo({ name: data.emergency_contact_name, number: data.emergency_contact_phone });
         setInsuranceInfo({ provider: data.insurance_provider, id: data.insurance_number, coverage: "N/A", validUntil: "N/A" });
 
@@ -169,6 +169,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     { id: 1, name: "Panadol", dosage: "500 mg", duration: "7 days" },
     { id: 2, name: "Voltaren", dosage: "50 mg", duration: "5 days" },
   ];
+ 
+
   const testResults = [
   {
     id: 1,
