@@ -231,7 +231,7 @@ export const sharedStyles = {
     actionButton: { 
         padding: '6px 14px', 
         backgroundColor: 'white', 
-        color: '#02505F', 
+        color: '#059669', 
         border: '1px solid #e2e8f0', 
         borderRadius: '6px', 
         cursor: 'pointer', 

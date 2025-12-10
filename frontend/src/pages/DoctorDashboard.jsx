@@ -5,6 +5,7 @@ import { sharedStyles as s } from '../styles/sharedStyles';
 import { patientProfileStyles as pps } from '../styles/patientProfileStyles';
 import { doctorProfileStyles as dps } from '../styles/doctorProfileStyles';
 import welcomeDocImage from '../assets/welcome-doc.svg';
+import myPatientsImage from '../assets/welcome_my_patients.svg';
 
 import { 
     Home, Users, User, LogOut, Eye, Activity, 
@@ -235,7 +236,7 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
                             <div style={s.inputLabel}>Doctor's Findings & Notes</div>
                             {/* ✅ FIX 2: Download Button */}
                             {(scan?.isReadOnly || reportText) && (
-                                <button onClick={handleDownload} style={{fontSize:'12px', color:'#02505F', background:'none', border:'none', cursor:'pointer', fontWeight:'600', textDecoration:'underline'}}>
+                                <button onClick={handleDownload} style={{fontSize:'12px', color:'#059669', background:'none', border:'none', cursor:'pointer', fontWeight:'600', textDecoration:'underline'}}>
                                     Download Report
                                 </button>
                             )}
@@ -258,7 +259,7 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
                 {!scan?.isReadOnly && (
                     <div style={s.modalFooter}>
                         <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                        <button style={{...s.actionButton, backgroundColor: '#02505F', color: 'white'}} onClick={onSubmit}>Submit Report</button>
+                        <button style={{...s.actionButton, backgroundColor: '#059669', color: 'white'}} onClick={onSubmit}>Submit Report</button>
                     </div>
                 )}
             </div>
@@ -335,7 +336,7 @@ const RenderScanOrderModal = ({ show, onClose }) => {
                 </div>
                 <div style={s.modalFooter}>
                     <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                    <button style={{...s.actionButton, backgroundColor: '#02505F', color: 'white'}} onClick={onClose}>Order Scan</button>
+                    <button style={{...s.actionButton, backgroundColor: '#059669', color: 'white'}} onClick={onClose}>Order Scan</button>
                 </div>
             </div>
         </div>
@@ -745,73 +746,119 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
 };
 
 const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePatientClick }) => {
-    const filteredPatients = allPatientsData.filter(p => 
-        p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.diagnosis.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const patientTableGrid = { 
+        gridTemplateColumns: '100px 1.5fr 1.5fr 1fr 1fr',
+        alignItems: 'center'
+    };
+
+    const filteredPatients = allPatientsData.filter(p => {
+        const term = searchTerm.toLowerCase();
+        // Safe check for null values with ( || '')
+        return (
+            `P-10${p.id}`.toLowerCase().includes(term) || // Search by generated ID
+            (p.patientName || '').toLowerCase().includes(term) ||
+            (p.diagnosis || '').toLowerCase().includes(term) ||
+            (p.lastVisitDate || '').toLowerCase().includes(term) ||
+            (p.nextVisitDate || '').toLowerCase().includes(term)
+        );
+    });
+
+    const totalPatients = allPatientsData.length;
 
     return (
-        <div style={s.main}>
-            <div style={{marginBottom: '10px'}}>
-                <h1 style={{fontSize: '28px', fontWeight: '700', color: '#1e293b'}}>My Patients</h1>
-                <p style={{color: '#64748b'}}>Manage patient records, track recovery phases, and retention.</p>
-            </div>
-
-            <div style={s.searchContainer}>
-                <div style={s.searchWrapper}>
-                    <Search size={18} style={s.searchIcon} />
-                    <input 
-                        type="text" 
-                        style={s.searchInput} 
-                        placeholder="Search by Name, ID, or Diagnosis..." 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+        // Added overflowY: auto to main container for scrolling if needed
+        <div style={{...s.main, overflowY: 'auto'}}>
+            
+            {/* --- 3. NEW PATIENT WELCOME BANNER --- */}
+            {/* Added flexShrink: 0 so it doesn't squash on scroll */}
+            <section style={{...dps.welcomeBanner, flexShrink: 0}}>
+                <div style={dps.decorativeCircle1}></div>
+                <div style={dps.decorativeCircle2}></div>
+                <div style={dps.welcomeTextBox}>
+                    <h1 style={dps.welcomeTitle}>My Patients</h1>
+                    <p style={dps.welcomeSubText}>
+                        You are currently managing <span style={dps.welcomeHighlight}>{totalPatients} patient records</span>. 
+                        Track their recovery progress and upcoming visits here.
+                    </p>
                 </div>
-                <div style={{fontSize: '14px', color: '#64748b'}}>Showing {filteredPatients.length} Patients</div>
+                {/* Make sure this image is imported at the top of the file */}
+                <img 
+                    src={myPatientsImage} 
+                    alt="Patients" 
+                    style={dps.welcomeIllustration} 
+                />
+            </section>
+
+            {/* Search & Title Section */}
+            <div style={{marginBottom: '20px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '15px'}}>
+                   <h2 style={s.sectionTitle}>Patient Records Directory</h2>
+                   <div style={{fontSize: '14px', color: '#64748b'}}>Showing {filteredPatients.length} results</div>
+                </div>
+
+                <div style={s.searchContainer}>
+                    <div style={s.searchWrapper}>
+                        <Search size={18} style={s.searchIcon} />
+                        <input 
+                            type="text" 
+                            style={s.searchInput} 
+                            placeholder="Search by ID, Name, Diagnosis, or Date..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
             </div>
 
             <div style={s.contentContainer}>
                 <div style={s.section}>
                     <div style={s.tableContainer}>
-                        <div style={{ ...s.tableHeader, ...s.patientListGrid }}>
+                        {/* 4. UPDATED TABLE HEADER (Removed Phase, Added ID) */}
+                        <div style={{ ...s.tableHeader, ...patientTableGrid }}>
+                            <div>Patient ID</div>
                             <div>Patient Name</div>
                             <div>Condition / Diagnosis</div>
-                            <div>Treatment Phase</div>
-                            <div>Last Visit</div>
-                            <div>Next Visit</div>
+                            {/* Removed Treatment Phase */}
+                            <div>Last Visit Date</div>
+                            <div>Next Visit Date</div>
                         </div>
                         
                         <div style={s.scrollableRows}>
-                            {filteredPatients.map((patient) => (
-                                <div key={patient.id} style={{ ...s.tableRow, ...s.patientListGrid }}>
-                                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                                        <div style={{width:'32px', height:'32px', borderRadius:'50%', background:'#e2e8f0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', color:'#475569'}}>
-                                            {patient.patientName.charAt(0)}
+                            {filteredPatients.length > 0 ? (
+                                filteredPatients.map((patient) => (
+                                    // 5. UPDATED TABLE ROW
+                                    <div key={patient.id} style={{ ...s.tableRow, ...patientTableGrid }}>
+                                        {/* Patient ID Column */}
+                                        <div style={{fontWeight:'600', color: '#475569'}}>
+                                            P-10{patient.id}
                                         </div>
-                                        <button 
-                                            style={s.clickablePatientName} 
-                                            onClick={() => handlePatientClick(patient.patientName)}
-                                        >
-                                            {patient.patientName}
-                                        </button>
-                                    </div>
 
-                                    <div style={{fontWeight: '500', color: '#334155'}}>{patient.diagnosis}</div>
+                                        {/* Clickable Patient Name Column */}
+                                        <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                            <div style={{width:'32px', height:'32px', borderRadius:'50%', background:'#e2e8f0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', color:'#475569'}}>
+                                                {patient.patientName.charAt(0)}
+                                            </div>
+                                            <button 
+                                                style={s.clickablePatientName} 
+                                                onClick={() => handlePatientClick(patient.patientName)}
+                                            >
+                                                {patient.patientName}
+                                            </button>
+                                        </div>
 
-                                    <div>
-                                        <span style={{ ...s.phaseBadge, ...getPhaseStyle(patient.phase) }}>
-                                            {patient.phase}
-                                        </span>
-                                    </div>
+                                        {/* Diagnosis Column */}
+                                        <div style={{fontWeight: '500', color: '#334155'}}>{patient.diagnosis}</div>
 
-                                    <div style={{color: '#64748b'}}>{patient.lastVisitDate || '-'}</div>
-                                    <div style={{color: patient.nextVisitDate === 'Pending' ? '#ef4444' : '#02505F', fontWeight:'500'}}>
-                                        {patient.nextVisitDate}
+                                        {/* Removed Phase Badge Column */}
+
+                                        {/* Dates Columns */}
+                                        <div style={{color: '#64748b'}}>{patient.lastVisitDate || '-'}</div>
+                                        <div style={{color: patient.nextVisitDate === 'Pending' ? '#ef4444' : '#02505F', fontWeight:'500'}}>
+                                            {patient.nextVisitDate}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            {filteredPatients.length === 0 && (
+                                ))
+                            ) : (
                                 <div style={{padding: '40px', textAlign: 'center', color: '#94a3b8'}}>
                                     No patients found matching "{searchTerm}"
                                 </div>
@@ -978,7 +1025,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                 <button style={{...s.actionButton, padding: '16px', backgroundColor: '#4361ee', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowMedicationModal(true)}>
                                     <Pill size={18} /> Prescribe Medication
                                 </button>
-                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#02505F', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowScanOrderModal(true)}>
+                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#059669', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowScanOrderModal(true)}>
                                     <Activity size={18} /> Order New Scan
                                 </button>
                             </div>
