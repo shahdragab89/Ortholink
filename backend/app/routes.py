@@ -109,8 +109,8 @@ def upcoming_appointments():
         return jsonify({"message": "Unauthorized"}), 403
     
     appointments = Appointment.query.filter(
-        Appointment.doctor_id == doctor.user_id,
-        Appointment.date >= datetime.utcnow()
+        Appointment.staff_id == doctor.user_id,
+        Appointment.appointment_date >= datetime.utcnow()
     ).all()
 
     result = []
@@ -118,7 +118,13 @@ def upcoming_appointments():
         result.append({
             "appointment_id": appt.appointment_id,
             "patient_id": appt.patient_id,
-            "date": appt.date.isoformat()
+            "date": appt.appointment_date.isoformat(),
+            "time": appt.appointment_time.isoformat(),
+           "reason": appt.reason,
+           "notes": appt.notes,
+           "status": appt.status
+
+            #time,#oatient_name,#reason,#notes,#status
         })
     return jsonify(result), 200
 

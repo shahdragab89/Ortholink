@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Import styles
 import { sharedStyles as s } from '../styles/sharedStyles';
@@ -72,29 +72,6 @@ const allPatientsData = [
         id: 6, patientName: 'James Miller', age: 45, gender: 'Male', bloodType: 'A+', allergies: 'Peanuts',
         diagnosis: 'Meniscus Tear', phase: 'Post-Op (Wk 2)', lastVisitDate: '18 Feb 2024', nextVisitDate: '28 Feb 2024',
         history: ['Hypertension'], lastVisit: null
-    },
-];
-
-const appointments = [
-    { 
-        id: 1, date: '24 Feb 2024', time: '10:00 AM', patientName: 'Sarah Johnson', 
-        reason: 'Shoulder Pain', notes: 'Possible Rotator Cuff tear', status: 'scheduled'
-    },
-    { 
-        id: 2, date: '24 Feb 2024', time: '11:30 AM', patientName: 'Michael Brown', 
-        reason: 'Post-Op Knee Check', notes: 'ACL Reconstruction follow-up', status: 'completed'
-    },
-    { 
-        id: 3, date: '24 Feb 2024', time: '02:00 PM', patientName: 'Emily Davis', 
-        reason: 'Ankle Sprain', notes: 'Twisted ankle while running', status: 'cancelled'
-    },
-    { 
-        id: 4, date: '25 Feb 2024', time: '09:00 AM', patientName: 'Robert Wilson', 
-        reason: 'Back Pain', notes: 'Chronic lower back pain', status: 'no-show'
-    },
-    { 
-        id: 5, date: '25 Feb 2024', time: '10:30 AM', patientName: 'Lisa Anderson', 
-        reason: 'Wrist Fracture', notes: 'Cast removal assessment', status: 'scheduled'
     },
 ];
 
@@ -528,7 +505,7 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
                                 <div><button style={s.clickablePatientName} onClick={() => handlePatientClick(apt.patientName)}>{apt.patientName}</button></div>
                                 <div>{apt.reason}</div>
                                 <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.notes}</div>
-                                <div><span style={{ ...s.statusBadge, ...getStatusStyle(apt.status) }}>{apt.status.replace('-', ' ')}</span></div>
+                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>{apt.status}</div>
                             </div>
                         ))}
                     </div>
@@ -821,6 +798,7 @@ export default function DoctorDashboard() {
     const [activeTab, setActiveTab] = useState('home');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [appointments, setAppointments] = useState([]);
     const doctorName = "Maya";
 
     // Modals State
@@ -834,6 +812,40 @@ export default function DoctorDashboard() {
     const [consultationRecords, setConsultationRecords] = useState({
         complaint: '', diagnosis: '', treatment: '', physicalExam: ''
     });
+
+    useEffect(() => {
+        const fetchAppointments = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(
+              "http://127.0.0.1:5000/api/doctor/appointments",
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            const data = await response.json();
+            const formattedAppointments = data.map((appt) => {        
+              return {
+                id: appt.appointment_id,
+                date: appt.date,
+                time: appt.atime,
+                patientName: `Patient #${appt.patient_id}`,
+                reason: appt.reason,
+                notes: appt.notes,
+                status: appt.status?? "scheduled",              };
+            });
+            console.log(`formattedAppointments: ${JSON.stringify(formattedAppointments)}`);
+            setAppointments(formattedAppointments);
+          } catch (error) {
+            console.error("Error fetching appointments:", error);
+          }
+        };
+        fetchAppointments();
+      }, []);
 
     const [profileData, setProfileData] = useState({
         fullName: 'Dr. Maya Johnson',
