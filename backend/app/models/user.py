@@ -4,9 +4,9 @@ from ..extensions import db
 from datetime import datetime
 
 class Gender(enum.Enum):
-    MALE = "male"
-    FEMALE = "female"
-    OTHER = "other"
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
 
 class Role(enum.Enum):
     DOCTOR = "doctor"
