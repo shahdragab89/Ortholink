@@ -44,7 +44,7 @@ export default function RadiologistPage() {
                     return;
                 }
 
-                const res = await fetch(`${API_BASE}/auth/radiologist/${userId}`, {
+                const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}`, {
                     headers: { 
                         "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
@@ -153,7 +153,7 @@ export default function RadiologistPage() {
                 `${API_BASE}/profile`,                   // Simple profile endpoint
                 `${API_BASE}/auth/update-profile`,       // Common update profile endpoint
                 `${API_BASE}/users/update/${userId}`,    // Alternative user update
-                `${API_BASE}/auth/radiologist/${userId}` // Original endpoint (fallback)
+                `${API_BASE}/radiologist/radiologist/${userId}` // Original endpoint (fallback)
             ];
             
             let successfulEndpoint = null;
