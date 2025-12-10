@@ -28,8 +28,9 @@ def create_app():
     from .models.medication import Medication
     
     # Import and register blueprints
-    from .routes import auth_bp
+    from .routes import auth_bp, doctor_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(doctor_bp, url_prefix='/api/doctor')
     
     # Add a test route directly on app
     @app.route('/')
