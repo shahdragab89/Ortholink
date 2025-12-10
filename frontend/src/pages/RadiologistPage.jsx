@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { radiologistStyles } from '../styles/RadiologistStyles';
+import welcomeDocImage from '../assets/welcome-rad.svg.svg';
 
 // Default placeholder image if the doctor hasn't uploaded one
 const DEFAULT_AVATAR = "https://via.placeholder.com/150?text=Dr+Image";
@@ -263,11 +264,32 @@ export default function RadiologistPage() {
 
     // Mock Data
     const [scans, setScans] = useState([
-        { id: 1, date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', type: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending' },
-        { id: 2, date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', type: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed' },
-        { id: 3, date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', type: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending' },
-        { id: 4, date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', type: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending' },
+        { id: 1, did: 'DR-501', date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', age: '34', gender: 'Male', bodyType: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-10' },
+        { id: 2, did: 'DR-512', date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', age: '54', gender: 'Male', bodyType: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed', recordId: 'rec-16' },
+        { id: 3, did: 'DR-501', date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', age: '67', gender: 'Female', bodyType: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-19' },
+        { id: 4, did: 'DR-512', date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', age: '46', gender: 'Male', bodyType: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending', recordId: 'rec-30' },
     ]);
+
+    const [uploadFiles, setUploadFiles] = useState([]);
+
+    const handleFileSelect = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const newFiles = Array.from(e.target.files);
+            setUploadFiles(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const handleRemoveFile = (indexToRemove) => {
+        setUploadFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
 
     const profileStats = {
         appointmentsThisMonth: 142,
@@ -278,7 +300,7 @@ export default function RadiologistPage() {
         setSelectedScan(scan);
         setModalOpen(true);
         setNotes('');
-        setUploadFile(null);
+        setUploadFiles([]);
     };
 
     const handleSubmitUpload = () => {
@@ -294,11 +316,27 @@ export default function RadiologistPage() {
         setProfilePhoto(newPhotoUrl);
     }
 
-    const filteredScans = scans.filter(scan => 
-        scan.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        scan.pid.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        scan.type.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredScans = scans.filter(scan => {
+        if (!searchTerm) return true; // Show all if search is empty
+        const term = searchTerm.toLowerCase();
+        
+        // Combine all searchable field values into one string for easy checking
+        // Ensure numeric IDs convert to strings first (.toString())
+        const combinedData = `
+            ${scan.id.toString()} 
+            ${scan.date} 
+            ${scan.time} 
+            ${scan.patient.toLowerCase()} 
+            ${scan.pid.toLowerCase()} 
+            ${scan.doctor.toLowerCase()} 
+            ${scan.did.toLowerCase()} 
+            ${scan.bodyType.toLowerCase()} 
+            ${scan.module.toLowerCase()} 
+            ${scan.status.toLowerCase()}
+        `;
+
+        return combinedData.includes(term);
+    });
 
     // Get first name for greeting
     const getFirstName = () => {
@@ -363,9 +401,11 @@ export default function RadiologistPage() {
                                     You have <span style={radiologistStyles.welcomeHighlight}>{scans.filter(s => s.status === 'Pending').length} pending tasks</span> today. Your progress is looking great. Let's clear the queue!
                                 </p>
                             </div>
-                            <div style={radiologistStyles.welcomeIllustration}>
-                                Illustration Placeholder
-                            </div>
+                            <img 
+                                src={welcomeDocImage} 
+                                alt="Doctor Illustration" 
+                                style={radiologistStyles.welcomeIllustration} 
+                            />
                         </section>
 
                         {/* --- Dashboard Content --- */}
@@ -375,7 +415,7 @@ export default function RadiologistPage() {
                         <div style={radiologistStyles.searchContainer}>
                             <input 
                                 type="text" 
-                                placeholder="Search patient, ID, or scan type..." 
+                                placeholder="Search patient, ID, Date, Dr, Module or Status..." 
                                 style={radiologistStyles.searchInput}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -390,12 +430,14 @@ export default function RadiologistPage() {
                             <table style={radiologistStyles.table}>
                                 <thead>
                                     <tr>
+                                        <th style={radiologistStyles.th}>Scan ID</th>
                                         <th style={radiologistStyles.th}>Date</th>
                                         <th style={radiologistStyles.th}>Time</th>
                                         <th style={radiologistStyles.th}>Patient Name</th>
-                                        <th style={radiologistStyles.th}>ID</th>
-                                        <th style={radiologistStyles.th}>Referring Doctor</th>
-                                        <th style={radiologistStyles.th}>Scan Type</th>
+                                        <th style={radiologistStyles.th}>Patient ID</th>
+                                        <th style={radiologistStyles.th}>Ref. Doctor</th>
+                                        <th style={radiologistStyles.th}>Dr. ID</th>
+                                        <th style={radiologistStyles.th}>Body Part</th>
                                         <th style={radiologistStyles.th}>Module</th>
                                         <th style={radiologistStyles.th}>Status</th>
                                         <th style={radiologistStyles.th}>Action</th>
@@ -409,12 +451,14 @@ export default function RadiologistPage() {
                                         
                                         return (
                                         <tr key={scan.id}>
+                                            <td style={{...radiologistStyles.td, fontWeight: 'bold'}}>#{scan.id}</td>
                                             <td style={radiologistStyles.td}>{scan.date}</td>
                                             <td style={radiologistStyles.td}>{scan.time}</td>
                                             <td style={radiologistStyles.td}><strong>{scan.patient}</strong></td>
                                             <td style={radiologistStyles.td}>{scan.pid}</td>
                                             <td style={radiologistStyles.td}>{scan.doctor}</td>
-                                            <td style={radiologistStyles.td}>{scan.type}</td>
+                                            <td style={radiologistStyles.td}>{scan.did}</td>
+                                            <td style={radiologistStyles.td}>{scan.bodyType}</td>
                                             <td style={radiologistStyles.td}>{scan.module}</td>
                                             <td style={radiologistStyles.td}>
                                                 <span style={{...radiologistStyles.statusBadge, backgroundColor: statusBg, color: statusColor}}>
@@ -429,7 +473,7 @@ export default function RadiologistPage() {
                                                     onMouseEnter={(e) => !isCompleted && (e.currentTarget.style.backgroundColor = '#047857')}
                                                     onMouseLeave={(e) => !isCompleted && (e.currentTarget.style.backgroundColor = '#059669')}
                                                 >
-                                                    {isCompleted ? 'View Report' : 'Upload Results'}
+                                                    {isCompleted ? 'Scan sent' : 'Upload scan'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -462,76 +506,149 @@ export default function RadiologistPage() {
                             Upload Scan Results
                         </div>
                         
-                        {/* Order Details */}
+                        {/* --- NEW: DETAILED INFO GRID --- */}
+                        {/* This shows all the IDs, Age, Gender, etc. inside the popup */}
                         <div style={radiologistStyles.infoBox}>
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px'}}>
-                                <span><strong>Patient:</strong> {selectedScan.patient} ({selectedScan.pid})</span>
-                                <span><strong>Date:</strong> {selectedScan.date}</span>
-                                <span><strong>Ref. Doctor:</strong> {selectedScan.doctor}</span>
-                                <span><strong>Scan:</strong> {selectedScan.type} - {selectedScan.module}</span>
+                            <div style={radiologistStyles.modalInfoGrid}>
+                                {/* Column 1: Patient Details */}
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Patient Name</div>
+                                    <div>{selectedScan.patient}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Patient ID</div>
+                                    <div>{selectedScan.pid}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Age / Gender</div>
+                                    <div>{selectedScan.age} Yrs / {selectedScan.gender}</div>
+                                </div>
+
+                                {/* Column 2: Doctor & Record Details */}
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Ref. Doctor</div>
+                                    <div>{selectedScan.doctor}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Doctor ID</div>
+                                    <div>{selectedScan.did}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Record ID</div>
+                                    <div>{selectedScan.recordId}</div>
+                                </div>
+
+                                {/* Column 3: Scan Details */}
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Body Part</div>
+                                    <div>{selectedScan.bodyType}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Module</div>
+                                    <div>{selectedScan.module}</div>
+                                </div>
+                                <div>
+                                    <div style={radiologistStyles.infoLabel}>Scan ID</div>
+                                    <div>#{selectedScan.id}</div>
+                                </div>
                             </div>
-                            <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #bbf7d0'}}>
-                                <strong>Clinical Indication/Reason:</strong> <br/> {selectedScan.desc}
+                            
+                            <div style={{marginTop: '15px', paddingTop: '10px', borderTop: '1px solid #bbf7d0'}}>
+                                <span style={radiologistStyles.infoLabel}>Clinical Indication: </span> 
+                                {selectedScan.desc}
                             </div>
                         </div>
 
-                        {/* Upload Area */}
-                        <label style={radiologistStyles.formLabel}>Attach Scan Image/DICOM</label>
-                        <div 
-                            style={radiologistStyles.uploadBox} 
-                            onClick={() => document.getElementById('fileUpload').click()}
-                            onMouseEnter={(e) => {e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.backgroundColor = '#f0fdf4'}}
-                            onMouseLeave={(e) => {e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.backgroundColor = '#f9fafb'}}
-                        >
-                            <span style={{fontSize: '24px', display: 'block', marginBottom: '10px'}}>📁</span>
-                            {uploadFile ? 
-                                <span style={{color: '#059669', fontWeight: '600'}}>{uploadFile.name}</span> : 
-                                "Click here to browse your files"
-                            }
+                        {/* --- NEW: ADVANCED UPLOAD AREA --- */}
+                        <label style={radiologistStyles.formLabel}>Attach Scan Images/DICOM</label>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                            {/* Drag & Drop Area */}
+                            <div 
+                                style={radiologistStyles.uploadBox} 
+                                onClick={() => document.getElementById('fileUpload').click()}
+                            >
+                                <span style={{fontSize: '32px', display: 'block', marginBottom: '8px'}}>cloud_upload</span>
+                                <span style={{fontWeight: '600', color: '#374151'}}>Click to Browse Files</span>
+                                <span style={{display:'block', fontSize:'12px', color:'#9ca3af', marginTop:'4px'}}>
+                                    (Supports multiple files: JPG, PNG, DICOM)
+                                </span>
+                            </div>
+
+                            {/* Hidden Inputs for Files and Folders */}
                             <input 
                                 id="fileUpload" 
                                 type="file" 
+                                multiple // Enables multiple file selection
                                 hidden 
-                                onChange={(e) => setUploadFile(e.target.files[0])}
+                                onChange={handleFileSelect}
                             />
+                            
+                            {/* Folder Upload Link */}
+                            <div style={{textAlign: 'right', marginTop: '-10px', marginBottom: '15px'}}>
+                                <input
+                                    id="folderUpload"
+                                    type="file"
+                                    webkitdirectory="" // Enables folder selection
+                                    directory=""
+                                    hidden
+                                    onChange={handleFileSelect}
+                                />
+                                <button 
+                                    onClick={() => document.getElementById('folderUpload').click()}
+                                    style={radiologistStyles.folderBtn}
+                                >
+                                    or Upload Entire Folder
+                                </button>
+                            </div>
+
+                            {/* --- FILE LIST WITH SIZE & PATH --- */}
+                            {uploadFiles.length > 0 && (
+                                <div style={radiologistStyles.fileListContainer}>
+                                    {uploadFiles.map((file, index) => (
+                                        <div key={index} style={radiologistStyles.fileItem}>
+                                            <div style={{display:'flex', alignItems:'center', gap:'10px', overflow:'hidden'}}>
+                                                <span style={{fontSize:'18px'}}>📄</span>
+                                                <div style={{display:'flex', flexDirection:'column'}}>
+                                                    {/* Shows relative path if folder, or name if file */}
+                                                    <span style={radiologistStyles.fileName}>{file.webkitRelativePath || file.name}</span>
+                                                    <span style={radiologistStyles.fileSize}>{formatFileSize(file.size)}</span>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleRemoveFile(index)}
+                                                style={radiologistStyles.removeFileBtn}
+                                                title="Remove file"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Notes */}
+                        {/* Notes Input */}
                         <label style={radiologistStyles.formLabel}>Radiologist Findings & Conclusion</label>
                         <textarea 
                             style={radiologistStyles.textArea} 
                             placeholder="Type your detailed report findings here..."
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            onFocus={(e) => e.target.style.borderColor = '#059669'}
-                            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                         />
 
-                        {/* Buttons */}
+                        {/* Action Buttons */}
                         <div style={radiologistStyles.buttonGroup}>
-                            <button 
-                                onClick={() => setModalOpen(false)}
-                                style={{...radiologistStyles.actionBtn, backgroundColor: 'white', color: '#374151', border: '1px solid #d1d5db', boxShadow: 'none'}}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleSubmitUpload}
-                                style={radiologistStyles.actionBtn}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#047857'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#059669'}
-                            >
-                                Submit Report
-                            </button>
+                            <button onClick={() => setModalOpen(false)} style={radiologistStyles.cancelBtn}>Cancel</button>
+                            <button onClick={handleSubmitUpload} style={radiologistStyles.submitBtn}>Submit Scan</button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
-    );
-}
+
+        </div> // <--- This closes the main container div
+    ); // <--- This closes the return statement
+} // <--- This closes the function
 
 // --- Sub-Component for Profile ---
 function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInfo, contactInfo, onContactInfoChange, onSaveProfile, loading }) {
@@ -608,7 +725,7 @@ function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInf
                 {/* Vertical Form Stack */}
                 <div style={radiologistStyles.formStack}>
                     
-                    <div style={radiologistStyles.sectionTitle}>Professional Identity (Read Only)</div>
+                    <div style={radiologistStyles.sectionTitle}>Professional Identity</div>
                     
                     {/* Username & Email Fields - Using ACTUAL data */}
                     <div style={radiologistStyles.inputGroup}>
@@ -674,7 +791,7 @@ function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInf
                     </div>
 
                     {/* Monthly Statistics Section */}
-                    <div style={radiologistStyles.sectionTitle}>Monthly Statistics (Read Only)</div>
+                    <div style={radiologistStyles.sectionTitle}>Monthly Statistics</div>
                     <div style={radiologistStyles.statsContainer}>
                         <div style={radiologistStyles.statCard}>
                             <span style={radiologistStyles.statNumber}>{stats.appointmentsThisMonth}</span>
@@ -686,7 +803,7 @@ function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInf
                         </div>
                     </div>
 
-                    <div style={radiologistStyles.sectionTitle}>Contact Details (Editable)</div>
+                    <div style={radiologistStyles.sectionTitle}>Contact Details</div>
 
                     <div style={radiologistStyles.inputGroup}>
                         <label style={radiologistStyles.formLabel}>Phone Number</label>

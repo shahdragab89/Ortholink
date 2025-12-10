@@ -30,6 +30,10 @@ if (response.ok) {
 
     if (result.role === "patient") {
         window.location.href = "/patient/dashboard";
+
+    }else if (result.role === "receptionist") {
+        window.location.href = "/receptionist";
+
     } else if (result.role === "doctor") {
         window.location.href = "/doctor/dashboard";
     } else if (result.role === "radiologist") {
