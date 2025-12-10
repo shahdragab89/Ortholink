@@ -330,7 +330,7 @@ export default function RadiologistPage() {
             ${scan.pid.toLowerCase()} 
             ${scan.doctor.toLowerCase()} 
             ${scan.did.toLowerCase()} 
-            ${scan.type.toLowerCase()} 
+            ${scan.bodyType.toLowerCase()} 
             ${scan.module.toLowerCase()} 
             ${scan.status.toLowerCase()}
         `;
