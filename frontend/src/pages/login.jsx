@@ -31,7 +31,7 @@ if (response.ok) {
     if (result.role === "patient") {
         window.location.href = "/patient/dashboard";
 
-    }else if (role === "receptioinist") {
+    }else if (result.role === "receptionist") {
         window.location.href = "/receptionist";
 
     } else if (result.role === "doctor") {

@@ -34,6 +34,11 @@ def create_app():
     from .receptionist_routes import reception_bp
     app.register_blueprint(reception_bp, url_prefix="/api/receptionist")
 
+    # In your main Flask app file (app.py, __init__.py, or wherever you create your app)
+    from .radiologist_routes import radiologist_bp
+
+    # Register the blueprint with the '/api' prefix
+    app.register_blueprint(radiologist_bp, url_prefix='/api/radiologist')
     
     # Add a test route directly on app
     @app.route('/')
