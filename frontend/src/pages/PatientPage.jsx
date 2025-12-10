@@ -11,6 +11,7 @@ export default function PatientPage() {
   const [contactInfo, setContactInfo] = useState({});
   const [emergencyInfo, setEmergencyInfo] = useState({});
   const [insuranceInfo, setInsuranceInfo] = useState({});
+  
   const savePatientEdits = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -169,6 +170,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     { id: 1, name: "Panadol", dosage: "500 mg", duration: "7 days" },
     { id: 2, name: "Voltaren", dosage: "50 mg", duration: "5 days" },
   ];
+ 
+
   const testResults = [
   {
     id: 1,
