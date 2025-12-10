@@ -119,19 +119,15 @@ export const radiologistStyles = {
     },
     // Placeholder for the illustration seen in your examples
     welcomeIllustration: {
-        height: '180px',
-        // Using a placeholder colored div instead of a real image for now
-        width: '250px',
-        backgroundColor: '#a7f3d0',
-        borderRadius: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#065f46',
-        fontWeight: 'bold',
+        height: '200px',        // Increased slightly for better visibility
+        width: 'auto',          // Let width adjust automatically
+        maxWidth: '300px',      // Prevent it from getting too huge
         zIndex: 2,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        objectFit: 'contain',   // Ensures the image doesn't get squashed
+        marginBottom: '-10px',  // Optional: anchors it slightly better to the bottom
+        // Removed: backgroundColor, color, fontWeight, boxShadow (not needed for flat vector)
     },
+
     // Optional decorative circles background
     decorativeCircle1: { position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', borderRadius: '50%', backgroundColor: '#ecfdf5', zIndex: 1 },
     decorativeCircle2: { position: 'absolute', bottom: '-80px', left: '100px', width: '150px', height: '150px', borderRadius: '50%', backgroundColor: '#ecfdf5', zIndex: 1 },
@@ -236,13 +232,102 @@ export const radiologistStyles = {
     modal: {
         backgroundColor: 'white',
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '750px', // Wider
         borderRadius: '20px',
         padding: '32px',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         maxHeight: '90vh',
         overflowY: 'auto',
     },
+    modalInfoGrid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr', // 3 Columns
+        gap: '16px',
+        fontSize: '13px',
+        color: '#1f2937'
+    },
+
+    infoLabel: {
+        fontSize: '11px',
+        color: '#059669', // Emerald Green label
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        marginBottom: '2px'
+    },
+
+    fileListContainer: {
+        marginTop: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        maxHeight: '160px',
+        overflowY: 'auto',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        padding: '8px',
+        backgroundColor: '#f9fafb'
+    },
+    fileItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        border: '1px solid #f3f4f6',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+    },
+    fileName: {
+        fontSize: '13px',
+        color: '#374151',
+        fontWeight: '500',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: '400px',
+    },
+    fileSize: {
+        fontSize: '11px',
+        color: '#9ca3af',
+    },
+    removeFileBtn: {
+        background: 'none',
+        border: 'none',
+        color: '#ef4444',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        padding: '0 8px',
+    },
+    folderBtn: {
+        background: 'none',
+        border: 'none',
+        color: '#059669',
+        fontSize: '13px',
+        cursor: 'pointer',
+        textDecoration: 'underline',
+        fontWeight: '500'
+    },
+    cancelBtn: {
+        backgroundColor: 'white',
+        color: '#374151',
+        border: '1px solid #d1d5db',
+        padding: '10px 24px',
+        borderRadius: '8px',
+        fontWeight: '600',
+        cursor: 'pointer'
+    },
+    submitBtn: {
+        backgroundColor: '#059669',
+        color: 'white',
+        border: 'none',
+        padding: '10px 24px',
+        borderRadius: '8px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.2)'
+    },
+
     modalHeader: {
         fontSize: '22px',
         fontWeight: '700',

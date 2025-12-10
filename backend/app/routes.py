@@ -8,11 +8,15 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash
 from .models.user import User
 from .models.staff import Staff
+from .models.appointment import Appointment
+from .models.visit_record import VisitRecord
+from .models.medication import Medication
 from .extensions import db
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('api/auth', __name__)
+doctor_bp = Blueprint('doctor', __name__)
+
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
@@ -22,7 +26,7 @@ def signup():
     hashed_password = generate_password_hash(data['password'])
 
  
-    gender_value = Gender(data.get('gender').lower())  
+    gender_value = Gender(data.get('gender').upper())  
 
     if not gender_value:
         return jsonify({"message": "Invalid gender value"}), 400
@@ -63,10 +67,6 @@ def signup():
         "patient_id": new_patient.patient_id
     }), 201
 
-@auth_bp.route('/test', methods=['GET'])
-def test():
-    return {"message": "Auth blueprint is working!"}
-
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -91,100 +91,176 @@ def login():
         }), 200
     else:
         return jsonify({"message": "Invalid email or password"}), 401
-    
 
-@auth_bp.route('/radiologist/<int:user_id>', methods=['GET'])
+
+
+def get_current_doctor():
+    user_id = get_jwt_identity()
+    doctor = User.query.filter_by(user_id=user_id, role=Role.DOCTOR).first()
+    return doctor
+
+
+
+@doctor_bp.route('/appointments', methods=['GET'])
 @jwt_required()
-def get_radiologist_profile(user_id):
-    # Get the current user from JWT token
-    current_user_id = get_jwt_identity()
+def upcoming_appointments():
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
     
-    # Debug print to see what's being compared
-    print(f"Debug: current_user_id (JWT) = '{current_user_id}' (type: {type(current_user_id)})")
-    print(f"Debug: user_id (URL) = {user_id} (type: {type(user_id)})")
-    
-    # Convert current_user_id to int for comparison since URL param is int
-    try:
-        current_user_id_int = int(current_user_id)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    # Check if the requested user_id matches the current user
-    if current_user_id_int != user_id:
-        return jsonify({"error": f"Unauthorized access. Token user: {current_user_id_int}, Requested user: {user_id}"}), 403
-    
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    staff = Staff.query.filter_by(user_id=user_id).first()
-    
-    if not staff:
-        return jsonify({"error": "Staff record not found"}), 404
-    
+    appointments = Appointment.query.filter(
+        Appointment.staff_id == doctor.user_id,
+        Appointment.appointment_date >= datetime.utcnow()
+    ).all()
+
+    result = []
+    for appt in appointments:
+        result.append({
+            "appointment_id": appt.appointment_id,
+            "patient_id": appt.patient_id,
+            "date": appt.appointment_date.isoformat(),
+            "time": appt.appointment_time.isoformat(),
+           "reason": appt.reason,
+           "notes": appt.notes,
+           "status": appt.status
+
+            #time,#oatient_name,#reason,#notes,#status
+        })
+    return jsonify(result), 200
+
+
+@doctor_bp.route('/patient/<int:patient_id>', methods=['GET'])
+@jwt_required()
+def patient_info(patient_id):
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    patient = Patient.query.get(patient_id)
+    if not patient:
+        return jsonify({"message": "Patient not found"}), 404
+
+    visit_history = VisitRecord.query.filter_by(patient_id=patient_id).all()
+    visits = []
+    for visit in visit_history:
+        visits.append({
+            "visit_id": visit.visit_id,
+            "notes": visit.notes,
+            "diagnosis": visit.diagnosis,
+            "treatment_plan": visit.treatment_plan,
+            "date": visit.date.isoformat()
+        })
+
     return jsonify({
-        "user_id": user.user_id,
-        "username": user.username,
-        "email": user.email,
-        "f_name": user.f_name,
-        "l_name": user.l_name,
-        "phone": user.phone,
-        "address": user.address,
-        "birth_date": user.birth_date.strftime("%Y-%m-%d") if user.birth_date else None,
-        "gender": user.gender.value if user.gender else None,
-        "staff_id": staff.staff_id,
-        "license_number": staff.license_number,
-        "staff_phone": staff.phone,
-        "department": staff.department,
-        "hire_date": staff.hire_date.strftime("%Y-%m-%d") if staff.hire_date else None,
-        "salary": float(staff.salary) if staff.salary else None,
-        "role": user.role.value
-    })
+        "patient_id": patient.patient_id,
+        "name": f"{patient.user.f_name} {patient.user.l_name}",
+        "blood_type": patient.blood_type,
+        "allergies": patient.allergies,
+        "chronic_conditions": patient.chronic_conditions,
+        "insurance_provider": patient.insurance_provider,
+        "visit_history": visits
+    }), 200
 
-@auth_bp.route('/radiologist/<int:user_id>', methods=['PUT'])
+
+@doctor_bp.route('/visit/<int:visit_id>', methods=['PUT'])
 @jwt_required()
-def update_radiologist_profile(user_id):
-    current_user_id = get_jwt_identity()
-    
-    # Convert current_user_id to int for comparison
-    try:
-        current_user_id_int = int(current_user_id)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    if current_user_id_int != user_id:
-        return jsonify({"error": "Unauthorized access"}), 403
-    
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    data = request.json
-    phone = data.get('phone')
-    address = data.get('address')
-    
-    # Update user fields
-    if phone:
-        user.phone = phone
-    if address:
-        user.address = address
-    
-    # Also update staff phone if different
-    staff = Staff.query.filter_by(user_id=user_id).first()
-    if staff and phone:
-        staff.phone = phone
-    
+def update_visit(visit_id):
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    visit = VisitRecord.query.get(visit_id)
+    if not visit:
+        return jsonify({"message": "Visit not found"}), 404
+
+    data = request.get_json()
+    visit.notes = data.get('notes', visit.notes)
+    visit.diagnosis = data.get('diagnosis', visit.diagnosis)
+    visit.treatment_plan = data.get('treatment_plan', visit.treatment_plan)
+    visit.updated_at = datetime.utcnow()
+
     db.session.commit()
+    return jsonify({"message": "Visit updated successfully"}), 200
     
-    return jsonify({
-        "message": "Profile updated successfully",
-        "user_id": user.user_id,
-        "phone": user.phone,
-        "address": user.address
-    })
+
+@doctor_bp.route('/order_scan', methods=['POST'])
+@jwt_required()
+def order_scan():
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    # For simplicity, we just create a VisitRecord with a "scan" note
+    visit = VisitRecord(
+        patient_id=data['patient_id'],
+        doctor_id=doctor.user_id,
+        notes=f"Scan ordered: {data.get('scan_type', 'General')}",
+        diagnosis=None,
+        treatment_plan=None,
+        date=datetime.utcnow()
+    )
+    db.session.add(visit)
+    db.session.commit()
+
+    return jsonify({"message": "Scan ordered successfully", "visit_id": visit.visit_id}), 201
+
+
+
+@doctor_bp.route('/order_medication', methods=['POST'])
+@jwt_required()
+def order_medication():
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    med = Medication(
+        patient_id=data['patient_id'],
+        doctor_id=doctor.user_id,
+        name=data['name'],
+        dosage=data['dosage'],
+        instructions=data.get('instructions')
+    )
+    db.session.add(med)
+    db.session.commit()
+
+    return jsonify({"message": "Medication ordered", "medication_id": med.medication_id}), 201
+
+
+
+@doctor_bp.route('/write_report/<int:visit_id>', methods=['PUT'])
+@jwt_required()
+def write_report(visit_id):
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    visit = VisitRecord.query.get(visit_id)
+    if not visit:
+        return jsonify({"message": "Visit not found"}), 404
+
+    data = request.get_json()
+    visit.report = data.get('report', '')
+    visit.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({"message": "Report saved"}), 200
+
+
+
+@doctor_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    doctor = get_current_doctor()
+    if not doctor:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    doctor.f_name = data.get('first_name', doctor.f_name)
+    doctor.l_name = data.get('last_name', doctor.l_name)
+    doctor.phone = data.get('phone', doctor.phone)
+    doctor.address = data.get('address', doctor.address)
+    db.session.commit()
+
+    return jsonify({"message": "Profile updated successfully"}), 200
