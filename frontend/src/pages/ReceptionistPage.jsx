@@ -1,154 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PiSignOutBold } from "react-icons/pi";
 import { patientStyles } from "../styles/patientStyles";
 
 function ReceptionistPage() {
-  const [appointments, setAppointments] = useState([
-    {
-      id: 1,
-      name: "Eman Khaled",
-      patientId: "P-1234",
-      phone: "01023456789",
-      date: "2025-12-09",
-      time: "11:00 AM",
-      doctor: "Dr. Ahmed",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      name: "Hassan Ali",
-      patientId: "P-3456",
-      phone: "01055667788",
-      date: "2025-12-10",
-      time: "10:00 AM",
-      doctor: "Dr. Nour",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      name: "Sara Adel",
-      patientId: "P-8890",
-      phone: "01099988877",
-      date: "2025-12-10",
-      time: "1:30 PM",
-      doctor: "Dr. Ahmed",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 4,
-      name: "Omar Hany",
-      patientId: "P-4456",
-      phone: "01111222333",
-      date: "2025-12-11",
-      time: "9:00 AM",
-      doctor: "Dr. Nour",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 5,
-      name: "Aya Fathi",
-      patientId: "P-7744",
-      phone: "01223334455",
-      date: "2025-12-12",
-      time: "2:00 PM",
-      doctor: "Dr. Ahmed",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 6,
-      name: "Tamer Said",
-      patientId: "P-6677",
-      phone: "01077889900",
-      date: "2025-12-12",
-      time: "4:00 PM",
-      doctor: "Dr. Nour",
-      billing: "Pending",
-      status: "Pending",
-    },
-  ]);
+  useEffect(() => {
+    fetch("http://localhost:5000/api/receptionist/appointments")
+      .then(res => res.json())
+      .then(data => setAppointments(data));
 
-  const [scans, setScans] = useState([
-    {
-      id: 1,
-      name: "Omar Hassan",
-      patientId: "P-5678",
-      phone: "01098765432",
-      date: "2025-12-09",
-      time: "3:30 PM",
-      modality: "MRI",
-      radiologist: "Dr. Sara",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      name: "Mona Hafez",
-      patientId: "P-9012",
-      phone: "01034567890",
-      date: "2025-12-10",
-      time: "10:15 AM",
-      modality: "X-ray",
-      radiologist: "Dr. Youssef",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      name: "Laila Rami",
-      patientId: "P-1022",
-      phone: "01122334455",
-      date: "2025-12-11",
-      time: "1:45 PM",
-      modality: "MRI",
-      radiologist: "Dr. Sara",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 4,
-      name: "Ahmed Nabil",
-      patientId: "P-5566",
-      phone: "01299887766",
-      date: "2025-12-11",
-      time: "11:30 AM",
-      modality: "X-ray",
-      radiologist: "Dr. Youssef",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 5,
-      name: "Nada Sherif",
-      patientId: "P-9988",
-      phone: "01011223344",
-      date: "2025-12-12",
-      time: "4:00 PM",
-      modality: "MRI",
-      radiologist: "Dr. Sara",
-      billing: "Pending",
-      status: "Pending",
-    },
-    {
-      id: 6,
-      name: "Rami Ghaly",
-      patientId: "P-1290",
-      phone: "01055667788",
-      date: "2025-12-13",
-      time: "12:00 PM",
-      modality: "X-ray",
-      radiologist: "Dr. Youssef",
-      billing: "Pending",
-      status: "Pending",
-    },
-  ]);
+    fetch("http://localhost:5000/api/receptionist/scans")
+      .then(res => res.json())
+      .then(data => setScans(data));
 
-  const [searchAppointment, setSearchAppointment] = useState("");
+    fetch("http://localhost:5000/api/receptionist/doctors")
+      .then(res => res.json())
+      .then(data => setDoctors(data));
+}, []);
+
+const [searchAppointment, setSearchAppointment] = useState("");
 const [searchScan, setSearchScan] = useState("");
+const [appointments, setAppointments] = useState([]);
+const [scans, setScans] = useState([]);
+const [doctors, setDoctors] = useState([]);
+
 
 const filterRows = (rows, term) =>
   rows.filter((r) =>
@@ -207,6 +81,17 @@ const [showCalendar, setShowCalendar] = useState(false);
   closePopup();
 };
 
+  const convertTime = (t) => {
+    const [time, period] = t.split(" ");
+    let [h, m] = time.split(":").map(Number);
+
+    if (period === "PM" && h !== 12) h += 12;
+    if (period === "AM" && h === 12) h = 0;
+
+    return `${h.toString().padStart(2, "0")}:${m}:00`;
+  };
+
+
 
 
   const inputStyle = {
@@ -219,21 +104,57 @@ const [showCalendar, setShowCalendar] = useState(false);
     fontSize: 14,
   };
 
-  const handleAddReschedule = (tableType) => {
-    const newRow = {
-      ...selectedRow,
-      id: Date.now(),
-      date: selectedDate || selectedRow.date,
-      time: selectedTime || selectedRow.time,
-      status: "Pending",
-    };
-    if (tableType === "appointment") {
-      setAppointments((prev) => [newRow, ...prev].slice(0, 30));
-    } else {
-      setScans((prev) => [newRow, ...prev].slice(0, 30));
-    }
-    closePopup();
+  const handleAddReschedule = async (type) => {
+  if (!selectedDate || !selectedTime) {
+    alert("Please select a date and time");
+    return;
+  }
+
+  const body = {
+    date: selectedDate,
+    time: convertTime(selectedTime),
+  staff_id: selectedRow.staff_id
   };
+
+  try {
+    if (type === "appointment") {
+      body.doctor_id = selectedRow.staff_id;
+
+      await fetch("http://localhost:5000/api/receptionist/appointment/reschedule", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    }
+
+    if (type === "scan") {
+body.staff_id = selectedRow.staff_id;
+
+      await fetch("http://localhost:5000/api/receptionist/scan/reschedule", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    }
+
+    alert("Rescheduled successfully!");
+
+    // Refresh data
+    fetch("http://localhost:5000/api/receptionist/appointments")
+      .then(res => res.json())
+      .then(data => setAppointments(data));
+
+    fetch("http://localhost:5000/api/receptionist/scans")
+      .then(res => res.json())
+      .then(data => setScans(data));
+
+    closePopup();
+
+  } catch (error) {
+    console.error("Error rescheduling:", error);
+    alert("Something went wrong");
+  }
+};
 
   return (
     <div style={{ minHeight: "100vh", background: "white" }}>
@@ -717,31 +638,53 @@ const [showCalendar, setShowCalendar] = useState(false);
             marginTop: 10,
           }}
         >
-          {(activePopup === "reschedule-appointment"
-            ? ["Dr. Ahmed", "Dr. Nour"]
-            : ["MRI", "X-ray"]
-          ).map((choice) => (
-            <div
-              key={choice}
-              onClick={() => {
-                if (activePopup === "reschedule-appointment")
-                  setSelectedRow({ ...selectedRow, doctor: choice });
-                else setSelectedModality(choice);
-                setShowCalendar(true);
-              }}
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                padding: 16,
-                cursor: "pointer",
-                fontWeight: 600,
-                background: "rgba(10,88,108,0.05)",
-                color: "#0a586c",
-              }}
-            >
-              {choice}
-            </div>
-          ))}
+         {activePopup === "reschedule-appointment"
+  ? doctors.map((d) => (
+      <div
+        key={d.staff_id}
+        onClick={() => {
+          setSelectedRow({
+            ...selectedRow,
+            staff_id: d.staff_id,
+            doctorName: d.name,
+          });
+          setShowCalendar(true);
+        }}
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: 12,
+          padding: 16,
+          cursor: "pointer",
+          fontWeight: 600,
+          background: "rgba(10,88,108,0.05)",
+          color: "#0a586c",
+        }}
+      >
+        {d.name}
+      </div>
+    ))
+  : ["MRI", "X-ray"].map((mod) => (
+      <div
+        key={mod}
+        onClick={() => {
+          setSelectedModality(mod);
+          setSelectedRow({ ...selectedRow, modality: mod });
+          setShowCalendar(true);
+        }}
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: 12,
+          padding: 16,
+          cursor: "pointer",
+          fontWeight: 600,
+          background: "rgba(10,88,108,0.05)",
+          color: "#0a586c",
+        }}
+      >
+        {mod}
+      </div>
+    ))}
+
         </div>
       </div>
     )}
