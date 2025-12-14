@@ -31,92 +31,101 @@ export default function RadiologistPage() {
 
     // State for profile loading
     const [loading, setLoading] = useState(true);
+useEffect(() => {
+    const fetchRadiologistData = async () => {
+        try {
+            const token = localStorage.getItem("token"); 
+            const userId = localStorage.getItem("user_id");
 
-    useEffect(() => {
-        const fetchRadiologistData = async () => {
-            try {
-                const token = localStorage.getItem("token"); 
-                const userId = localStorage.getItem("user_id");
+            if (!token || !userId) {
+                console.error("No token or user_id found");
+                setLoading(false);
+                return;
+            }
 
-                if (!token || !userId) {
-                    console.error("No token or user_id found");
-                    setLoading(false);
+            const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}`, {
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    handleLogout();
                     return;
                 }
-
-                const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}`, {
-                    headers: { 
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!res.ok) {
-                    if (res.status === 401) {
-                        handleLogout();
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-
-                // In the fetchRadiologistData function:
-                const data = await res.json();
-                console.log("Fetched radiologist data:", data);
-                console.log("FULL API RESPONSE STRUCTURE:", JSON.stringify(data, null, 2));
-
-                // Check specifically for phone and address in user data
-                console.log("User phone from API:", data.phone);
-                console.log("User address from API:", data.address);
-                console.log("User staff_phone from API:", data.staff_phone);
-
-
-                // Check for nested staff data - ADD THIS CHECK
-                const staffData = data.staff || data; // Try nested first, fallback to root
-                console.log("Using staffData:", staffData);
-
-                // Check if staff-specific fields exist in the response
-                console.log("Staff ID from staffData:", staffData.staff_id);
-                console.log("License from staffData:", staffData.license_number);
-                console.log("Department from staffData:", staffData.department);
-
-                // Update personal info with ACTUAL data from API - MODIFY TO USE staffData
-                setPersonalInfo({
-                    phone: data.phone || data.staff_phone || '+20 987 654 3210',
-                    username: data.username || 'dr_btabt',
-                    email: data.email || 'btabt@ortholink.com',
-                    f_name: data.f_name || 'Btabt',
-                    l_name: data.l_name || 'Bob',
-                    full_name: `Dr. ${data.f_name || 'Btabt'} ${data.l_name || 'Bob'}`,
-                    staff_id: staffData.staff_id ? `RAD-${staffData.staff_id}` : 'RAD-5',
-                    gender: data.gender ? data.gender.toUpperCase() : 'FEMALE',
-                    license_number: staffData.license_number || 'RD123456',
-                    department: staffData.department || 'Radiology',
-                    hire_date: staffData.hire_date || '2015-07-01',
-                    salary: staffData.salary ? `$${parseFloat(staffData.salary).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$150,000.00',
-                    photo: DEFAULT_AVATAR
-                });
-
-                // Update contact info
-                // Use phone from user data (staff_phone is separate if needed)
-                //const phone = data.phone || '+20 987 654 3210';
-                setContactInfo({ 
-                    phone: data.phone || data.staff_phone || '+20 987 654 3210', 
-                    address: data.address || 'Alexandria, Egypt' 
-                });
-
-                // Update localStorage for display
-                localStorage.setItem("full_name", `Dr. ${data.f_name || 'Kareem'} ${data.l_name || 'Ahmed'}`);
-                localStorage.setItem("username", data.username || 'dr.kareem');
-
-            } catch (error) {
-                console.error("Error fetching radiologist data:", error);
-            } finally {
-                setLoading(false);
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
-        };
 
-        fetchRadiologistData();
-    }, []);
+            const data = await res.json();
+
+            const staffData = data.staff || data;
+
+            setPersonalInfo({
+                phone: data.phone || data.staff_phone || '+20 987 654 3210',
+                username: data.username || 'dr_btabt',
+                email: data.email || 'btabt@ortholink.com',
+                f_name: data.f_name || 'Btabt',
+                l_name: data.l_name || 'Bob',
+                full_name: `Dr. ${data.f_name || 'Btabt'} ${data.l_name || 'Bob'}`,
+                staff_id: staffData.staff_id ? `RAD-${staffData.staff_id}` : 'RAD-5',
+                gender: data.gender ? data.gender.toUpperCase() : 'FEMALE',
+                license_number: staffData.license_number || 'RD123456',
+                department: staffData.department || 'Radiology',
+                hire_date: staffData.hire_date || '2015-07-01',
+                salary: staffData.salary
+                    ? `$${parseFloat(staffData.salary).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                      })}`
+                    : '$150,000.00',
+                photo: DEFAULT_AVATAR
+            });
+
+            setContactInfo({
+                phone: data.phone || data.staff_phone || '+20 987 654 3210',
+                address: data.address || 'Alexandria, Egypt'
+            });
+
+            localStorage.setItem(
+                "full_name",
+                `Dr. ${data.f_name || 'Kareem'} ${data.l_name || 'Ahmed'}`
+            );
+            localStorage.setItem("username", data.username || 'dr.kareem');
+        } catch (error) {
+            console.error("Error fetching radiologist data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchScans = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const userId = localStorage.getItem("user_id");
+
+            // const res = await fetch(`${API_BASE}/radiologist/${userId}/scans`, {
+            const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}/scans`, {
+
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error("Failed to load scans");
+
+            const data = await res.json();
+            console.log("Loaded scans:", data);
+            setScans(data);
+        } catch (err) {
+            console.error("Error loading scans:", err);
+        }
+    };
+
+    // Run both
+    fetchRadiologistData();
+    fetchScans();
+}, []); // <-- Correct end of useEffect
+
 
     // --- Handlers ---
     const handleLogout = () => {
@@ -264,10 +273,6 @@ export default function RadiologistPage() {
 
     // Mock Data
     const [scans, setScans] = useState([
-        { id: 1, did: 'DR-501', date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', age: '34', gender: 'Male', bodyType: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-10' },
-        { id: 2, did: 'DR-512', date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', age: '54', gender: 'Male', bodyType: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed', recordId: 'rec-16' },
-        { id: 3, did: 'DR-501', date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', age: '67', gender: 'Female', bodyType: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-19' },
-        { id: 4, did: 'DR-512', date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', age: '46', gender: 'Male', bodyType: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending', recordId: 'rec-30' },
     ]);
 
     const [uploadFiles, setUploadFiles] = useState([]);
