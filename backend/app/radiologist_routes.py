@@ -115,3 +115,45 @@ def update_radiologist_profile(user_id):
         "phone": user.phone,
         "address": user.address
     })
+
+@radiologist_bp.route("/radiologist/<int:user_id>/scans", methods=["GET"])
+@jwt_required()
+def get_radiologist_scans(user_id):
+    current_user_id = int(get_jwt_identity())
+
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Radiologist staff record
+    staff = Staff.query.filter_by(user_id=user_id).first()
+    if not staff:
+        return jsonify({"error": "Radiologist staff record not found"}), 404
+
+    # Fetch scans assigned to this radiologist
+    from .models.dicom_scan import DicomScan
+    from .models.patient import Patient
+    from .models.user import User
+
+    scans = DicomScan.query.filter_by(staff_id=staff.staff_id).all()
+
+    results = []
+    for s in scans:
+        patient = Patient.query.get(s.patient_id)
+        u = User.query.get(patient.user_id)
+
+        results.append({
+            "id": s.scan_id,
+            "date": s.scan_date.strftime("%Y-%m-%d"),
+            "time": s.scan_date.strftime("%H:%M"),
+            "patient": f"{u.f_name} {u.l_name}",
+            "pid": f"{patient.patient_id}",
+            "doctor": "Unknown" if s.record_id is None else f"DR-{s.staff_id}",
+            "did": f"DR-{s.staff_id}",
+            "bodyType": s.body_part,
+            "module": s.modality,
+            "desc": s.description,
+            "status": s.status,
+            "recordId": s.record_id
+        })
+
+    return jsonify(results), 200
