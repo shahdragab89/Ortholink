@@ -31,6 +31,18 @@ export default function RadiologistPage() {
 
     // State for profile loading
     const [loading, setLoading] = useState(true);
+    
+    // --- Rest of your original state ---
+    const [currentView, setCurrentView] = useState('dashboard');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedScan, setSelectedScan] = useState(null);
+    const [notes, setNotes] = useState('');
+    const [profilePhoto, setProfilePhoto] = useState(DEFAULT_AVATAR);
+
+    // Mock Data
+    const [scans, setScans] = useState([]);
+    const [uploadFiles, setUploadFiles] = useState([]);
 
     useEffect(() => {
         const fetchRadiologistData = async () => {
@@ -105,7 +117,6 @@ export default function RadiologistPage() {
                 const token = localStorage.getItem("token");
                 const userId = localStorage.getItem("user_id");
 
-                // const res = await fetch(`${API_BASE}/radiologist/${userId}/scans`, {
                 const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}/scans`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -123,7 +134,7 @@ export default function RadiologistPage() {
         // Run both
         fetchRadiologistData();
         fetchScans();
-    }, []); // <-- Correct end of useEffect
+    }, []);
 
     // --- Handlers ---
     const handleLogout = () => {
@@ -259,20 +270,6 @@ export default function RadiologistPage() {
             alert(`Unexpected error: ${error.message}\n\nCheck browser console for details.`);
         }
     };
-
-    // --- Rest of your original state ---
-    const [currentView, setCurrentView] = useState('dashboard');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedScan, setSelectedScan] = useState(null);
-    const [uploadFile, setUploadFile] = useState(null);
-    const [notes, setNotes] = useState('');
-    const [profilePhoto, setProfilePhoto] = useState(DEFAULT_AVATAR);
-
-    // Mock Data
-    const [scans, setScans] = useState([]);
-
-    const [uploadFiles, setUploadFiles] = useState([]);
 
     const handleFileSelect = (e) => {
         if (e.target.files && e.target.files.length > 0) {

@@ -197,5 +197,62 @@ export const doctorProfileStyles = {
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: '0.5px'
+    },
+
+    welcomeBanner: {
+        backgroundColor: '#d1fae5', // Light Green background
+        borderRadius: '20px',
+        padding: '40px',
+        marginBottom: '40px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+    },
+    welcomeTextBox: {
+        zIndex: 2,
+        maxWidth: '60%',
+    },
+    welcomeTitle: {
+        fontSize: '36px',
+        fontWeight: '800',
+        color: '#064e3b', // Very dark green
+        marginBottom: '16px',
+        lineHeight: '1.2',
+    },
+    welcomeSubText: {
+        fontSize: '16px',
+        color: '#047857',
+        maxWidth: '500px',
+        lineHeight: '1.5',
+    },
+    welcomeHighlight: {
+        color: '#059669',
+        fontWeight: '700',
+    },
+    welcomeIllustration: {
+        height: '180px',
+        width: 'auto',
+        maxWidth: '300px',
+        zIndex: 2,
+        objectFit: 'contain',
+        marginBottom: '-10px',
+    },
+    decorativeCircle1: { position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', borderRadius: '50%', backgroundColor: '#ecfdf5', zIndex: 1 },
+    decorativeCircle2: { position: 'absolute', bottom: '-80px', left: '100px', width: '150px', height: '150px', borderRadius: '50%', backgroundColor: '#ecfdf5', zIndex: 1 },
+
+    // --- NEW: TABLE SEARCH BAR STYLE ---
+    tableSearchInput: {
+        width: '100%',
+        padding: '10px 16px',
+        marginBottom: '16px',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+        fontSize: '14px',
+        outline: 'none',
+        backgroundColor: '#f8fafc',
+        boxSizing: 'border-box' // Important for padding calculation
     }
 };
