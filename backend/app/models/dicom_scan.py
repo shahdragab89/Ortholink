@@ -1,7 +1,7 @@
 from app.extensions import db
 
 class DicomScan(db.Model):
-    __tablename__ = "dicom_scan"
+    _tablename_ = "dicom_scan"
 
     scan_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey("patient.patient_id"))

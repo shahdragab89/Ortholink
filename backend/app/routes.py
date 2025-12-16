@@ -264,3 +264,54 @@ def update_profile():
 
     return jsonify({"message": "Profile updated successfully"}), 200
   
+@auth_bp.route('/patient_data/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_patient_profile(user_id):
+    user = User.query.get(user_id)
+    patient = Patient.query.filter_by(user_id=user_id).first()
+
+    return jsonify({
+        "name": f"{user.f_name} {user.l_name}",
+        
+        "email": user.email,
+        "phone": user.phone,
+        "address": user.address,
+        "birth_date": user.birth_date.strftime("%Y-%m-%d"),
+        "gender": user.gender.value,
+        "blood_type": patient.blood_type,
+        "allergies": patient.allergies,
+        "chronic_conditions": patient.chronic_conditions,
+        "insurance_provider": patient.insurance_provider,
+        "insurance_number": patient.insurance_number,
+        "emergency_contact_name": patient.emergency_contact_name,
+        "emergency_contact_phone": patient.emergency_contact_phone
+    })
+@auth_bp.route('/edit_patient/<int:user_id>',methods=["PUT"])
+@jwt_required()
+def edit_patient_profile(user_id):
+    data = request.get_json()
+    
+    user = User.query.get(user_id)
+    patient = Patient.query.filter_by(user_id=user_id).first()
+    
+    if not user or not patient:
+        return jsonify({"message": "Patient not found"}), 404
+    
+    # Update User fields
+    user.f_name = data.get("first_name", user.f_name)
+    user.l_name = data.get("last_name", user.l_name)
+    user.phone = data.get("phone", user.phone)
+    user.address = data.get("address", user.address)
+    
+    # Update Patient fields
+    patient.blood_type = data.get("blood_type", patient.blood_type)
+    patient.allergies = data.get("allergies", patient.allergies)
+    patient.chronic_conditions = data.get("chronic_conditions", patient.chronic_conditions)
+    patient.insurance_provider = data.get("insurance_provider", patient.insurance_provider)
+    patient.insurance_number = data.get("insurance_number", patient.insurance_number)
+    patient.emergency_contact_name = data.get("emergency_contact_name", patient.emergency_contact_name)
+    patient.emergency_contact_phone = data.get("emergency_contact_phone", patient.emergency_contact_phone)
+    
+    db.session.commit()
+    
+    return jsonify({"message": "Patient profile updated successfully"})
