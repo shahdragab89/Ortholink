@@ -1,54 +1,59 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from werkzeug.utils import secure_filename
+
 from .extensions import db
 from .models.user import User, Role
 from .models.staff import Staff
 from .models.visit_record import VisitRecord
-# from .models.radiology_report import RadiologyReport  # You might need to create this model
-# from .models.scan_order import ScanOrder  # You might need to create this model
+
+from .config import Config  # Import config
+
 
 radiologist_bp = Blueprint('radiologist', __name__)
 
-def get_current_radiologist():
-    """Helper function to get the current radiologist from JWT token"""
-    user_id = get_jwt_identity()
-    radiologist = User.query.filter_by(user_id=user_id, role=Role.RADIOLOGIST).first()
-    return radiologist
+# Use config-based upload folder
+UPLOAD_FOLDER = Config.UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
+# ===============================
+# Helpers
+# ===============================
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_current_radiologist():
+    user_id = get_jwt_identity()
+    return User.query.filter_by(user_id=user_id, role=Role.RADIOLOGIST).first()
+
+
+# ===============================
+# Get Radiologist Profile
+# ===============================
 @radiologist_bp.route('/radiologist/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_radiologist_profile(user_id):
-    # Get the current user from JWT token
     current_user_id = get_jwt_identity()
-    
-    # Convert current_user_id to int for comparison
+
     try:
-        current_user_id_int = int(current_user_id)
+        current_user_id = int(current_user_id)
     except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    # Check if the requested user_id matches the current user
-    if current_user_id_int != user_id:
-        return jsonify({"error": f"Unauthorized access. Token user: {current_user_id_int}, Requested user: {user_id}"}), 403
-    
-    # Get user from User table
+        return jsonify({"error": "Invalid token"}), 400
+
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
+
     user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    # Get staff record using the foreign key user_id
+    if not user or user.role != Role.RADIOLOGIST:
+        return jsonify({"error": "Radiologist not found"}), 404
+
     staff = Staff.query.filter_by(user_id=user_id).first()
-    print(f"DEBUG: Looking for staff with user_id={user_id}, found: {staff}")  # Debug print
-    
     if not staff:
         return jsonify({"error": "Staff record not found"}), 404
-    
-    print(f"DEBUG: Staff data - staff_id: {staff.staff_id}, license: {staff.license_number}, dept: {staff.department}")  # Debug print
-    
+
     return jsonify({
         "user_id": user.user_id,
         "username": user.username,
@@ -59,63 +64,116 @@ def get_radiologist_profile(user_id):
         "address": user.address,
         "birth_date": user.birth_date.strftime("%Y-%m-%d") if user.birth_date else None,
         "gender": user.gender.value if user.gender else None,
-        "staff_id": staff.staff_id,  # From Staff table
-        "license_number": staff.license_number,  # From Staff table
-        "staff_phone": staff.phone,  # From Staff table (might be different)
-        "department": staff.department,  # From Staff table
+        "profile_image": user.profile_image,
+        "staff_id": staff.staff_id,
+        "license_number": staff.license_number,
+        "department": staff.department,
         "hire_date": staff.hire_date.strftime("%Y-%m-%d") if staff.hire_date else None,
         "salary": float(staff.salary) if staff.salary else None,
         "role": user.role.value
     })
 
+
+# ===============================
+# Update Radiologist Profile
+# ===============================
 @radiologist_bp.route('/radiologist/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_radiologist_profile(user_id):
-    current_user_id = get_jwt_identity()
-    
-    # Convert current_user_id to int for comparison
-    try:
-        current_user_id_int = int(current_user_id)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid user identity in token"}), 400
-    
-    if current_user_id_int != user_id:
-        return jsonify({"error": "Unauthorized access"}), 403
-    
+    current_user_id = int(get_jwt_identity())
+
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
     user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if user.role != Role.RADIOLOGIST:
-        return jsonify({"error": "User is not a radiologist"}), 400
-    
-    # Get staff record
+    if not user or user.role != Role.RADIOLOGIST:
+        return jsonify({"error": "Radiologist not found"}), 404
+
     staff = Staff.query.filter_by(user_id=user_id).first()
     if not staff:
         return jsonify({"error": "Staff record not found"}), 404
-    
-    data = request.json
-    phone = data.get('phone')
-    address = data.get('address')
-    
-    # Update user fields
-    if phone:
-        user.phone = phone
-        # Also update staff phone
-        staff.phone = phone
-    
-    if address:
-        user.address = address
-    
-    db.session.commit()
-    
-    return jsonify({
-        "message": "Profile updated successfully",
-        "user_id": user.user_id,
-        "phone": user.phone,
-        "address": user.address
-    })
 
+    data = request.json or {}
+
+    if "phone" in data:
+        user.phone = data["phone"]
+        staff.phone = data["phone"]
+
+    if "address" in data:
+        user.address = data["address"]
+
+    db.session.commit()
+
+    return jsonify({"message": "Profile updated successfully"}), 200
+
+# ===============================
+# Upload Profile Image (FIXED)
+# ===============================
+@radiologist_bp.route('/radiologist/<int:user_id>/profile-image', methods=['POST'])
+@jwt_required()
+def upload_radiologist_profile_image(user_id):
+    current_user_id = int(get_jwt_identity())
+
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    user = User.query.get(user_id)
+    if not user or user.role != Role.RADIOLOGIST:
+        return jsonify({"error": "Radiologist not found"}), 404
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image file provided"}), 400
+
+    file = request.files["image"]
+
+    if file.filename == "":
+        return jsonify({"error": "Empty filename"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid image type"}), 400
+
+    # Ensure upload folder exists
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = secure_filename(f"radiologist_{user_id}.{ext}")
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+    # Remove old image if exists
+    if user.profile_image:
+        old_filename = os.path.basename(user.profile_image)
+        old_filepath = os.path.join(UPLOAD_FOLDER, old_filename)
+        if os.path.exists(old_filepath):
+            try:
+                os.remove(old_filepath)
+            except:
+                pass
+
+    file.save(filepath)
+
+    # Store the filename only or relative path
+    user.profile_image = filename
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Profile image uploaded successfully",
+        "profile_image": user.profile_image  # This returns something like "profile_images/radiologist_123.jpg"
+    }), 200
+
+
+# ===============================
+# Serve Profile Images
+# ===============================
+@radiologist_bp.route('/profile_images/<filename>')
+def serve_profile_image(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+print("UPLOAD_FOLDER =", UPLOAD_FOLDER)
+
+# ===============================
+# Get Radiologist Scans
+# ===============================
 @radiologist_bp.route("/radiologist/<int:user_id>/scans", methods=["GET"])
 @jwt_required()
 def get_radiologist_scans(user_id):
@@ -124,31 +182,26 @@ def get_radiologist_scans(user_id):
     if current_user_id != user_id:
         return jsonify({"error": "Unauthorized"}), 403
 
-    # Radiologist staff record
     staff = Staff.query.filter_by(user_id=user_id).first()
     if not staff:
         return jsonify({"error": "Radiologist staff record not found"}), 404
 
-    # Fetch scans assigned to this radiologist
     from .models.dicom_scan import DicomScan
     from .models.patient import Patient
-    from .models.user import User
 
     scans = DicomScan.query.filter_by(staff_id=staff.staff_id).all()
 
     results = []
     for s in scans:
         patient = Patient.query.get(s.patient_id)
-        u = User.query.get(patient.user_id)
+        user = User.query.get(patient.user_id)
 
         results.append({
             "id": s.scan_id,
             "date": s.scan_date.strftime("%Y-%m-%d"),
             "time": s.scan_date.strftime("%H:%M"),
-            "patient": f"{u.f_name} {u.l_name}",
-            "pid": f"{patient.patient_id}",
-            "doctor": "Unknown" if s.record_id is None else f"DR-{s.staff_id}",
-            "did": f"DR-{s.staff_id}",
+            "patient": f"{user.f_name} {user.l_name}",
+            "pid": patient.patient_id,
             "bodyType": s.body_part,
             "module": s.modality,
             "desc": s.description,
