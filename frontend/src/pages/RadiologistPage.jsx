@@ -5,6 +5,8 @@ import welcomeDocImage from '../assets/welcome-rad.svg.svg';
 // Default placeholder image if the doctor hasn't uploaded one
 const DEFAULT_AVATAR = "https://via.placeholder.com/150?text=Dr+Image";
 const API_BASE = "http://127.0.0.1:5000/api";
+const IMAGE_BASE = "http://127.0.0.1:5000/api/radiologist";
+
 
 export default function RadiologistPage() {
     // State for personal info with default values
@@ -73,7 +75,9 @@ export default function RadiologistPage() {
 
                 const data = await res.json();
                 const staffData = data.staff || data;
-
+                const imageUrl = `${IMAGE_BASE}${data.profile_image}`;  // Construct full URL
+                setProfilePhoto(imageUrl);
+                
                 setPersonalInfo({
                     phone: data.phone || data.staff_phone || '+20 987 654 3210',
                     username: data.username || 'dr_btabt',
@@ -94,6 +98,13 @@ export default function RadiologistPage() {
                         : '$150,000.00',
                     photo: DEFAULT_AVATAR
                 });
+
+
+                setProfilePhoto(
+                    data.profile_image
+                        ? `${IMAGE_BASE}/profile_images/${data.profile_image}`
+                        : DEFAULT_AVATAR
+                );
 
                 setContactInfo({
                     phone: data.phone || data.staff_phone || '+20 987 654 3210',
@@ -311,9 +322,50 @@ export default function RadiologistPage() {
         alert(`Report successfully sent to ${selectedScan.doctor}`);
     };
 
-    const handlePhotoChange = (newPhotoUrl) => {
-        setProfilePhoto(newPhotoUrl);
-    }
+    const uploadProfileImage = async (file) => {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("user_id");
+
+        if (!file || !token || !userId) return;
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/radiologist/radiologist/${userId}/profile-image`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: formData
+                }
+            );
+
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+
+            const data = await res.json();
+
+            const imageUrl = `${IMAGE_BASE}/profile_images/${data.profile_image}`;
+            setProfilePhoto(imageUrl);
+
+            // Also sync with personalInfo
+            setPersonalInfo(prev => ({
+                ...prev,
+                photo: imageUrl
+            }));
+
+            alert("✅ Profile photo updated successfully");
+        } catch (err) {
+            console.error("Upload failed:", err);
+            alert("❌ Failed to upload image");
+        }
+    };
+
 
     const filteredScans = scans.filter(scan => {
         if (!searchTerm) return true; // Show all if search is empty
@@ -486,7 +538,7 @@ export default function RadiologistPage() {
                     <ProfileEditor 
                         onBack={() => setCurrentView('dashboard')} 
                         currentPhoto={profilePhoto}
-                        onPhotoUpdate={handlePhotoChange}
+                        onPhotoUpdate={uploadProfileImage}
                         stats={profileStats}
                         personalInfo={personalInfo}
                         contactInfo={contactInfo}
@@ -660,10 +712,10 @@ function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInf
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            onPhotoUpdate(imageUrl);
+            onPhotoUpdate(file); // send FILE, not URL
         }
     };
+
 
     const handlePhoneChange = (e) => {
         onContactInfoChange({

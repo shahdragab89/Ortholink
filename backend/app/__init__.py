@@ -4,9 +4,12 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from .config import Config
 from .extensions import db
+import os
+from flask import Flask, send_from_directory
+
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='../static')
     app.config.from_object(Config)
     
     # JWT configuration
@@ -46,5 +49,11 @@ def create_app():
     @app.route('/api/health')
     def health():
         return {"status": "healthy", "service": "ortholink-api"}
+    
+    # In create_app() function:
+    @app.route('/uploads/<path:filename>')
+    def uploaded_files(filename):
+        uploads_dir = os.path.join(app.root_path, '..', 'uploads')
+        return send_from_directory(uploads_dir, filename)
     
     return app
