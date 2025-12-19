@@ -128,7 +128,8 @@ export default function RadiologistPage() {
                 const token = localStorage.getItem("token");
                 const userId = localStorage.getItem("user_id");
 
-                const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}/scans`, {
+                // UPDATE THIS ENDPOINT
+                const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}/scans?filter_by=radiologist`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 });
 
@@ -320,8 +321,41 @@ export default function RadiologistPage() {
         setScans(updatedScans);
         setModalOpen(false);
         alert(`Report successfully sent to ${selectedScan.doctor}`);
+        
+        // Make API call to update scan status
+        updateScanStatusInBackend(selectedScan.id);  // Use id, not scan_id
     };
 
+    const updateScanStatusInBackend = async (scanId) => {
+        try {
+            const token = localStorage.getItem("token");
+            
+            // CORRECTED ENDPOINT: /api/radiologist/scans/{scan_id}/complete
+            const res = await fetch(`${API_BASE}/radiologist/scans/${scanId}/complete`, {
+                method: 'PUT',
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: 'Completed',
+                    notes: notes // Add notes if you want to send them
+                })
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to update scan status: ${errorText}`);
+            }
+            
+            const result = await res.json();
+            console.log("Scan status updated successfully:", result);
+            return result;
+        } catch (err) {
+            console.error("Error updating scan status:", err);
+            throw err;
+        }
+    };
     const uploadProfileImage = async (file) => {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("user_id");
@@ -368,15 +402,14 @@ export default function RadiologistPage() {
 
 
     const filteredScans = scans.filter(scan => {
-        if (!searchTerm) return true; // Show all if search is empty
+        if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         
-        // Combine all searchable field values into one string for easy checking
-        // Ensure numeric IDs convert to strings first (.toString())
-        const combinedData = `
+        // Use only fields that actually exist in your data
+        const searchableText = `
             ${scan.id.toString()} 
-            ${scan.date} 
-            ${scan.time} 
+            ${scan.date || ''} 
+            ${scan.time || ''} 
             ${scan.patient.toLowerCase()} 
             ${scan.pid.toLowerCase()} 
             ${scan.doctor.toLowerCase()} 
@@ -384,9 +417,9 @@ export default function RadiologistPage() {
             ${scan.bodyType.toLowerCase()} 
             ${scan.module.toLowerCase()} 
             ${scan.status.toLowerCase()}
-        `;
+        `.toLowerCase();
 
-        return combinedData.includes(term);
+        return searchableText.includes(term);
     });
 
     // Get first name for greeting

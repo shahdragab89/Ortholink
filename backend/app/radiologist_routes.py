@@ -29,6 +29,19 @@ def get_current_radiologist():
     user_id = get_jwt_identity()
     return User.query.filter_by(user_id=user_id, role=Role.RADIOLOGIST).first()
 
+def calculate_age(birth_date):
+    """Calculate age from birth date"""
+    if not birth_date:
+        return "N/A"
+    
+    today = datetime.now().date()
+    age = today.year - birth_date.year
+    
+    # Adjust if birthday hasn't occurred yet this year
+    if (today.month, today.day) < (birth_date.month, birth_date.day):
+        age -= 1
+    
+    return age
 
 # ===============================
 # Get Radiologist Profile
@@ -171,8 +184,9 @@ def serve_profile_image(filename):
 
 print("UPLOAD_FOLDER =", UPLOAD_FOLDER)
 
+
 # ===============================
-# Get Radiologist Scans
+# Get Radiologist Scans 
 # ===============================
 @radiologist_bp.route("/radiologist/<int:user_id>/scans", methods=["GET"])
 @jwt_required()
@@ -185,28 +199,128 @@ def get_radiologist_scans(user_id):
     staff = Staff.query.filter_by(user_id=user_id).first()
     if not staff:
         return jsonify({"error": "Radiologist staff record not found"}), 404
+    
+    # DEBUG LOGGING
+    print(f"DEBUG: Current user_id: {user_id}")
+    print(f"DEBUG: Found staff record - staff_id: {staff.staff_id}, user_id: {staff.user_id}")
+    print(f"DEBUG: Looking for scans with radiologist_id = {staff.staff_id}")
 
     from .models.dicom_scan import DicomScan
     from .models.patient import Patient
+    from .models.user import User as PatientUser
+    
+    today = datetime.now().date()
 
-    scans = DicomScan.query.filter_by(staff_id=staff.staff_id).all()
+    # FIXED: Use f_name and l_name instead of full_name
+    # Also use func.concat to combine first and last names
+    from sqlalchemy import func
+    
+    scans = db.session.query(
+        DicomScan,
+        Staff.f_name,
+        Staff.l_name,
+        Staff.staff_id.label('referring_doctor_id')
+    ).join(
+        Staff, DicomScan.staff_id == Staff.staff_id
+    ).filter(
+        DicomScan.radiologist_id == staff.staff_id
+    ).all()
+    
+    # ADD MORE DEBUG
+    print(f"DEBUG: Found {len(scans)} scans in query")
+    for scan, f_name, l_name, doc_id in scans:
+        print(f"DEBUG: Scan ID: {scan.scan_id}, Radiologist ID: {scan.radiologist_id}, Referring Dr: {f_name} {l_name}")
 
     results = []
-    for s in scans:
-        patient = Patient.query.get(s.patient_id)
-        user = User.query.get(patient.user_id)
+    for scan, doc_f_name, doc_l_name, doc_id in scans:
+        # Get patient info
+        patient = Patient.query.get(scan.patient_id)
+        
+        if patient:
+            user = PatientUser.query.get(patient.user_id)
+            if user:
+                patient_name = f"{user.f_name} {user.l_name}"
+                # Calculate age
+                if user.birth_date:
+                    birth_date = user.birth_date
+                    age = today.year - birth_date.year
+                    if (today.month, today.day) < (birth_date.month, birth_date.day):
+                        age -= 1
+                    patient_age = str(age)
+                else:
+                    patient_age = "N/A"
+                
+                patient_gender = user.gender.value if user.gender else "N/A"
+            else:
+                patient_name = "Unknown Patient"
+                patient_age = "N/A"
+                patient_gender = "N/A"
+        else:
+            patient_name = "Unknown Patient"
+            patient_age = "N/A"
+            patient_gender = "N/A"
+
+        # Combine doctor's first and last name
+        referring_doctor_name = f"{doc_f_name} {doc_l_name}" if doc_f_name and doc_l_name else "Unknown Doctor"
 
         results.append({
-            "id": s.scan_id,
-            "date": s.scan_date.strftime("%Y-%m-%d"),
-            "time": s.scan_date.strftime("%H:%M"),
-            "patient": f"{user.f_name} {user.l_name}",
-            "pid": patient.patient_id,
-            "bodyType": s.body_part,
-            "module": s.modality,
-            "desc": s.description,
-            "status": s.status,
-            "recordId": s.record_id
+            "id": scan.scan_id,
+            "date": scan.scan_date.strftime("%Y-%m-%d") if scan.scan_date else "N/A",
+            "time": scan.scan_date.strftime("%H:%M") if scan.scan_date else "N/A",
+            "patient": patient_name,
+            "pid": patient.patient_id if patient else "N/A",
+            "doctor": referring_doctor_name,
+            "did": doc_id or "N/A",
+            "bodyType": scan.body_part or "N/A",
+            "module": scan.modality or "N/A",
+            "desc": scan.description or "No description",
+            "status": scan.status or "pending",
+            "recordId": scan.record_id or "N/A",
+            "age": patient_age,
+            "gender": patient_gender
         })
-
+    
+    print(f"DEBUG: Returning {len(results)} results")
     return jsonify(results), 200
+# ===============================
+# Complete Scan (Update Status)
+# ===============================
+@radiologist_bp.route('/scans/<int:scan_id>/complete', methods=['PUT'])
+@jwt_required()
+def complete_scan(scan_id):
+    current_user_id = int(get_jwt_identity())
+    
+    # Get radiologist staff record
+    radiologist_staff = Staff.query.filter_by(user_id=current_user_id).first()
+    if not radiologist_staff:
+        return jsonify({"error": "Radiologist staff record not found"}), 404
+    
+    from .models.dicom_scan import DicomScan
+    
+    scan = DicomScan.query.get(scan_id)
+    if not scan:
+        return jsonify({"error": "Scan not found"}), 404
+    
+    # Verify this scan is assigned to this radiologist
+    if scan.radiologist_id != radiologist_staff.staff_id:
+        return jsonify({"error": "This scan is not assigned to you"}), 403
+    
+    data = request.json or {}
+    
+    # Update scan status
+    if 'status' in data:
+        scan.status = data['status']
+    
+    # You might want to update other fields like file_path, description, etc.
+    if 'notes' in data:
+        scan.description = f"{scan.description or ''}\n\nRadiologist Notes: {data['notes']}"
+    
+    scan.uploaded_at = datetime.now()
+    
+    db.session.commit()
+    
+    return jsonify({
+        "message": "Scan completed successfully",
+        "scan_id": scan.scan_id,
+        "status": scan.status
+    }), 200
