@@ -5,7 +5,11 @@ class DicomScan(db.Model):
 
     scan_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey("patient.patient_id"))
+    # Staff who referred/ordered the scan (physician)
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"))
+    
+    # Staff who will interpret the scan (radiologist)
+    radiologist_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"))    
     record_id = db.Column(db.Integer, db.ForeignKey("visit_record.record_id"))
     scan_type = db.Column(db.String(50))
     body_part = db.Column(db.String(100))
