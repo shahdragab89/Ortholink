@@ -1,26 +1,24 @@
 export const dicomViewerStyles = {
-  // Main Container - LOCKED to screen height
   container: {
-    height: '100vh', // Changed from minHeight to height
+    height: '100vh',
     width: '100vw',
-    backgroundColor: '#000000', // Pure black for medical standard
+    backgroundColor: '#000000',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     display: 'flex',
     flexDirection: 'column',
     color: '#e5e7eb',
-    overflow: 'hidden', // Prevents full page scroll
+    overflow: 'hidden',
   },
 
-  // Top Toolbar
   toolbar: {
     backgroundColor: '#1f2937',
-    padding: '8px 16px', // Reduced padding to save space
+    padding: '8px 16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottom: '1px solid #374151',
-    height: '60px', // Fixed height
-    flexShrink: 0, // Prevents shrinking
+    height: '60px',
+    flexShrink: 0,
   },
 
   toolbarLeft: { display: 'flex', alignItems: 'center', gap: '16px' },
@@ -38,7 +36,7 @@ export const dicomViewerStyles = {
 
   toolbarTitle: { display: 'flex', alignItems: 'center', color: '#f3f4f6' },
 
-  toolGroup: { display: 'flex', gap: '6px' }, // Tighter gap
+  toolGroup: { display: 'flex', gap: '6px' },
 
   toolBtn: {
     backgroundColor: '#374151',
@@ -59,7 +57,7 @@ export const dicomViewerStyles = {
     backgroundColor: '#059669',
     borderColor: '#10b981',
     color: 'white',
-    boxShadow: '0 0 10px rgba(5, 150, 105, 0.4)', // Glow effect
+    boxShadow: '0 0 10px rgba(5, 150, 105, 0.4)',
   },
 
   toolbarRight: { display: 'flex', alignItems: 'center', gap: '12px' },
@@ -97,20 +95,18 @@ export const dicomViewerStyles = {
     marginLeft: '12px',
   },
 
-  // Main Content Area - The key to fixing layout
   mainContent: {
     display: 'flex',
-    flex: 1, // Takes remaining height
-    height: 'calc(100vh - 90px)', // Subtract toolbar + status bar
+    flex: 1,
+    height: 'calc(100vh - 90px)',
     overflow: 'hidden',
   },
 
-  // Sidebar
   sidebar: {
-    width: '260px', // Slightly narrower
+    width: '260px',
     backgroundColor: '#111827',
     borderRight: '1px solid #374151',
-    overflowY: 'auto', // ONLY sidebar scrolls
+    overflowY: 'auto',
     padding: '12px',
     display: 'flex',
     flexDirection: 'column',
@@ -118,7 +114,6 @@ export const dicomViewerStyles = {
     flexShrink: 0,
   },
 
-  // Cards
   patientCard: {
     backgroundColor: '#1f2937',
     borderRadius: '8px',
@@ -149,7 +144,6 @@ export const dicomViewerStyles = {
     letterSpacing: '0.5px',
   },
 
-  // Info Rows (Compact)
   infoRow: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -168,7 +162,6 @@ export const dicomViewerStyles = {
     fontSize: '10px',
   },
 
-  // Series List
   seriesList: { display: 'flex', flexDirection: 'column', gap: '6px' },
 
   seriesItem: {
@@ -201,7 +194,6 @@ export const dicomViewerStyles = {
   seriesName: { fontSize: '12px', fontWeight: '600', color: '#e5e7eb' },
   seriesInfo: { fontSize: '10px', color: '#9ca3af' },
 
-  // Sliders (Compact)
   sliderGroup: { marginBottom: '12px' },
   sliderLabel: {
     display: 'flex',
@@ -213,12 +205,13 @@ export const dicomViewerStyles = {
   sliderValue: { color: '#34d399' },
   slider: {
     width: '100%',
-    height: '4px',
-    borderRadius: '2px',
+    height: '6px',
+    borderRadius: '3px',
     outline: 'none',
-    background: '#4b5563',
+    background: '#1f2937',
     appearance: 'none',
     cursor: 'pointer',
+    border: '1px solid #374151',
   },
 
   presetGrid: {
@@ -236,7 +229,6 @@ export const dicomViewerStyles = {
     fontSize: '10px',
   },
 
-  // Viewport Grid
   viewportGrid: {
     flex: 1,
     display: 'grid',
@@ -262,7 +254,6 @@ export const dicomViewerStyles = {
     justifyContent: 'center',
   },
 
-  // Images
   dicomImage: {
     width: '100%',
     height: '100%',
@@ -270,11 +261,10 @@ export const dicomViewerStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    backgroundSize: '40px 40px', // Grid background
+    backgroundSize: '40px 40px',
     backgroundImage: 'linear-gradient(to right, #111 1px, transparent 1px), linear-gradient(to bottom, #111 1px, transparent 1px)',
   },
 
-  // Overlays
   crosshairVertical: {
     position: 'absolute',
     width: '1px',
@@ -335,7 +325,47 @@ export const dicomViewerStyles = {
     zIndex: 10,
   },
 
-  // Status Bar
+  volumeContainer: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  volumePlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+
+  volumeControls: {
+    position: 'absolute',
+    bottom: '20px',
+    display: 'flex',
+    gap: '8px',
+  },
+
+  volumeBtn: {
+    backgroundColor: '#374151',
+    color: '#e5e7eb',
+    border: '1px solid #4b5563',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '11px',
+    fontWeight: '500',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+
   statusBar: {
     height: '30px',
     backgroundColor: '#111827',
