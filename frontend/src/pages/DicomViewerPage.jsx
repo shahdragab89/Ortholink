@@ -91,16 +91,36 @@ export default function DicomViewerPage() {
     
     // CSS Filters to simulate image adjustments
     const filterStyle = {
+      // We apply the filters to the IMAGE now, not the container
       filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${sharpness}%) blur(${enableSmoothing ? '1px' : '0px'})`,
       transform: `scale(${zoomLevel / 100}) rotate(${rotation[plane]}deg)`,
-      transition: 'all 0.2s ease'
+      transition: 'all 0.2s ease',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain' // This ensures the image fits inside the box
     };
+
+    let imageUrl = '';
+    if (plane === 'axial') {
+      imageUrl = '/axial.jpeg'; // Real Axial Knee
+    } else if (plane === 'sagittal') {
+      imageUrl = '/sagittal.jpg'; // Real Sagittal Knee
+    } else if (plane === 'coronal') {
+      imageUrl = '/coronal.jpg'; // Real Coronal Knee
+    }
 
     return (
       <div style={dicomViewerStyles.viewportInner} onClick={handleImageClick}>
         
         {/* The "Image" (with filters applied) */}
         <div style={{...dicomViewerStyles.dicomImage, ...filterStyle}}>
+
+        {/* Render the Real Image instead of the fake gray box */}
+        <img 
+          src={imageUrl} 
+          alt={plane}
+          style={filterStyle} 
+        />
           
           {/* Placeholder for the actual Bone/X-ray */}
           <div style={{
@@ -212,10 +232,10 @@ export default function DicomViewerPage() {
             style={{...dicomViewerStyles.toolBtn, ...(activeTool === 'pan' && dicomViewerStyles.toolBtnActive)}}
             onClick={() => handleToolSelect('pan')}
           >🤚 Pan</button>
-          <button 
+          {/* <button 
             style={{...dicomViewerStyles.toolBtn, ...(activeTool === 'zoom' && dicomViewerStyles.toolBtnActive)}}
             onClick={() => handleToolSelect('zoom')}
-          >🔍 Zoom</button>
+          >🔍 Zoom</button> */}
           <button 
             style={{...dicomViewerStyles.toolBtn, ...(activeTool === 'window' && dicomViewerStyles.toolBtnActive)}}
             onClick={() => handleToolSelect('window')}
@@ -357,7 +377,7 @@ export default function DicomViewerPage() {
       <div style={dicomViewerStyles.statusBar}>
         <div style={dicomViewerStyles.statusLeft}>
           <span style={dicomViewerStyles.statusItem}>🖼️ Slice: {currentSlice.axial}</span>
-          <span style={dicomViewerStyles.statusItem}>🔍 Zoom: {zoomLevel}%</span>
+          {/* <span style={dicomViewerStyles.statusItem}>🔍 Zoom: {zoomLevel}%</span> */}
           <span style={dicomViewerStyles.statusItem}>⚪ W/L: {windowLevel.center}/{windowLevel.width}</span>
         </div>
         <div style={dicomViewerStyles.statusRight}>
