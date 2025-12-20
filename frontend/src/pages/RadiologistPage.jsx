@@ -286,6 +286,19 @@ export default function RadiologistPage() {
     const handleFileSelect = (e) => {
         if (e.target.files && e.target.files.length > 0) {
             const newFiles = Array.from(e.target.files);
+            
+            // Validate file types
+            const validExtensions = ['.dcm', '.dicom', '.ima', '.png', '.jpg', '.jpeg'];
+            const invalidFiles = newFiles.filter(file => {
+                const ext = file.name.toLowerCase().split('.').pop();
+                return !validExtensions.includes('.' + ext);
+            });
+            
+            if (invalidFiles.length > 0) {
+                alert(`Some files have invalid extensions. Only DICOM (.dcm, .dicom, .ima) and image files are allowed.`);
+                return;
+            }
+            
             setUploadFiles(prev => [...prev, ...newFiles]);
         }
     };
@@ -314,45 +327,134 @@ export default function RadiologistPage() {
         setUploadFiles([]);
     };
 
-    const handleSubmitUpload = () => {
-        const updatedScans = scans.map(s => 
-            s.id === selectedScan.id ? { ...s, status: 'Completed' } : s
-        );
-        setScans(updatedScans);
-        setModalOpen(false);
-        alert(`Report successfully sent to ${selectedScan.doctor}`);
-        
-        // Make API call to update scan status
-        updateScanStatusInBackend(selectedScan.id);  // Use id, not scan_id
+    const handleSubmitUpload = async () => {
+        try {
+            // 1. First upload the files if any
+            let folderPath = null;
+            if (uploadFiles.length > 0) {
+                folderPath = await uploadScanFiles(selectedScan.id);
+            }
+            
+            // 2. Then update the scan status with report and folder path
+            const result = await updateScanStatusInBackend(selectedScan.id, notes, folderPath);
+            
+            // 3. Update local state
+            const updatedScans = scans.map(s => 
+                s.id === selectedScan.id ? { 
+                    ...s, 
+                    status: 'completed',
+                    rad_report: notes,
+                    folder_path: folderPath
+                } : s
+            );
+            setScans(updatedScans);
+            setModalOpen(false);
+            
+            alert(`✅ Scan #${selectedScan.id} completed successfully!\nReport saved and ${uploadFiles.length} files uploaded.`);
+            
+        } catch (err) {
+            console.error("Error submitting scan:", err);
+            alert(`❌ Failed to complete scan: ${err.message}`);
+        }
     };
 
-    const updateScanStatusInBackend = async (scanId) => {
+    // New function to upload scan files
+    const uploadScanFiles = async (scanId) => {
+        if (uploadFiles.length === 0) {
+            return null;
+        }
+        
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        
+        // Add all files to formData
+        uploadFiles.forEach((file, index) => {
+            formData.append('files[]', file);
+        });
+        
+        try {
+            const res = await fetch(`${API_BASE}/radiologist/scans/${scanId}/upload-folder`, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                    // Don't set Content-Type for FormData, browser will set it with boundary
+                },
+                body: formData
+            });
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`File upload failed: ${errorText}`);
+            }
+            
+            const result = await res.json();
+            console.log("Files uploaded successfully:", result);
+            return result.folder_path; // Return the folder path for database update
+            
+        } catch (err) {
+            console.error("Error uploading files:", err);
+            throw err;
+        }
+    };
+    // Updated function to update scan status
+    const updateScanStatusInBackend = async (scanId, radReport, folderPath = null) => {
         try {
             const token = localStorage.getItem("token");
             
-            // CORRECTED ENDPOINT: /api/radiologist/scans/{scan_id}/complete
+            // Prepare the request body with SAFE string conversion
+            const requestBody = {
+                status: 'completed',
+                rad_report: radReport ? String(radReport) : ''  // Force string conversion
+            };
+            
+            // Add folder path if provided
+            if (folderPath) {
+                requestBody.folder_path = String(folderPath);
+            }
+            
+            console.log("Sending scan completion request:", {
+                scanId,
+                reportLength: requestBody.rad_report.length,
+                hasFolder: !!folderPath
+            });
+            
             const res = await fetch(`${API_BASE}/radiologist/scans/${scanId}/complete`, {
                 method: 'PUT',
                 headers: { 
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    status: 'Completed',
-                    notes: notes // Add notes if you want to send them
-                })
+                body: JSON.stringify(requestBody)
             });
 
+            // Check response
             if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Failed to update scan status: ${errorText}`);
+                let errorText;
+                try {
+                    errorText = await res.json();
+                } catch {
+                    errorText = await res.text();
+                }
+                console.error("Server error:", errorText);
+                throw new Error(errorText.error || errorText.details || `HTTP ${res.status}`);
             }
             
             const result = await res.json();
-            console.log("Scan status updated successfully:", result);
+            console.log("✅ Scan completed successfully:", result);
             return result;
+            
         } catch (err) {
-            console.error("Error updating scan status:", err);
+            console.error("❌ Error updating scan status:", err);
+            
+            // Show user-friendly error message
+            let userMessage = "Failed to save scan report";
+            if (err.message.includes("Database type error")) {
+                userMessage = "Database configuration issue. Please contact administrator.";
+            } else if (err.message.includes("VARCHAR") || err.message.includes("TEXT")) {
+                userMessage = "Report is too long. Please shorten your report.";
+            }
+            
+            alert(`❌ ${userMessage}\n\nTechnical details: ${err.message}`);
             throw err;
         }
     };
@@ -529,7 +631,7 @@ export default function RadiologistPage() {
                                 </thead>
                                 <tbody>
                                     {filteredScans.map((scan) => {
-                                        const isCompleted = scan.status === 'Completed';
+                                        const isCompleted = scan.status === 'completed';
                                         const statusBg = isCompleted ? '#dcfce7' : '#fff7ed';
                                         const statusColor = isCompleted ? '#166534' : '#c2410c';
                                         
@@ -647,15 +749,15 @@ export default function RadiologistPage() {
                         <label style={radiologistStyles.formLabel}>Attach Scan Images/DICOM</label>
                         
                         <div style={{marginBottom: '20px'}}>
-                            {/* Drag & Drop Area */}
+                            {/* In your modal, update the text to mention DICOM files */}
                             <div 
                                 style={radiologistStyles.uploadBox} 
                                 onClick={() => document.getElementById('fileUpload').click()}
                             >
                                 <span style={{fontSize: '32px', display: 'block', marginBottom: '8px'}}>cloud_upload</span>
-                                <span style={{fontWeight: '600', color: '#374151'}}>Click to Browse Files</span>
+                                <span style={{fontWeight: '600', color: '#374151'}}>Click to Browse DICOM Files</span>
                                 <span style={{display:'block', fontSize:'12px', color:'#9ca3af', marginTop:'4px'}}>
-                                    (Supports multiple files: JPG, PNG, DICOM)
+                                    (Supports DICOM: .dcm, .dicom, .ima and Images: .png, .jpg, .jpeg)
                                 </span>
                             </div>
 
