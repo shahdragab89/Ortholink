@@ -3,14 +3,13 @@ from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import shutil
 
 from .extensions import db
 from .models.user import User, Role
 from .models.staff import Staff
 from .models.visit_record import VisitRecord
-
-from .config import Config  # Import config
-
+from .config import Config
 
 radiologist_bp = Blueprint('radiologist', __name__)
 
@@ -18,12 +17,14 @@ radiologist_bp = Blueprint('radiologist', __name__)
 UPLOAD_FOLDER = Config.UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
+# Define scan folders directory
+SCAN_FOLDERS_DIR = "scan_folders"
+
 # ===============================
 # Helpers
 # ===============================
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def get_current_radiologist():
     user_id = get_jwt_identity()
@@ -85,7 +86,6 @@ def get_radiologist_profile(user_id):
         "salary": float(staff.salary) if staff.salary else None,
         "role": user.role.value
     })
-
 
 # ===============================
 # Update Radiologist Profile
@@ -171,9 +171,8 @@ def upload_radiologist_profile_image(user_id):
 
     return jsonify({
         "message": "Profile image uploaded successfully",
-        "profile_image": user.profile_image  # This returns something like "profile_images/radiologist_123.jpg"
+        "profile_image": user.profile_image
     }), 200
-
 
 # ===============================
 # Serve Profile Images
@@ -183,7 +182,6 @@ def serve_profile_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 print("UPLOAD_FOLDER =", UPLOAD_FOLDER)
-
 
 # ===============================
 # Get Radiologist Scans 
@@ -199,22 +197,14 @@ def get_radiologist_scans(user_id):
     staff = Staff.query.filter_by(user_id=user_id).first()
     if not staff:
         return jsonify({"error": "Radiologist staff record not found"}), 404
-    
-    # DEBUG LOGGING
-    print(f"DEBUG: Current user_id: {user_id}")
-    print(f"DEBUG: Found staff record - staff_id: {staff.staff_id}, user_id: {staff.user_id}")
-    print(f"DEBUG: Looking for scans with radiologist_id = {staff.staff_id}")
 
     from .models.dicom_scan import DicomScan
     from .models.patient import Patient
     from .models.user import User as PatientUser
+    from sqlalchemy import func
     
     today = datetime.now().date()
 
-    # FIXED: Use f_name and l_name instead of full_name
-    # Also use func.concat to combine first and last names
-    from sqlalchemy import func
-    
     scans = db.session.query(
         DicomScan,
         Staff.f_name,
@@ -225,11 +215,6 @@ def get_radiologist_scans(user_id):
     ).filter(
         DicomScan.radiologist_id == staff.staff_id
     ).all()
-    
-    # ADD MORE DEBUG
-    print(f"DEBUG: Found {len(scans)} scans in query")
-    for scan, f_name, l_name, doc_id in scans:
-        print(f"DEBUG: Scan ID: {scan.scan_id}, Radiologist ID: {scan.radiologist_id}, Referring Dr: {f_name} {l_name}")
 
     results = []
     for scan, doc_f_name, doc_l_name, doc_id in scans:
@@ -280,8 +265,8 @@ def get_radiologist_scans(user_id):
             "gender": patient_gender
         })
     
-    print(f"DEBUG: Returning {len(results)} results")
     return jsonify(results), 200
+
 # ===============================
 # Complete Scan (Update Status)
 # ===============================
@@ -305,22 +290,165 @@ def complete_scan(scan_id):
     if scan.radiologist_id != radiologist_staff.staff_id:
         return jsonify({"error": "This scan is not assigned to you"}), 403
     
-    data = request.json or {}
+    try:
+        data = request.get_json()
+        print(f"DEBUG: Received data type: {type(data)}")
+        
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        # Update scan status to 'Completed'
+        scan.status = 'completed'
+        
+        # SAFELY handle rad_report - convert to string and limit length
+        if 'rad_report' in data:
+            # Get the report text
+            report_text = data['rad_report']
+            
+            # Convert to string if it's not None
+            if report_text is not None:
+                report_str = str(report_text)
+                print(f"DEBUG: Converting rad_report to string. Length: {len(report_str)}")
+                
+                # Optional: Truncate if too long (for VARCHAR safety)
+                if len(report_str) > 2000:
+                    print(f"DEBUG: Truncating report from {len(report_str)} to 2000 chars")
+                    report_str = report_str[:2000]
+                
+                scan.rad_report = report_str
+            else:
+                scan.rad_report = None
+        
+        # Update folder path - also ensure it's a string
+        if 'folder_path' in data and data['folder_path'] is not None:
+            scan.folder_path = str(data['folder_path'])
+        
+        # Set uploaded timestamp
+        scan.uploaded_at = datetime.now()
+        
+        print(f"DEBUG: Before commit - rad_report type: {type(scan.rad_report)}")
+        db.session.commit()
+        print(f"DEBUG: Commit successful!")
+        
+        return jsonify({
+            "message": "Scan completed successfully",
+            "scan_id": scan.scan_id,
+            "status": scan.status,
+            "has_report": scan.rad_report is not None,
+            "report_length": len(scan.rad_report) if scan.rad_report else 0,
+            "report_preview": scan.rad_report[:100] + "..." if scan.rad_report and len(scan.rad_report) > 100 else scan.rad_report
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in complete_scan: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Check if it's a database constraint error
+        error_msg = str(e).lower()
+        if 'string' in error_msg or 'text' in error_msg or 'varchar' in error_msg:
+            return jsonify({
+                "error": "Database type error", 
+                "details": "The rad_report data type is incompatible with the database column",
+                "solution": "Change database column to VARCHAR(2000) or TEXT"
+            }), 500
+        
+        return jsonify({"error": "Database error", "details": str(e)}), 500     
+# ===============================
+# Upload Scan Folder (ANY FILES ALLOWED)
+# ===============================
+@radiologist_bp.route('/scans/<int:scan_id>/upload-folder', methods=['POST'])
+@jwt_required()
+def upload_scan_folder(scan_id):
+    current_user_id = int(get_jwt_identity())
     
-    # Update scan status
-    if 'status' in data:
-        scan.status = data['status']
+    # Get radiologist staff record
+    radiologist_staff = Staff.query.filter_by(user_id=current_user_id).first()
+    if not radiologist_staff:
+        return jsonify({"error": "Radiologist staff record not found"}), 404
     
-    # You might want to update other fields like file_path, description, etc.
-    if 'notes' in data:
-        scan.description = f"{scan.description or ''}\n\nRadiologist Notes: {data['notes']}"
+    from .models.dicom_scan import DicomScan
     
-    scan.uploaded_at = datetime.now()
+    scan = DicomScan.query.get(scan_id)
+    if not scan:
+        return jsonify({"error": "Scan not found"}), 404
+    
+    # Verify this scan is assigned to this radiologist
+    if scan.radiologist_id != radiologist_staff.staff_id:
+        return jsonify({"error": "This scan is not assigned to you"}), 403
+    
+    # Check if files were uploaded
+    if 'files[]' not in request.files:
+        return jsonify({"error": "No files provided"}), 400
+    
+    files = request.files.getlist('files[]')
+    
+    # ACCEPT ANY FILE TYPE - NO VALIDATION
+    if len(files) == 0 or all(f.filename == '' for f in files):
+        return jsonify({"error": "No valid files found"}), 400
+    
+    # Create scan-specific folder in backend/scan_folders/
+    scan_folders_base = os.path.join(Config.BASE_DIR, SCAN_FOLDERS_DIR)
+    os.makedirs(scan_folders_base, exist_ok=True)
+    
+    # Use timestamp to make folder name unique
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = f"scan_{scan_id}_{timestamp}"
+    scan_folder = os.path.join(scan_folders_base, folder_name)
+    os.makedirs(scan_folder, exist_ok=True)
+    
+    # Save all files (ANY FILE TYPE ALLOWED)
+    saved_files = []
+    total_size = 0
+    
+    for file in files:
+        if file.filename == '':
+            continue
+        
+        # Secure the filename
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(scan_folder, filename)
+        file.save(file_path)
+        saved_files.append(filename)
+        
+        # Calculate file size
+        try:
+            total_size += os.path.getsize(file_path)
+        except:
+            pass
+    
+    # Store RELATIVE path in database: scan_folders/folder_name
+    relative_path = f"{SCAN_FOLDERS_DIR}/{folder_name}"
+    scan.folder_path = relative_path
     
     db.session.commit()
     
     return jsonify({
-        "message": "Scan completed successfully",
+        "message": "Scan files uploaded successfully",
         "scan_id": scan.scan_id,
-        "status": scan.status
+        "folder_path": relative_path,  # Relative path for frontend
+        "absolute_path": scan_folder,  # Absolute path for reference
+        "files_count": len(saved_files),
+        "total_size_bytes": total_size,
+        "files": saved_files[:10]  # Return first 10 filenames
     }), 200
+
+# ===============================
+# Serve Scan Files (for downloading/viewing)
+# ===============================
+@radiologist_bp.route('/scan_files/<path:filename>')
+@jwt_required()
+def serve_scan_file(filename):
+    # Security: Validate that user has access to this scan
+    # You should add proper authorization logic here
+    
+    # Build absolute path
+    file_path = os.path.join(Config.BASE_DIR, filename)
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+    
+    # Serve the file
+    return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path))
