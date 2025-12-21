@@ -157,9 +157,9 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 
   const appointments = [
-    { id: 1, date: "12 Feb 2020", time: "10:00 AM", doctor: "Dr. Smith" },
-    { id: 2, date: "13 Feb 2020", time: "11:30 AM", doctor: "Dr. Jones" },
-    { id: 3, date: "14 Feb 2020", time: "01:00 PM", doctor: "Dr. Brown" },
+    { id: 1, date: "12 Feb 2026", time: "10:00 AM", doctor: "Dr. Mohamed" },
+    { id: 2, date: "13 Feb 2026", time: "11:30 AM", doctor: "Dr. Hassan" },
+    { id: 3, date: "14 March 2026", time: "01:00 PM", doctor: "Dr. KHalifa" },
   ];
   const scans = [
     { id: 1, date: "20 Feb 2020", time: "08:30 AM", modality: "MRI" },
@@ -175,14 +175,14 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   {
     id: 1,
     title: "CT Scan - Full Body",
-    date: "12 Feb 2020",
+    date: "12 Jan 2026",
     images: ["/Background.png", "/xray.jpg"],
     report: "CT scan shows no abnormality detected.",
   },
   {
     id: 2,
     title: "Lumbar MRI",
-    date: "13 Feb 2020",
+    date: "13 Jan 2026",
     images: ["/scans/mri1.png", "/scans/mri2.png"],
     report: "MRI reveals mild disc dehydration at L4-L5, no herniation.",
   },

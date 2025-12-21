@@ -1082,8 +1082,8 @@ export default function DoctorDashboard() {
               return {
                 id: appt.appointment_id,
                 date: appt.date,
-                time: appt.atime,
-                patientName: `Patient #${appt.patient_id}`,
+                time: appt.time,
+                patientName: appt.patient_name,
                 reason: appt.reason,
                 notes: appt.notes,
                 status: appt.status?? "scheduled",              };
