@@ -5,7 +5,9 @@ from flask_jwt_extended import JWTManager
 from .config import Config
 from .extensions import db
 import os
-from flask import Flask, send_from_directory
+from flask import send_from_directory
+
+from datetime import timedelta
 
 
 def create_app():
@@ -14,6 +16,7 @@ def create_app():
     
     # JWT configuration
     app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
     
     # Enable CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all for testing
