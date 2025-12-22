@@ -5,7 +5,9 @@ from flask_jwt_extended import JWTManager
 from .config import Config
 from .extensions import db
 import os
-from flask import Flask, send_from_directory
+from flask import send_from_directory
+
+from datetime import timedelta
 
 
 def create_app():
@@ -14,6 +16,7 @@ def create_app():
     
     # JWT configuration
     app.config["JWT_SECRET_KEY"] = app.config["SECRET_KEY"]
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
     
     # Enable CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all for testing
@@ -33,6 +36,8 @@ def create_app():
     # Import and register blueprints
     from .routes import auth_bp, doctor_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(doctor_bp, url_prefix='/api/doctor')
+
 
     from .receptionist_routes import reception_bp
     app.register_blueprint(reception_bp, url_prefix="/api/receptionist")
