@@ -3,123 +3,6 @@ import { adminStyles } from "../styles/AdminStyles";
 
 export default function AdminPage() {
 
-  // ================== STATE VARIABLES ==================
-  const [selected, setSelected] = useState("home");
-
-  // Doctors page data — BACKEND WILL FILL THESE
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [showAddDoctor, setShowAddDoctor] = useState(false);
-const [newDoctor, setNewDoctor] = useState({
-  photo: "",
-  first_name: "",
-  middle_name: "",
-  last_name: "",
-  professional_title: "",
-  doctor_id: "",
-  username: "",
-  email: "",
-  phone: "",
-  address: "",
-  medical_license: "",
-  hire_date: "",
-  birth_date: "",
-  gender: "",
-});
-
-
-//   const [doctorsList, setDoctorsList] = useState([]);
-const [doctorsList, setDoctorsList] = useState([
-  {
-    id: 1,
-    name: "Dr. Sarah Mahmoud",
-    specialty: "Orthopedic Surgeon",
-    status: "Active",
-    schedule: "Sun–Thu | 10 AM – 4 PM",
-    patients30d: 42,
-    revenue30d: "32,000 EGP",
-    reports30d: 18,
-  },
-  {
-    id: 2,
-    name: "Dr. Ahmed El-Sayed",
-    specialty: "Spine Specialist",
-    status: "Active",
-    schedule: "Mon–Fri | 12 PM – 6 PM",
-    patients30d: 35,
-    revenue30d: "27,500 EGP",
-    reports30d: 14,
-  },
-  {
-    id: 3,
-    name: "Dr. Noha Youssef",
-    specialty: "Pediatric Orthopedics",
-    status: "On Leave",
-    schedule: "Tue–Thu | 9 AM – 2 PM",
-    patients30d: 12,
-    revenue30d: "9,800 EGP",
-    reports30d: 6,
-  }
-]);
-
-  const [totalDoctors, setTotalDoctors] = useState(0);
-  const [appointmentCapacity, setAppointmentCapacity] = useState(0);
-  const [totalReports, setTotalReports] = useState(0);
-  const [avgVisitDuration, setAvgVisitDuration] = useState(0);
-
-  // ============== SCANS PAGE STATE ==============
-// const [scansList, setScansList] = useState([]);
-// ======== SCANS PAGE PLACEHOLDERS ========
-const [scansList, setScansList] = useState([
-  {
-    scan_id: "TEMP1",
-    scan_type: "MRI - Brain",
-    status: "Completed",
-    patient_name: "Omar Khaled",
-    doctor_name: "Dr. Ahmed El-Sayed",
-    radiologist_name: "Dr. Mariam Fathy",
-    date: "2025-12-19",
-    time: "10:45 AM",
-    report: "Normal MRI findings, no abnormalities detected.hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhjmdlfkjasd;lfjasdlfjsldfjldjvlkjvoiajvvnvkzjovnzoivjodfvjlkvjozkvrdfvladnvlkjdv;ijad;ovija;dovi;adoivjadlivjuapoisdjvlkdvijsvlkjaiudvyaksdnviausydvuajndlviuyasidvjlaksdvuaisdvjoiadjvo,a;lsdkvpoakdvpoakvakdvjoaisjdv09xio",
-  },
-  {
-    scan_id: "TEMP2",
-    scan_type: "X-Ray - Chest",
-    status: "Pending",
-    patient_name: "Laila Nasser",
-    doctor_name: "Dr. Sarah Mahmoud",
-    radiologist_name: "Dr. Hany Naguib",
-    date: "2025-12-18",
-    time: "01:30 PM",
-    report: "Awaiting radiologist review.",
-  },
-  {
-    scan_id: "TEMP3",
-    scan_type: "CT Scan - Abdomen",
-    status: "In Progress",
-    patient_name: "Mohamed Ali",
-    doctor_name: "Dr. Noha Youssef",
-    radiologist_name: "Dr. Mariam Fathy",
-    date: "2025-12-17",
-    time: "03:10 PM",
-    report: "Processing images, please check later.",
-  },
-]);
-
-const [selectedScan, setSelectedScan] = useState(null);
-
-// Stats from DB
-const [todaysScans, setTodaysScans] = useState(0);
-const [completedScansToday, setCompletedScansToday] = useState(0);
-const [cancelledScansToday, setCancelledScansToday] = useState(0);
-const [pendingScanReports, setPendingScanReports] = useState(0);
-
-
-
-  
-
-
   // ================== SIDEBAR MENU ITEMS ==================
   const menuItems = [
     { id: "home", label: "Home" },
@@ -130,42 +13,57 @@ const [pendingScanReports, setPendingScanReports] = useState(0);
     { id: "appointments", label: "Appointments" },
   ];
 
-  // ================== RADIOLOGIST STATE VARIABLES ==================
-const [radiologistsList, setRadiologistsList] = useState([
-  {
-    id: 1,
-    name: "Dr. Mariam Fathy",
-    specialty: "Neuroradiology",
-    status: "Active",
-    schedule: "Sun–Thu | 9 AM – 3 PM",
-    volume30d: 54,
-    revenue30d: "47,000 EGP",
-  },
-  {
-    id: 2,
-    name: "Dr. Hany Naguib",
-    specialty: "Musculoskeletal Imaging",
-    status: "On Leave",
-    schedule: "Mon–Thu | 12 PM – 6 PM",
-    volume30d: 28,
-    revenue30d: "25,500 EGP",
-  },
- 
-]);
+  // ================== STATE VARIABLES ==================
+  const [selected, setSelected] = useState("home");
 
-// Individual radiologist (for profile popup)
+  const [showPassword, setShowPassword] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+
+  // Doctors page data
+  // for the cards 
+  const [doctorsList, setDoctorsList] = useState([]);
+
+  // for the selected doctor
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  
+  // for new doctor
+  const [showAddDoctor, setShowAddDoctor] = useState(false);
+  const [newDoctor, setNewDoctor] = useState({
+    photo: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    professional_title: "",
+    doctor_id: "",
+    username: "",
+    email: "",
+    phone: "",
+    address: "",
+    medical_license: "",
+    hire_date: "",
+    birth_date: "",
+    gender: "",
+  });
+
+  // the four right boxes
+  const [totalDoctors, setTotalDoctors] = useState(0);
+  const [appointmentCapacity, setAppointmentCapacity] = useState(0);
+  const [totalReports, setTotalReports] = useState(0);
+  const [avgVisitDuration, setAvgVisitDuration] = useState(0);
+  
+
+
+ // ================== RADIOLOGIST STATE VARIABLES ==================
+
+//  for radiologist cards
+const [radiologistsList, setRadiologistsList] = useState([]);
+
+// for selected radiologists
 const [selectedRadiologist, setSelectedRadiologist] = useState(null);
 
-// For adding a new radiologist
+// for new radiologists
 const [showAddRadiologist, setShowAddRadiologist] = useState(false);
 const [newRadiologist, setNewRadiologist] = useState({});
-
-// Radiologist statistics (right-side boxes)
-const [totalRadiologists, setTotalRadiologists] = useState(0);
-const [scanCapacity, setScanCapacity] = useState(0);
-const [frequentScanType, setFrequentScanType] = useState("");
-const [avgScanDuration, setAvgScanDuration] = useState(0);
-
 // Open the Add Radiologist popup with cleared fields
 const handleAddRadiologist = () => {
   setNewRadiologist({
@@ -188,47 +86,41 @@ const handleAddRadiologist = () => {
   setShowAddRadiologist(true);
 };
 
+// Radiologist statistics (right-side boxes)
+const [totalRadiologists, setTotalRadiologists] = useState(0);
+const [scanCapacity, setScanCapacity] = useState(0);
+const [frequentScanType, setFrequentScanType] = useState("");
+const [avgScanDuration, setAvgScanDuration] = useState(0);
+
+ 
+// ============== SCANS PAGE STATE ==============
+
+// cards
+const [scansList, setScansList] = useState([]);
+
+// selected one
+const [selectedScan, setSelectedScan] = useState(null);
+
+// four right boxes
+const [todaysScans, setTodaysScans] = useState(0);
+const [completedScansToday, setCompletedScansToday] = useState(0);
+const [cancelledScansToday, setCancelledScansToday] = useState(0);
+const [pendingScanReports, setPendingScanReports] = useState(0);
+
 
 // ============ APPOINTMENTS STATE VARIABLES ============
-const [appointmentsList, setAppointmentsList] = useState([
-  {
-    id: 1,
-    patient_name: "Robert Wilson",
-    reason: "Back Pain Follow-up",
-    doctor: "Dr. Ahmed El-Sayed",
-    date: "2025-12-21",
-    time: "10:30 AM",
-    status: "Completed",
-    complaint: "Radiating pain down left leg",
-    physical_exam: "Tenderness in lumbar region",
-    diagnosis: "L4-L5 Disc Herniation",
-    treatment_plan: "Continue physiotherapy and follow up in 2 weeks",
-    ordered_scans: "MRI Lumbar Spine",
-    ordered_medications: "Ibuprofen 400mg twice daily",
-  },
-  {
-    id: 2,
-    patient_name: "Mariam Nabil",
-    reason: "Knee Injury",
-    doctor: "Dr. Sarah Mahmoud",
-    date: "2025-12-21",
-    time: "11:45 AM",
-    status: "Pending",
-  },
-]);
+// cards
+const [appointmentsList, setAppointmentsList] = useState([]);
 
+// selected one
 const [selectedAppointment, setSelectedAppointment] = useState(null);
 const [activeTab, setActiveTab] = useState("records");
 
+// 4 right boxes
 const [todayAppointments, setTodayAppointments] = useState(0);
 const [completedToday, setCompletedToday] = useState(0);
 const [cancelledToday, setCancelledToday] = useState(0);
 const [avgWaitingTime, setAvgWaitingTime] = useState(0);
-
-
-
-
-
 
   return (
     <div style={adminStyles.layout}>
@@ -1101,6 +993,10 @@ const [avgWaitingTime, setAvgWaitingTime] = useState(0);
     </div>
   </div>
 )}
+
+
+
+
 
 {/* ======================= RADIOLOGISTS PAGE ======================= */}
 {selected === "radiologists" && (
