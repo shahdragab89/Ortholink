@@ -12,6 +12,7 @@ from .models.appointment import Appointment
 from .models.visit_record import VisitRecord
 from .models.medication import Medication
 from .extensions import db
+from sqlalchemy import desc, asc
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 auth_bp = Blueprint('api/auth', __name__)
 doctor_bp = Blueprint('doctor', __name__)
@@ -114,16 +115,17 @@ def upcoming_appointments():
 
     result = []
     for appt in appointments:
+        patient = appt.patient
+        user = patient. user if patient else None
         result.append({
-            "appointment_id": appt.appointment_id,
-            "patient_id": appt.patient_id,
             "date": appt.appointment_date.isoformat(),
             "time": appt.appointment_time.isoformat(),
-           "reason": appt.reason,
-           "notes": appt.notes,
-           "status": appt.status
+            "patient_name": f"{user.f_name} {user.l_name}" if user else None,
+            "reason": appt.reason,
+            "notes": appt.notes,
+            "status": appt.status
 
-            #time,#oatient_name,#reason,#notes,#status
+            #time,#patient_name,#reason,#notes,#status
         })
     return jsonify(result), 200
 
@@ -135,29 +137,47 @@ def patient_info(patient_id):
     if not doctor:
         return jsonify({"message": "Unauthorized"}), 403
 
+    #Get the doctor's data from staff table
+    doctor_staff = Staff.query.filter_by(user_id=doctor.user_id).first()
+    if not doctor_staff:
+        return jsonify({"message": "Staff record not found"}), 404
+
     patient = Patient.query.get(patient_id)
     if not patient:
         return jsonify({"message": "Patient not found"}), 404
 
-    visit_history = VisitRecord.query.filter_by(patient_id=patient_id).all()
-    visits = []
-    for visit in visit_history:
-        visits.append({
-            "visit_id": visit.visit_id,
-            "notes": visit.notes,
-            "diagnosis": visit.diagnosis,
-            "treatment_plan": visit.treatment_plan,
-            "date": visit.date.isoformat()
-        })
+    # Last visit (most recent past appointment)
+    last_appointment = Appointment.query.filter(
+        Appointment.patient_id == patient_id,
+        Appointment.staff_id == doctor_staff.staff_id,
+        Appointment.appointment_date <= datetime.utcnow()
+    ).order_by(desc(Appointment.appointment_date), desc(Appointment.appointment_time)).first()
+
+    last_visit_date = None
+    diagnosis = None
+    if last_appointment:
+        last_visit_date = f"{last_appointment.appointment_date.isoformat()} {last_appointment.appointment_time.isoformat()}"
+        # Get VisitRecord for this appointment
+        visit_record = VisitRecord.query.filter_by(appointment_id=last_appointment.appointment_id)
+        if visit_record:
+            diagnosis = visit_record.diagnosis
+
+    # Next visit (upcoming appointment)
+    next_appointment = Appointment.query.filter(
+        Appointment.patient_id == patient_id,
+        Appointment.staff_id == doctor_staff.staff_id,
+        Appointment.appointment_date >= datetime.utcnow()
+    ).order_by(asc(Appointment.appointment_date), asc(Appointment.appointment_time)).first()
+
+    next_visit_date = None
+    if next_appointment:
+        next_visit_date = f"{next_appointment.appointment_date.isoformat()} {next_appointment.appointment_time.isoformat()}"
 
     return jsonify({
-        "patient_id": patient.patient_id,
         "name": f"{patient.user.f_name} {patient.user.l_name}",
-        "blood_type": patient.blood_type,
-        "allergies": patient.allergies,
-        "chronic_conditions": patient.chronic_conditions,
-        "insurance_provider": patient.insurance_provider,
-        "visit_history": visits
+        "diagnosis": diagnosis,
+        "last_visit": last_visit_date,
+        "next_visit": next_visit_date
     }), 200
 
 
