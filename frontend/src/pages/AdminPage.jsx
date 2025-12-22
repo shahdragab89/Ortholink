@@ -1047,7 +1047,6 @@ const [avgWaitingTime, setAvgWaitingTime] = useState(0);
     birth_date: "",
     gender: "",
     schedule: "",
-    frequent_scan_type: "X-Ray", // Default value
   });
   setShowAddRadiologist(true);
 }}
