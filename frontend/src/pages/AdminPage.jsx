@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { adminStyles } from "../styles/AdminStyles";
+import AdminHome from "./AdminHome";
 
 export default function AdminPage() {
 
@@ -175,6 +176,10 @@ const [pendingBills, setPendingBills] = useState(5);
       {/* ======================= MAIN CONTENT ======================= */}
       <main style={adminStyles.mainContent}>
         <h1 style={adminStyles.pageTitle}></h1>
+        {/* ======================= HOME PAGE ======================= */}
+  {selected === "home" && (
+     <AdminHome />
+  )}
 
 
         {/* ======================= DOCTORS PAGE ======================= */}
