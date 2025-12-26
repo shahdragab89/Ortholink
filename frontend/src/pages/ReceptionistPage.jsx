@@ -105,13 +105,21 @@ const [showCalendar, setShowCalendar] = useState(false);
   };
 
   const handleAddReschedule = async (type) => {
+  // Build YYYY-MM-DD format from day number
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth() + calendarMonthOffset + 1;
+
+const formattedDate = 
+    `${year}-${String(month).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
+
   if (!selectedDate || !selectedTime) {
     alert("Please select a date and time");
     return;
   }
 
   const body = {
-    date: selectedDate,
+    date: formattedDate,
     time: convertTime(selectedTime),
   staff_id: selectedRow.staff_id
   };
@@ -119,23 +127,23 @@ const [showCalendar, setShowCalendar] = useState(false);
   try {
     if (type === "appointment") {
       body.doctor_id = selectedRow.staff_id;
-
-      await fetch("http://localhost:5000/api/receptionist/appointment/reschedule", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+         await fetch(`http://localhost:5000/api/receptionist/appointment/${selectedRow.id}/reschedule`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+});
     }
 
     if (type === "scan") {
-body.staff_id = selectedRow.staff_id;
+body.staff_id = selectedRow.staff_id;   
+await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/reschedule`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+});
 
-      await fetch("http://localhost:5000/api/receptionist/scan/reschedule", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
     }
+
 
     alert("Rescheduled successfully!");
 
@@ -725,7 +733,7 @@ body.staff_id = selectedRow.staff_id;
 
           <h3 style={{ color: "#0a586c", textAlign: "center" }}>
             {activePopup === "reschedule-appointment"
-              ? selectedRow?.doctor
+              ? selectedRow?.doctorName
               : selectedModality}
           </h3>
 

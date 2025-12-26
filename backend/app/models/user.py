@@ -39,6 +39,10 @@ class User(db.Model):
     birth_date = db.Column(db.Date)
     phone = db.Column(db.String(20))
     
+        # 🔹 NEW FIELD
+    profile_image = db.Column(db.String(255))  
+    # e.g. "uploads/profile_images/23.jpg" or full URL
+    
     # Relationships - use string references to avoid circular imports
     patient = db.relationship("Patient", back_populates="user", uselist=False, foreign_keys="[Patient.user_id]")
     staff = db.relationship("Staff", back_populates="user", uselist=False, foreign_keys="[Staff.user_id]")
