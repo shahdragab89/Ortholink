@@ -3,14 +3,18 @@ import { dicomViewerStyles } from "../styles/DicomViewerStyles";
 
 // Mock Data for different series
 const seriesData = [
-  { id: 1, name: 'Scout View', count: 1, type: 'Localizer' },
+  { id: 1, name: 'Coronal View', count: 1, type: 'Localizer' },
   { id: 2, name: 'Axial Bone 2.0', count: 120, type: 'Bone' },
   { id: 3, name: 'Sagittal Reformat', count: 85, type: 'Soft Tissue' },
+  { id: 4, name: '3D Volume View', count: 1, type: 'Volume' },
 ];
 
 export default function DicomViewerPage() {
   // --- STATE MANAGEMENT ---
-  const [currentView, setCurrentView] = useState('mpr'); 
+  // const [currentView, setCurrentView] = useState('mpr'); 
+  const [currentView, setCurrentView] = useState('single'); // default single-plane view
+const [currentPane, setCurrentPane] = useState('axial'); // default axial
+
   const [activeTool, setActiveTool] = useState('pan');
   const [activeSeries, setActiveSeries] = useState(2);
   
@@ -31,7 +35,7 @@ export default function DicomViewerPage() {
   const [panPosition, setPanPosition] = useState({ axial: { x: 0, y: 0 }, sagittal: { x: 0, y: 0 }, coronal: { x: 0, y: 0 } });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [currentPane, setCurrentPane] = useState('axial');
+  // const [currentPane, setCurrentPane] = useState('axial');
 
   // Measurement tool state
   const [measurePoints, setMeasurePoints] = useState({ axial: [], sagittal: [], coronal: [] });
@@ -77,10 +81,25 @@ export default function DicomViewerPage() {
     setCurrentView(prev => prev === 'mpr' ? 'single' : 'mpr');
   };
 
-  const handleSeriesClick = (seriesId) => {
-    setActiveSeries(seriesId);
-    setCurrentSlice({ axial: 1, sagittal: 1, coronal: 1 });
-  };
+const handleSeriesClick = (seriesId) => {
+  setActiveSeries(seriesId);
+  setCurrentView('single');
+
+  // Map each series to its corresponding plane
+  if (seriesId === 1) {
+    setCurrentPane('coronal');
+  } else if (seriesId === 2) {
+    setCurrentPane('axial');
+  } else if (seriesId === 3) {
+    setCurrentPane('sagittal');
+  } else if (seriesId === 4) {
+    setCurrentPane('3d');
+  }
+
+  setCurrentSlice({ axial: 1, sagittal: 1, coronal: 1 });
+};
+
+
 
   const handleRotate = () => {
     if (currentView === 'single') {
@@ -503,10 +522,15 @@ export default function DicomViewerPage() {
               <div style={dicomViewerStyles.viewport}><VolumeView /></div>
             </>
           ) : (
-            <div style={{...dicomViewerStyles.viewport, gridColumn: '1 / -1', gridRow: '1 / -1'}}>
-              <ViewportContent plane={currentPane} sliceNumber={currentSlice[currentPane]} />
-            </div>
-          )}
+  <div style={{...dicomViewerStyles.viewport, gridColumn: '1 / -1', gridRow: '1 / -1'}}>
+    {currentPane === '3d' ? (
+      <VolumeView />
+    ) : (
+      <ViewportContent plane={currentPane} sliceNumber={currentSlice[currentPane]} />
+    )}
+  </div>
+)}
+
         </div>
       </div>
 
