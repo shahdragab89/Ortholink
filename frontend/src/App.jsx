@@ -6,6 +6,8 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import PatientPage from './pages/PatientPage';
 import ReceptionistPage from "./pages/ReceptionistPage";
 import RadiologistPage from './pages/RadiologistPage';
+import AdminPage from './pages/AdminPage';
+import DicomViewerPage from './pages/DicomViewerPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -30,6 +32,13 @@ function App() {
        else if (path === '/doctor') { 
         setCurrentPage('doctor');
       }
+      else if (path === '/admin') {
+        setCurrentPage('admin');
+      }
+      else if (path === '/dicom-viewer') { 
+        setCurrentPage('dicom-viewer');
+
+      }
        else {
         setCurrentPage('login');
       }
@@ -45,6 +54,8 @@ function App() {
   if (currentPage === 'patient') return <PatientPage />;
   if (currentPage === 'radiologist') return <RadiologistPage />;
   if (currentPage === 'receptionist') return <ReceptionistPage />;
+  if (currentPage === 'admin') return <AdminPage />;
+  if (currentPage === 'dicom-viewer') return <DicomViewerPage />;
 
   return <LoginPage />;
 }

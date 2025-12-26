@@ -5,6 +5,8 @@ import welcomeDocImage from '../assets/welcome-rad.svg.svg';
 // Default placeholder image if the doctor hasn't uploaded one
 const DEFAULT_AVATAR = "https://via.placeholder.com/150?text=Dr+Image";
 const API_BASE = "http://127.0.0.1:5000/api";
+const IMAGE_BASE = "http://127.0.0.1:5000/api/radiologist";
+
 
 export default function RadiologistPage() {
     // State for personal info with default values
@@ -31,6 +33,18 @@ export default function RadiologistPage() {
 
     // State for profile loading
     const [loading, setLoading] = useState(true);
+    
+    // --- Rest of your original state ---
+    const [currentView, setCurrentView] = useState('dashboard');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedScan, setSelectedScan] = useState(null);
+    const [notes, setNotes] = useState('');
+    const [profilePhoto, setProfilePhoto] = useState(DEFAULT_AVATAR);
+
+    // Mock Data
+    const [scans, setScans] = useState([]);
+    const [uploadFiles, setUploadFiles] = useState([]);
 
     useEffect(() => {
         const fetchRadiologistData = async () => {
@@ -59,27 +73,11 @@ export default function RadiologistPage() {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
 
-                // In the fetchRadiologistData function:
                 const data = await res.json();
-                console.log("Fetched radiologist data:", data);
-                console.log("FULL API RESPONSE STRUCTURE:", JSON.stringify(data, null, 2));
-
-                // Check specifically for phone and address in user data
-                console.log("User phone from API:", data.phone);
-                console.log("User address from API:", data.address);
-                console.log("User staff_phone from API:", data.staff_phone);
-
-
-                // Check for nested staff data - ADD THIS CHECK
-                const staffData = data.staff || data; // Try nested first, fallback to root
-                console.log("Using staffData:", staffData);
-
-                // Check if staff-specific fields exist in the response
-                console.log("Staff ID from staffData:", staffData.staff_id);
-                console.log("License from staffData:", staffData.license_number);
-                console.log("Department from staffData:", staffData.department);
-
-                // Update personal info with ACTUAL data from API - MODIFY TO USE staffData
+                const staffData = data.staff || data;
+                const imageUrl = `${IMAGE_BASE}${data.profile_image}`;  // Construct full URL
+                setProfilePhoto(imageUrl);
+                
                 setPersonalInfo({
                     phone: data.phone || data.staff_phone || '+20 987 654 3210',
                     username: data.username || 'dr_btabt',
@@ -92,22 +90,32 @@ export default function RadiologistPage() {
                     license_number: staffData.license_number || 'RD123456',
                     department: staffData.department || 'Radiology',
                     hire_date: staffData.hire_date || '2015-07-01',
-                    salary: staffData.salary ? `$${parseFloat(staffData.salary).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$150,000.00',
+                    salary: staffData.salary
+                        ? `$${parseFloat(staffData.salary).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}`
+                        : '$150,000.00',
                     photo: DEFAULT_AVATAR
                 });
 
-                // Update contact info
-                // Use phone from user data (staff_phone is separate if needed)
-                //const phone = data.phone || '+20 987 654 3210';
-                setContactInfo({ 
-                    phone: data.phone || data.staff_phone || '+20 987 654 3210', 
-                    address: data.address || 'Alexandria, Egypt' 
+
+                setProfilePhoto(
+                    data.profile_image
+                        ? `${IMAGE_BASE}/profile_images/${data.profile_image}`
+                        : DEFAULT_AVATAR
+                );
+
+                setContactInfo({
+                    phone: data.phone || data.staff_phone || '+20 987 654 3210',
+                    address: data.address || 'Alexandria, Egypt'
                 });
 
-                // Update localStorage for display
-                localStorage.setItem("full_name", `Dr. ${data.f_name || 'Kareem'} ${data.l_name || 'Ahmed'}`);
+                localStorage.setItem(
+                    "full_name",
+                    `Dr. ${data.f_name || 'Kareem'} ${data.l_name || 'Ahmed'}`
+                );
                 localStorage.setItem("username", data.username || 'dr.kareem');
-
             } catch (error) {
                 console.error("Error fetching radiologist data:", error);
             } finally {
@@ -115,7 +123,29 @@ export default function RadiologistPage() {
             }
         };
 
+        const fetchScans = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const userId = localStorage.getItem("user_id");
+
+                // UPDATE THIS ENDPOINT
+                const res = await fetch(`${API_BASE}/radiologist/radiologist/${userId}/scans?filter_by=radiologist`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error("Failed to load scans");
+
+                const data = await res.json();
+                console.log("Loaded scans:", data);
+                setScans(data);
+            } catch (err) {
+                console.error("Error loading scans:", err);
+            }
+        };
+
+        // Run both
         fetchRadiologistData();
+        fetchScans();
     }, []);
 
     // --- Handlers ---
@@ -253,28 +283,22 @@ export default function RadiologistPage() {
         }
     };
 
-    // --- Rest of your original state ---
-    const [currentView, setCurrentView] = useState('dashboard');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedScan, setSelectedScan] = useState(null);
-    const [uploadFile, setUploadFile] = useState(null);
-    const [notes, setNotes] = useState('');
-    const [profilePhoto, setProfilePhoto] = useState(DEFAULT_AVATAR);
-
-    // Mock Data
-    const [scans, setScans] = useState([
-        { id: 1, did: 'DR-501', date: '2023-10-25', time: '09:00 AM', patient: 'Ahmed Ali', pid: 'P-101', age: '34', gender: 'Male', bodyType: 'MRI', module: 'Knee', desc: 'ACL Injury check', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-10' },
-        { id: 2, did: 'DR-512', date: '2023-10-25', time: '10:30 AM', patient: 'John Smith', pid: 'P-102', age: '54', gender: 'Male', bodyType: 'CT Scan', module: 'Brain', desc: 'Chronic Headaches', doctor: 'Dr. Moustafa El-Sayed', status: 'Completed', recordId: 'rec-16' },
-        { id: 3, did: 'DR-501', date: '2023-10-26', time: '11:45 AM', patient: 'Mona Zaki', pid: 'P-103', age: '67', gender: 'Female', bodyType: 'X-Ray', module: 'Chest', desc: 'Persistent Cough', doctor: 'Dr. Sarah Johnson', status: 'Pending', recordId: 'rec-19' },
-        { id: 4, did: 'DR-512', date: '2023-10-26', time: '01:15 PM', patient: 'Khaled Omar', pid: 'P-104', age: '46', gender: 'Male', bodyType: 'Ultrasound', module: 'Abdomen', desc: 'Pain investigation', doctor: 'Dr. Moustafa El-Sayed', status: 'Pending', recordId: 'rec-30' },
-    ]);
-
-    const [uploadFiles, setUploadFiles] = useState([]);
-
     const handleFileSelect = (e) => {
         if (e.target.files && e.target.files.length > 0) {
             const newFiles = Array.from(e.target.files);
+            
+            // Validate file types
+            const validExtensions = ['.dcm', '.dicom', '.ima', '.png', '.jpg', '.jpeg'];
+            const invalidFiles = newFiles.filter(file => {
+                const ext = file.name.toLowerCase().split('.').pop();
+                return !validExtensions.includes('.' + ext);
+            });
+            
+            if (invalidFiles.length > 0) {
+                alert(`Some files have invalid extensions. Only DICOM (.dcm, .dicom, .ima) and image files are allowed.`);
+                return;
+            }
+            
             setUploadFiles(prev => [...prev, ...newFiles]);
         }
     };
@@ -303,29 +327,191 @@ export default function RadiologistPage() {
         setUploadFiles([]);
     };
 
-    const handleSubmitUpload = () => {
-        const updatedScans = scans.map(s => 
-            s.id === selectedScan.id ? { ...s, status: 'Completed' } : s
-        );
-        setScans(updatedScans);
-        setModalOpen(false);
-        alert(`Report successfully sent to ${selectedScan.doctor}`);
+    const handleSubmitUpload = async () => {
+        try {
+            // 1. First upload the files if any
+            let folderPath = null;
+            if (uploadFiles.length > 0) {
+                folderPath = await uploadScanFiles(selectedScan.id);
+            }
+            
+            // 2. Then update the scan status with report and folder path
+            const result = await updateScanStatusInBackend(selectedScan.id, notes, folderPath);
+            
+            // 3. Update local state
+            const updatedScans = scans.map(s => 
+                s.id === selectedScan.id ? { 
+                    ...s, 
+                    status: 'completed',
+                    rad_report: notes,
+                    folder_path: folderPath
+                } : s
+            );
+            setScans(updatedScans);
+            setModalOpen(false);
+            
+            alert(`✅ Scan #${selectedScan.id} completed successfully!\nReport saved and ${uploadFiles.length} files uploaded.`);
+            
+        } catch (err) {
+            console.error("Error submitting scan:", err);
+            alert(`❌ Failed to complete scan: ${err.message}`);
+        }
     };
 
-    const handlePhotoChange = (newPhotoUrl) => {
-        setProfilePhoto(newPhotoUrl);
-    }
+    // New function to upload scan files
+    const uploadScanFiles = async (scanId) => {
+        if (uploadFiles.length === 0) {
+            return null;
+        }
+        
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        
+        // Add all files to formData
+        uploadFiles.forEach((file, index) => {
+            formData.append('files[]', file);
+        });
+        
+        try {
+            const res = await fetch(`${API_BASE}/radiologist/scans/${scanId}/upload-folder`, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                    // Don't set Content-Type for FormData, browser will set it with boundary
+                },
+                body: formData
+            });
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`File upload failed: ${errorText}`);
+            }
+            
+            const result = await res.json();
+            console.log("Files uploaded successfully:", result);
+            return result.folder_path; // Return the folder path for database update
+            
+        } catch (err) {
+            console.error("Error uploading files:", err);
+            throw err;
+        }
+    };
+    // Updated function to update scan status
+    const updateScanStatusInBackend = async (scanId, radReport, folderPath = null) => {
+        try {
+            const token = localStorage.getItem("token");
+            
+            // Prepare the request body with SAFE string conversion
+            const requestBody = {
+                status: 'completed',
+                rad_report: radReport ? String(radReport) : ''  // Force string conversion
+            };
+            
+            // Add folder path if provided
+            if (folderPath) {
+                requestBody.folder_path = String(folderPath);
+            }
+            
+            console.log("Sending scan completion request:", {
+                scanId,
+                reportLength: requestBody.rad_report.length,
+                hasFolder: !!folderPath
+            });
+            
+            const res = await fetch(`${API_BASE}/radiologist/scans/${scanId}/complete`, {
+                method: 'PUT',
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            // Check response
+            if (!res.ok) {
+                let errorText;
+                try {
+                    errorText = await res.json();
+                } catch {
+                    errorText = await res.text();
+                }
+                console.error("Server error:", errorText);
+                throw new Error(errorText.error || errorText.details || `HTTP ${res.status}`);
+            }
+            
+            const result = await res.json();
+            console.log("✅ Scan completed successfully:", result);
+            return result;
+            
+        } catch (err) {
+            console.error("❌ Error updating scan status:", err);
+            
+            // Show user-friendly error message
+            let userMessage = "Failed to save scan report";
+            if (err.message.includes("Database type error")) {
+                userMessage = "Database configuration issue. Please contact administrator.";
+            } else if (err.message.includes("VARCHAR") || err.message.includes("TEXT")) {
+                userMessage = "Report is too long. Please shorten your report.";
+            }
+            
+            alert(`❌ ${userMessage}\n\nTechnical details: ${err.message}`);
+            throw err;
+        }
+    };
+    const uploadProfileImage = async (file) => {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("user_id");
+
+        if (!file || !token || !userId) return;
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/radiologist/radiologist/${userId}/profile-image`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: formData
+                }
+            );
+
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+
+            const data = await res.json();
+
+            const imageUrl = `${IMAGE_BASE}/profile_images/${data.profile_image}`;
+            setProfilePhoto(imageUrl);
+
+            // Also sync with personalInfo
+            setPersonalInfo(prev => ({
+                ...prev,
+                photo: imageUrl
+            }));
+
+            alert("✅ Profile photo updated successfully");
+        } catch (err) {
+            console.error("Upload failed:", err);
+            alert("❌ Failed to upload image");
+        }
+    };
+
 
     const filteredScans = scans.filter(scan => {
-        if (!searchTerm) return true; // Show all if search is empty
+        if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         
-        // Combine all searchable field values into one string for easy checking
-        // Ensure numeric IDs convert to strings first (.toString())
-        const combinedData = `
+        // Use only fields that actually exist in your data
+        const searchableText = `
             ${scan.id.toString()} 
-            ${scan.date} 
-            ${scan.time} 
+            ${scan.date || ''} 
+            ${scan.time || ''} 
             ${scan.patient.toLowerCase()} 
             ${scan.pid.toLowerCase()} 
             ${scan.doctor.toLowerCase()} 
@@ -333,9 +519,9 @@ export default function RadiologistPage() {
             ${scan.bodyType.toLowerCase()} 
             ${scan.module.toLowerCase()} 
             ${scan.status.toLowerCase()}
-        `;
+        `.toLowerCase();
 
-        return combinedData.includes(term);
+        return searchableText.includes(term);
     });
 
     // Get first name for greeting
@@ -445,7 +631,7 @@ export default function RadiologistPage() {
                                 </thead>
                                 <tbody>
                                     {filteredScans.map((scan) => {
-                                        const isCompleted = scan.status === 'Completed';
+                                        const isCompleted = scan.status === 'completed';
                                         const statusBg = isCompleted ? '#dcfce7' : '#fff7ed';
                                         const statusColor = isCompleted ? '#166534' : '#c2410c';
                                         
@@ -487,7 +673,7 @@ export default function RadiologistPage() {
                     <ProfileEditor 
                         onBack={() => setCurrentView('dashboard')} 
                         currentPhoto={profilePhoto}
-                        onPhotoUpdate={handlePhotoChange}
+                        onPhotoUpdate={uploadProfileImage}
                         stats={profileStats}
                         personalInfo={personalInfo}
                         contactInfo={contactInfo}
@@ -563,15 +749,15 @@ export default function RadiologistPage() {
                         <label style={radiologistStyles.formLabel}>Attach Scan Images/DICOM</label>
                         
                         <div style={{marginBottom: '20px'}}>
-                            {/* Drag & Drop Area */}
+                            {/* In your modal, update the text to mention DICOM files */}
                             <div 
                                 style={radiologistStyles.uploadBox} 
                                 onClick={() => document.getElementById('fileUpload').click()}
                             >
                                 <span style={{fontSize: '32px', display: 'block', marginBottom: '8px'}}>cloud_upload</span>
-                                <span style={{fontWeight: '600', color: '#374151'}}>Click to Browse Files</span>
+                                <span style={{fontWeight: '600', color: '#374151'}}>Click to Browse DICOM Files</span>
                                 <span style={{display:'block', fontSize:'12px', color:'#9ca3af', marginTop:'4px'}}>
-                                    (Supports multiple files: JPG, PNG, DICOM)
+                                    (Supports DICOM: .dcm, .dicom, .ima and Images: .png, .jpg, .jpeg)
                                 </span>
                             </div>
 
@@ -661,10 +847,10 @@ function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInf
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            onPhotoUpdate(imageUrl);
+            onPhotoUpdate(file); // send FILE, not URL
         }
     };
+
 
     const handlePhoneChange = (e) => {
         onContactInfoChange({
