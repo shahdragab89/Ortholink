@@ -7,6 +7,40 @@ import { patientStyles } from '../styles/patientStyles';
 
 export default function PatientPage() {
 
+  
+const [appointments, setAppointments] = useState([]);
+useEffect(() => {
+  const fetchAppointments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("user_id");
+      console.log("Token:", localStorage.getItem("token"));
+
+
+      if (!token) return console.error("No token found");
+     
+        if (!token || !userId) return;
+
+      const res = await fetch("http://127.0.0.1:5000/api/auth/show_patient_appointments", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      console.log("Fetched appointments:", data);
+      setAppointments(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchAppointments();
+}, []);
+
+
+
   const [personalInfo, setPersonalInfo] = useState({});
   const [contactInfo, setContactInfo] = useState({});
   const [emergencyInfo, setEmergencyInfo] = useState({});
@@ -51,6 +85,37 @@ export default function PatientPage() {
     }
   };
 
+  // medications
+const [medications, setMedications] = useState([]);
+useEffect(() => {
+  
+const fetchMedications = async () => {
+    try {
+      const token = localStorage.getItem("token"); // or wherever you store JWT
+      const response = await fetch("http://127.0.0.1:5000/api/auth/all_medications", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch medications");
+      }
+
+      const data = await response.json();
+      setMedications(data);
+     
+    } catch (err) {
+      console.error(err);
+     
+    
+    }
+  }; 
+  fetchMedications();
+  }, []);
+
   useEffect(() => {
     const fetchPatientData = async () => {
       try {
@@ -89,6 +154,7 @@ export default function PatientPage() {
     fetchPatientData();
   }, []);
 
+  
  const NAV_ITEMS = [
   { id: "home", label: "Home", icon: <PiHouseSimpleBold size={22} color="#FFFFFF" /> },
   { id: "visits", label: "Visits", icon: <MdOutlineAssignment size={22} color="#FFFFFF" /> },
@@ -152,113 +218,210 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 //   validUntil: "2026-12-31",
 // });
 
+const [scans, setScans] = useState([]);
+
+useEffect(() => {
+  const fetchScans = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        "http://127.0.0.1:5000/api/auth/upcoming_scans",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch scans");
+
+      const data = await res.json();
+      console.log("scans:", data);
+
+      setScans(data); // ✅ الصح
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchScans();
+}, []);
 
 
 
-
-  const appointments = [
-    { id: 1, date: "12 Feb 2020", time: "10:00 AM", doctor: "Dr. Smith" },
-    { id: 2, date: "13 Feb 2020", time: "11:30 AM", doctor: "Dr. Jones" },
-    { id: 3, date: "14 Feb 2020", time: "01:00 PM", doctor: "Dr. Brown" },
-  ];
-  const scans = [
-    { id: 1, date: "20 Feb 2020", time: "08:30 AM", modality: "MRI" },
-    { id: 2, date: "21 Feb 2020", time: "09:00 AM", modality: "CT" },
-  ];
-  const medications = [
-    { id: 1, name: "Panadol", dosage: "500 mg", duration: "7 days" },
-    { id: 2, name: "Voltaren", dosage: "50 mg", duration: "5 days" },
-  ];
+  // const appointments = [
+  //   { id: 1, date: "12 Feb 2020", time: "10:00 AM", doctor: "Dr. Smith" },
+  //   { id: 2, date: "13 Feb 2020", time: "11:30 AM", doctor: "Dr. Jones" },
+  //   { id: 3, date: "14 Feb 2020", time: "01:00 PM", doctor: "Dr. Brown" },
+  // ];
+  // const scans = [
+  //   { id: 1, date: "20 Feb 2020", time: "08:30 AM", modality: "MRI" },
+  //   { id: 2, date: "21 Feb 2020", time: "09:00 AM", modality: "CT" },
+  // ];
+  // const medications = [
+  //   { id: 1, name: "Panadol", dosage: "500 mg", duration: "7 days" },
+  //   { id: 2, name: "Voltaren", dosage: "50 mg", duration: "5 days" },
+  // ];
  
 
-  const testResults = [
-  {
-    id: 1,
-    title: "CT Scan - Full Body",
-    date: "12 Feb 2020",
-    images: ["/Background.png", "/xray.jpg"],
-    report: "CT scan shows no abnormality detected.",
-  },
-  {
-    id: 2,
-    title: "Lumbar MRI",
-    date: "13 Feb 2020",
-    images: ["/scans/mri1.png", "/scans/mri2.png"],
-    report: "MRI reveals mild disc dehydration at L4-L5, no herniation.",
-  },
-];
+//   const testResults = [
+//   {
+//     id: 1,
+//     title: "CT Scan - Full Body",
+//     date: "12 Feb 2020",
+//     images: ["/Background.png", "/xray.jpg"],
+//     report: "CT scan shows no abnormality detected.",
+//   },
+//   {
+//     id: 2,
+//     title: "Lumbar MRI",
+//     date: "13 Feb 2020",
+//     images: ["/scans/mri1.png", "/scans/mri2.png"],
+//     report: "MRI reveals mild disc dehydration at L4-L5, no herniation.",
+//   },
+// ];
+const [testResults, setTestResults] = useState([]);
+useEffect(() => {
+  const fetchResults = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-const pastVisits = [
-  {
-    date: "12 Nov 2025",
-    doctor: "Dr. Smith",
-    diagnosis: "Back pain",
-    summary: "View",
-    billing: "Paid",
-  },
-  {
-    date: "02 Dec 2025",
-    doctor: "Dr. Johnson",
-    diagnosis: "Shoulder pain",
-    summary: "View",
-    billing: "Pending",
-  },
-  {
-    date: "02 Dec 2025",
-    doctor: "Dr. Johnson",
-    diagnosis: "Shoulder pain",
-    summary: "View",
-    billing: "Pending",
-  },{
-    date: "02 Dec 2025",
-    doctor: "Dr. Johnson",
-    diagnosis: "Shoulder pain",
-    summary: "View",
-    billing: "Pending",
-  },{
-    date: "02 Dec 2025",
-    doctor: "Dr. Johnson",
-    diagnosis: "Shoulder pain",
-    summary: "View",
-    billing: "Pending",
-  },
-];
+      const res = await fetch(
+        "http://127.0.0.1:5000/api/auth/scan_results",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-const previousScans = [
-  {
-    date: "08 Nov 2025",
-    radiologist: "Dr. Emily",
-    scan: "MRI",
-    report: "Normal",
-    billing: "Paid",
-  },
-  {
-    date: "29 Oct 2025",
-    radiologist: "Dr. Omar",
-    scan: "CT",
-    report: "Mild lesion",
-    billing: "Pending",
-  },
-  {
-    date: "29 Oct 2025",
-    radiologist: "Dr. Omar",
-    scan: "CT",
-    report: "Mild lesion",
-    billing: "Pending",
-  },{
-    date: "29 Oct 2025",
-    radiologist: "Dr. Omar",
-    scan: "CT",
-    report: "Mild lesion",
-    billing: "Pending",
-  },{
-    date: "29 Oct 2025",
-    radiologist: "Dr. Omar",
-    scan: "CT",
-    report: "Mild lesion",
-    billing: "Pending",
-  },
-];
+      if (!res.ok) throw new Error("Failed to fetch scan results");
+
+      const data = await res.json();
+      console.log("Scan results:", data);
+
+      setTestResults(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchResults();
+}, []);
+
+const [pastVisits, setPastVisits] = useState([]);
+useEffect(() => {
+  const token = localStorage.getItem("token"); // JWT token
+
+  fetch("http://127.0.0.1:5000/api/auth/patient/visits", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  })
+    .then(res => res.json())
+    .then(data => setPastVisits(data))
+    .catch(err => console.error("Error fetching visits:", err));
+}, []);
+
+// const pastVisits = [
+//   {
+//     date: "12 Nov 2025",
+//     doctor: "Dr. Smith",
+//     diagnosis: "Back pain",
+//     summary: "View",
+//     billing: "Paid",
+//   },
+//   {
+//     date: "02 Dec 2025",
+//     doctor: "Dr. Johnson",
+//     diagnosis: "Shoulder pain",
+//     summary: "View",
+//     billing: "Pending",
+//   },
+//   {
+//     date: "02 Dec 2025",
+//     doctor: "Dr. Johnson",
+//     diagnosis: "Shoulder pain",
+//     summary: "View",
+//     billing: "Pending",
+//   },{
+//     date: "02 Dec 2025",
+//     doctor: "Dr. Johnson",
+//     diagnosis: "Shoulder pain",
+//     summary: "View",
+//     billing: "Pending",
+//   },{
+//     date: "02 Dec 2025",
+//     doctor: "Dr. Johnson",
+//     diagnosis: "Shoulder pain",
+//     summary: "View",
+//     billing: "Pending",
+//   },
+// ];
+
+
+
+// const previousScans = [
+//   {
+//     date: "08 Nov 2025",
+//     radiologist: "Dr. Emily",
+//     scan: "MRI",
+//     report: "Normal",
+//     billing: "Paid",
+//   },
+//   {
+//     date: "29 Oct 2025",
+//     radiologist: "Dr. Omar",
+//     scan: "CT",
+//     report: "Mild lesion",
+//     billing: "Pending",
+//   },
+//   {
+//     date: "29 Oct 2025",
+//     radiologist: "Dr. Omar",
+//     scan: "CT",
+//     report: "Mild lesion",
+//     billing: "Pending",
+//   },{
+//     date: "29 Oct 2025",
+//     radiologist: "Dr. Omar",
+//     scan: "CT",
+//     report: "Mild lesion",
+//     billing: "Pending",
+//   },{
+//     date: "29 Oct 2025",
+//     radiologist: "Dr. Omar",
+//     scan: "CT",
+//     report: "Mild lesion",
+//     billing: "Pending",
+//   },
+// ];
+
+const [previousScans, setPreviousScans] = useState([]);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  fetch("http://127.0.0.1:5000/api/auth/patien_previous_scans", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then(res => res.json())
+    .then(data => {
+      console.log("result", data);   
+      setPreviousScans(data);
+    })
+    .catch(err => console.error("Error fetching scans:", err));
+}, []);
+
 
 
 useEffect(() => {
@@ -401,11 +564,11 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    {appointments.map((a) => (
-                      <tr key={a.id}>
-                        <td style={patientStyles.td}>{a.date}</td>
-                        <td style={patientStyles.td}>{a.time}</td>
-                        <td style={patientStyles.td}>{a.doctor}</td>
+                    {appointments.map((appointment) => (
+                      <tr key={appointment.id}>
+                        <td style={patientStyles.td}>{appointment.appointment_date}</td>
+                        <td style={patientStyles.td}>{appointment.appointment_time}</td>
+                        <td style={patientStyles.td}>{appointment.doctor_name}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -418,10 +581,10 @@ useEffect(() => {
                   <h3 style={patientStyles.cardTitle}>Medication</h3>
                 </div>
                 {medications.map((m) => (
-                  <div key={m.id} style={patientStyles.medCard}>
+                  <div key={m.medication_id} style={patientStyles.medCard}>
                     <div style={patientStyles.medIcon}>💊</div>
                     <div>
-                      <div>{m.name}</div>
+                      <div>{m.medication_name}</div>
                       <div style={{ fontSize: 12, color: "#64748b" }}>
                         {m.dosage} – {m.duration}
                       </div>
@@ -558,13 +721,15 @@ useEffect(() => {
                     date: visit.date,
                   });
                   setVisitDetails({
-                    complaint: "Lower back pain radiating to right leg",
+                    complaint: visit.visitDetails.complaint,
                     physicalExam:
-                      "Normal reflexes, mild tenderness on L4-L5 palpation",
+                      visit.visitDetails.physicalExam,
                     treatmentPlan:
-                      "Physiotherapy twice a week + posture correction",
-                    medication: "Panadol 500 mg, twice daily",
-                    scansOrdered: "MRI Lumbar spine",
+                      visit.visitDetails.treatmentPlan,
+                    medication: visit.medications
+                    .map((m) => `${m.medication_name} ${m.dosage}, ${m.frequency}`)
+                    .join("; "),
+                  scansOrdered: visit.visitDetails.scansOrdered,
                   });
                 }}
               >
@@ -574,12 +739,12 @@ useEffect(() => {
   style={patientStyles.clickableCell}
   onClick={() => {
     setActivePopup({
-      type: "billingDetailed",
-      doctor: visit.doctor,
-      date: visit.date,
-      time: "10:30 AM",   // ← replace with DB variable
-      amount: "500 EGP",  // ← replace with DB variable
-      method: "Cash",     // ← replace with DB variable
+    type: "billingDetailed",
+    doctor: visit.doctor,
+    date: visit.billingDetails.date,
+    time: visit.billingDetails.time,                    // from backend
+    amount: `${visit.billingDetails.amount} EGP`, // format from backend
+    method: visit.billingDetails.method // from backend
     });
   }}
 >
@@ -615,7 +780,7 @@ useEffect(() => {
         <tbody>
           {previousScans.map((scan, index) => (
             <tr key={index}>
-              <td style={patientStyles.visitsTd}>{scan.date}</td>
+              <td style={patientStyles.visitsTd}>{scan.scan_date}</td>
               <td style={patientStyles.visitsTd}>{scan.radiologist}</td>
               <td
                 style={patientStyles.clickableCell}
@@ -623,7 +788,7 @@ useEffect(() => {
                   setActivePopup({
                     type: "scan",
                     doctor: scan.radiologist,
-                    date: scan.date,
+                    date: scan.scan_date,
                   });
                   setScanPhotos([
                     "/Background.png",
@@ -632,7 +797,7 @@ useEffect(() => {
                   setCurrentScanIndex(0);
                 }}
               >
-                {scan.scan}
+                {scan.scan_type}
               </td>
               <td
                 style={patientStyles.clickableCell}
@@ -640,10 +805,10 @@ useEffect(() => {
                   setActivePopup({
                     type: "report",
                     doctor: scan.radiologist,
-                    date: scan.date,
+                    date: scan.scan_date,
                   });
                   setReportText(
-                    "Scan report shows no abnormal findings. Normal spinal alignment and disc hydration preserved."
+                    scan.report
                   );
                 }}
               >
@@ -655,10 +820,10 @@ useEffect(() => {
     setActivePopup({
       type: "billingDetailed",
       doctor: scan.radiologist,
-      date: scan.date,
-      time: "09:45 AM",   // ← replace with DB variable
-      amount: "600 EGP",  // ← replace with DB variable
-      method: "Visa",     // ← replace with DB variable
+      date: scan.payment_date,
+      time: scan.payment_time,   // ← replace with DB variable
+      amount: scan.billing_amount,  // ← replace with DB variable
+      method:"Cash",     // ← replace with DB variable
     });
   }}
 >
@@ -695,7 +860,7 @@ useEffect(() => {
         }}
       >
         <button
-          onClick={() => setActivePopup(null)}
+          onClick={(onclose) => setActivePopup(null)}
           style={patientStyles.closeBtn}
         >
           ✕
@@ -1297,6 +1462,8 @@ function ReserveAppointmentModal({ onClose }) {
   const [billing, setBilling] = useState("cash");
   const [monthOffset, setMonthOffset] = useState(0);
 
+
+
   const baseDate = new Date();
   const current = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, 1);
   const year = current.getFullYear();
@@ -1304,24 +1471,101 @@ function ReserveAppointmentModal({ onClose }) {
   const monthName = current.toLocaleString("default", { month: "long" });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // placeholder doctors
-  const doctors = useRef(generateDoctors()).current;
-  function generateDoctors() {
-    const names = ["Dr. Smith", "Dr. Johnson", "Dr. Brown", "Dr. Lee", "Dr. Taylor"];
-    const roles = ["Orthopedic", "Radiologist", "Neurologist", "Physician", "Cardiologist"];
-    return names.map((n, i) => ({
-      id: i,
-      name: n,
-      role: roles[i],
-      shifts: Array.from({ length: 31 }, (_, d) =>
-        Math.random() < 0.3
-          ? { day: d + 1, times: ["09:00 AM", "11:00 AM", "01:30 PM"].filter(() => Math.random() < 0.7) }
-          : null
-      ).filter(Boolean),
-    }));
-  }
+  const [mappedDoctors, setMappedDoctors] = useState([]);
+useEffect(() => {
+  console.log("USE EFFECT RUNNING");
 
-  const selectedDoc = selectedDoctor != null ? doctors.find((d) => d.id === selectedDoctor) : null;
+  const token = localStorage.getItem("token");
+
+  fetch("http://127.0.0.1:5000/api/auth/all_doctors", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  })
+    .then(res => res.json())
+    .then(data => {
+      console.log("DATA FROM API:", data);
+
+      const newDoctors = data.map((doc, i) => ({
+        id: doc.staff_id,
+        name: `${doc.f_name} ${doc.l_name}`,
+        role: doc.department,
+        key:i,
+        shifts: Array.from({ length: 31 }, (_, d) =>
+    Math.random() < 0.3
+      ? { day: d + 1, times: ["09:00 AM", "11:00 AM", "01:30 PM"] }
+      : null
+  ).filter(Boolean),
+      }));
+
+      setMappedDoctors(newDoctors);
+    })
+    .catch(err => console.error(err));
+}, []);
+
+const handleReserve = async () => {
+  if (!selectedDoctor || !selectedDate || !selectedTime) {
+    alert("Please select doctor, date and time");
+    return;
+  }
+  const fullDate = new Date(year, month, selectedDate); // month is 0-indexed
+  const formattedDate = fullDate.toISOString().split('T')[0];
+  try {
+    const token = localStorage.getItem("token");
+
+    const payload = {
+      staff_id: selectedDoctor,
+      appointment_date: formattedDate,
+      appointment_time: selectedTime,
+      reason: reason,
+    };
+
+    const res = await fetch("http://127.0.0.1:5000/api/auth/patient_Create_appointments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(data.message); 
+      onClose();
+    } else {
+      alert("Error: " + data.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong!");
+  }
+};
+
+
+
+
+  // placeholder doctors
+  // const doctors = useRef(generateDoctors()).current;
+  // function generateDoctors() {
+  //   const names = ["Dr. Smith", "Dr. Johnson", "Dr. Brown", "Dr. Lee", "Dr. Taylor"];
+  //   const roles = ["Orthopedic", "Radiologist", "Neurologist", "Physician", "Cardiologist"];
+  //   return names.map((n, i) => ({
+  //     id: i,
+  //     name: n,
+  //     role: roles[i],
+  //     shifts: Array.from({ length: 31 }, (_, d) =>
+  //       Math.random() < 0.3
+  //         ? { day: d + 1, times: ["09:00 AM", "11:00 AM", "01:30 PM"].filter(() => Math.random() < 0.7) }
+  //         : null
+  //     ).filter(Boolean),
+  //   }));
+  // }
+
+  const selectedDoc = selectedDoctor != null ? mappedDoctors.find((d) => d.id === selectedDoctor) : null;
   const firstDay = new Date(year, month, 1).getDay();
   const calendarDays = Array.from({ length: daysInMonth + firstDay }, (_, i) =>
     i < firstDay ? null : i - firstDay + 1
@@ -1396,9 +1640,9 @@ function ReserveAppointmentModal({ onClose }) {
 
           <h3 style={{ color: "#0a586c", marginTop: 5, marginBottom: 12}}>Choose a Doctor</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-            {doctors.map((doc) => (
+            {mappedDoctors.map((doc) => (
               <div
-                key={doc.id}
+                key={doc.key}
                 onClick={() => {
                   setSelectedDoctor(doc.id);
                   setView("calendar");
@@ -1453,7 +1697,7 @@ function ReserveAppointmentModal({ onClose }) {
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
-              onClick={onClose}
+              onClick={handleReserve}
               style={{
                 marginTop: 20,
                 padding: "8px 20px",
