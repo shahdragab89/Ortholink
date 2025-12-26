@@ -537,7 +537,7 @@ def get_scan_results():
             "confidence_score": result.confidence_score if result else None,
             "doctor_notes": result.doctor_notes if result else None,
 
-            "images": [scan.file_path] if scan.file_path else []
+            "images": [scan.folder_path] if scan.folder_path else []
         })
 
     return jsonify(response), 200
