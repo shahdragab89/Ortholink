@@ -23,6 +23,8 @@ class User(db.Model):
     username = db.Column(db.String(50), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password_hash = db.Column(db.String(300), nullable=False)
+    profile_image = db.Column(db.String(255), nullable=True)  # stores path or URL of image
+
     
     # Use Enum with native_enum=False
     role = db.Column(db.Enum(Role, native_enum=False, length=100), nullable=False)
