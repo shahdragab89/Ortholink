@@ -8,6 +8,7 @@ import ReceptionistPage from "./pages/ReceptionistPage";
 import RadiologistPage from './pages/RadiologistPage';
 import AdminPage from './pages/AdminPage';
 import DicomViewerPage from './pages/DicomViewerPage';
+import CDSSAnalysisPage from './pages/cdssAnalysisPage'; 
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -38,7 +39,9 @@ function App() {
       else if (path === '/dicom-viewer') { 
         setCurrentPage('dicom-viewer');
 
-      }
+      }  else if (path === '/cdss-analysis') {
+        setCurrentPage('cdss-analysis');
+      } 
        else {
         setCurrentPage('login');
       }
@@ -56,6 +59,7 @@ function App() {
   if (currentPage === 'receptionist') return <ReceptionistPage />;
   if (currentPage === 'admin') return <AdminPage />;
   if (currentPage === 'dicom-viewer') return <DicomViewerPage />;
+  if (currentPage === 'cdss-analysis') return <CDSSAnalysisPage />;
 
   return <LoginPage />;
 }
