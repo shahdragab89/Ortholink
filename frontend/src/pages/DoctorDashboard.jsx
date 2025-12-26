@@ -147,7 +147,7 @@ const pendingScans = [
 const patientScansHistory = [
     { 
         id: 101, name: 'MRI Right Shoulder', modality: 'MRI', date: '10 Jan 2024', status: 'Report Ready', 
-        recordId: 'REC-885', patientId: 'P-101', // These will be merged with selectedPatient data
+        recordId: 'REC-885', patientId: 'P-101',
         image: 'shoulder_mri.jpg', report: 'Full thickness tear...', radiologist: 'Dr. Sarah Smith', 
     },
 ];
@@ -633,8 +633,24 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
     };
 
     const expandedScanGrid = {
-        gridTemplateColumns: '60px 0.9fr 1fr 0.8fr 1.2fr 1.1fr 1.1fr 80px' 
+        gridTemplateColumns: '60px 0.9fr 1fr 0.8fr 1.2fr 1.1fr 1.1fr 120px' // Increased last column for 2 buttons
     };
+    
+    // Handle DICOM Viewer navigation
+    const handleOpenDicomViewer = (scan) => {
+        const patientData = {
+            id: scan.patientId,
+            name: scan.patientName,
+            age: scan.age,
+            gender: scan.gender,
+            scanType: scan.scanType,
+            bodyPart: scan.bodyPart
+        };
+        
+        localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
+        window.location.href = `/dicom-viewer?patientId=${scan.patientId}`;
+    };
+    
         return (
         <div style={{ ...s.main, overflowY: 'auto' }}>
             
@@ -726,9 +742,22 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
                                             <div style={{ color: '#94a3b8' }}>{scan.time}</div>
                                         </div>
                                         <div style={{ fontSize: '13px', color: '#02505F' }}>{scan.radiologist}</div>
-                                        <div>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
                                             <button style={s.actionButton} onClick={() => handleOpenReport(scan, false)}>
                                                 <Eye size={14} /> View
+                                            </button>
+                                            <button 
+                                                onClick={() => handleOpenDicomViewer(scan)}
+                                                style={{
+                                                    ...s.actionButton,
+                                                    padding: '6px',
+                                                    backgroundColor: '#8b5cf6',
+                                                    color: 'white',
+                                                    border: 'none'
+                                                }}
+                                                title="Open DICOM Viewer"
+                                            >
+                                                🩻
                                             </button>
                                         </div>
                                     </div>
@@ -747,7 +776,7 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
 
 const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePatientClick }) => {
     const patientTableGrid = { 
-        gridTemplateColumns: '100px 1.5fr 1.5fr 1fr 1fr',
+        gridTemplateColumns: '100px 1.5fr 1.5fr 1fr 1fr 80px', // Added 80px for DICOM button
         alignItems: 'center'
     };
 
@@ -764,6 +793,21 @@ const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePa
     });
 
     const totalPatients = allPatientsData.length;
+
+    // Handle DICOM Viewer navigation for patients
+    const handleOpenDicomViewer = (patient) => {
+        const patientData = {
+            id: patient.id,
+            name: patient.patientName,
+            patientId: `P-10${patient.id}`,
+            age: patient.age,
+            gender: patient.gender,
+            diagnosis: patient.diagnosis
+        };
+        
+        localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
+        window.location.href = `/dicom-viewer?patientId=P-10${patient.id}`;
+    };
 
     return (
         // Added overflowY: auto to main container for scrolling if needed
@@ -818,9 +862,9 @@ const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePa
                             <div>Patient ID</div>
                             <div>Patient Name</div>
                             <div>Condition / Diagnosis</div>
-                            {/* Removed Treatment Phase */}
                             <div>Last Visit Date</div>
                             <div>Next Visit Date</div>
+                            <div>Viewer</div> {/* Added DICOM column */}
                         </div>
                         
                         <div style={s.scrollableRows}>
@@ -849,12 +893,31 @@ const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePa
                                         {/* Diagnosis Column */}
                                         <div style={{fontWeight: '500', color: '#334155'}}>{patient.diagnosis}</div>
 
-                                        {/* Removed Phase Badge Column */}
-
                                         {/* Dates Columns */}
                                         <div style={{color: '#64748b'}}>{patient.lastVisitDate || '-'}</div>
                                         <div style={{color: patient.nextVisitDate === 'Pending' ? '#ef4444' : '#02505F', fontWeight:'500'}}>
                                             {patient.nextVisitDate}
+                                        </div>
+
+                                        {/* DICOM Viewer Button Column */}
+                                        <div>
+                                            <button 
+                                                onClick={() => handleOpenDicomViewer(patient)}
+                                                style={{
+                                                    ...s.actionButton,
+                                                    padding: '6px 12px',
+                                                    backgroundColor: '#8b5cf6',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '12px',
+                                                    fontWeight: '500'
+                                                }}
+                                                title="View DICOM Images"
+                                            >
+                                                DICOM
+                                            </button>
                                         </div>
                                     </div>
                                 ))
@@ -873,6 +936,22 @@ const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePa
 
 const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, setConsultationRecords, setShowMedicationModal, setShowScanOrderModal, handleOpenReport, patientScansHistory }) => {
     const [tab, setTab] = useState('records');
+
+    // Handle DICOM Viewer navigation for specific patient
+    const handleOpenDicomViewer = (patient) => {
+        const patientData = {
+            id: patient.id,
+            name: patient.patientName,
+            patientId: `P-10${patient.id}`,
+            age: patient.age,
+            gender: patient.gender,
+            diagnosis: patient.diagnosis,
+            bloodType: patient.bloodType
+        };
+        
+        localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
+        window.location.href = `/dicom-viewer?patientId=P-10${patient.id}`;
+    };
 
     return (
         <div style={s.main}>
@@ -965,6 +1044,23 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                     <div style={{...s.card, flex: 1.2, padding: 0, overflow: 'hidden'}}>
                         <div style={{padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems:'center'}}>
                             <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px'}}><FileText size={18} /> Patient Scans</div>
+                            <button 
+                                onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                style={{
+                                    ...s.actionButton,
+                                    padding: '6px 12px',
+                                    backgroundColor: '#8b5cf6',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    fontWeight: '500'
+                                }}
+                                title="Open DICOM Viewer"
+                            >
+                                🩻 Open DICOM Viewer
+                            </button>
                         </div>
                         <div style={s.scrollableRows}>
                             <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '13px'}}>
@@ -973,6 +1069,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                         <th style={{textAlign: 'left', padding: '10px', color: '#64748b', borderBottom: '1px solid #e2e8f0', fontSize: '11px', textTransform: 'uppercase'}}>Scan Name</th>
                                         <th style={{textAlign: 'left', padding: '10px', color: '#64748b', borderBottom: '1px solid #e2e8f0', fontSize: '11px', textTransform: 'uppercase'}}>Modality</th>
                                         <th style={{textAlign: 'left', padding: '10px', color: '#64748b', borderBottom: '1px solid #e2e8f0', fontSize: '11px', textTransform: 'uppercase'}}>Action</th>
+                                        <th style={{textAlign: 'left', padding: '10px', color: '#64748b', borderBottom: '1px solid #e2e8f0', fontSize: '11px', textTransform: 'uppercase'}}>Viewer</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -982,6 +1079,21 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>{scan.modality}</td>
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
                                                 <button style={{...s.actionButton, padding: '4px 8px'}} onClick={() => handleOpenReport(scan, true)}>View</button>
+                                            </td>
+                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
+                                                <button 
+                                                    style={{
+                                                        ...s.actionButton, 
+                                                        padding: '4px 8px',
+                                                        backgroundColor: '#8b5cf6',
+                                                        color: 'white',
+                                                        fontSize: '12px'
+                                                    }}
+                                                    onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                                    title="Open DICOM Viewer"
+                                                >
+                                                    DICOM
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1101,7 +1213,6 @@ export default function DoctorDashboard() {
         fullName: 'Dr. Mohamed Khalaf',
         licenseNumber: '12345',
         professionalTitle: 'Orthopedic Surgeon',
-        // department: 'Orthopedics',
         staffId: 'STAFF-001',
         phone: '+20 106-1123-123',
         address: '123 Medical Center Drive, Suite 100',
@@ -1116,19 +1227,16 @@ export default function DoctorDashboard() {
 
     // --- HANDLERS ---
     const handleOpenReport = (scan, isReadOnly = false) => {
-        // Prepare the scan data
         let scanData = { ...scan, isReadOnly };
 
-        // IF we are viewing a scan from a specific patient's profile,
-        // we need to merge that patient's info (Age, Gender, ID) into the scan data
         if (selectedPatient) {
             scanData = {
                 ...scanData,
                 patientName: selectedPatient.patientName,
-                patientId: `P-${selectedPatient.id}`, // or selectedPatient.patientId if you have it
+                patientId: `P-10${selectedPatient.id}`,
                 age: selectedPatient.age,
                 gender: selectedPatient.gender,
-                recordId: scan.recordId || `REC-${scan.id + 500}` // Fallback if missing
+                recordId: scan.recordId || `REC-${scan.id + 500}`
             };
         }
 
@@ -1154,6 +1262,11 @@ export default function DoctorDashboard() {
     const handleBackToHome = () => {
         setSelectedPatient(null);
         setActiveTab('home');
+    };
+
+    // Handle DICOM Viewer navigation from sidebar
+    const handleOpenDicomViewer = () => {
+        window.location.href = '/dicom-viewer';
     };
 
     // --- MAIN RENDER ---
@@ -1189,6 +1302,16 @@ export default function DoctorDashboard() {
                             onMouseLeave={(e) => {if (activeTab !== 'patients') e.currentTarget.style.backgroundColor = 'transparent';}}
                         >
                             <Users size={20} /> <span>Patients</span>
+                        </button>
+
+                        {/* DICOM Viewer Button in Sidebar */}
+                        <button 
+                            style={{...s.navItem, ...(window.location.pathname.includes('dicom-viewer') ? s.navItemActive : {})}} 
+                            onClick={handleOpenDicomViewer}
+                            onMouseEnter={(e) => {if (!window.location.pathname.includes('dicom-viewer')) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';}}
+                            onMouseLeave={(e) => {if (!window.location.pathname.includes('dicom-viewer')) e.currentTarget.style.backgroundColor = 'transparent';}}
+                        >
+                            <span style={{fontSize: '18px'}}>🩻</span> <span>DICOM Viewer</span>
                         </button>
 
                         <button 
