@@ -123,12 +123,104 @@ const [completedToday, setCompletedToday] = useState(0);
 const [cancelledToday, setCancelledToday] = useState(0);
 const [avgWaitingTime, setAvgWaitingTime] = useState(0);
 
-// ============ PATIENTS STATE VARIABLES ============
-const [patientsList, setPatientsList] = useState([]); // TODO: Fetch from backend
-const [selectedPatient, setSelectedPatient] = useState(null);
-const [totalPatients, setTotalPatients] = useState(127);
-const [activePatients, setActivePatients] = useState(38);
-const [pendingBills, setPendingBills] = useState(5);
+// ======================= PATIENTS PAGE CONSTANTS =======================
+const [patientsList, setPatientsList] = useState([
+  {
+      patient_id: 1,
+      name: "John Doe",
+      age: 45,
+      gender: "Male",
+      last_diagnosis: "Lumbar Disc Herniation",
+      last_visit: "2025-12-10",
+      last_scan: "2025-12-12",
+    },
+    {
+      patient_id: 2,
+      name: "Sarah Ali",
+      age: 34,
+      gender: "Female",
+      last_diagnosis: "Cervical Strain",
+      last_visit: "2025-12-20",
+      last_scan: "2025-12-22",
+    },
+  
+  ]);          // All patients for cards
+const [selectedPatient, setSelectedPatient] = useState(null);  // One selected patient
+const [editPatientMode, setEditPatientMode] = useState(false); // Toggle editing mode
+
+const [patientStats, setPatientStats] = useState({
+  total: 0,
+  active30d: 0,
+  pendingBills: 0,
+  followups: 0,
+}); // Stats cards
+
+const [patientAppointments, setPatientAppointments] = useState([
+  {
+      date: "2025-12-10",
+      doctor: "Dr. Ali",
+      reason: "Back pain",
+      diagnosis: "Disc herniation",
+      medication: "Ibuprofen",
+      scan: "MRI Spine",
+    },
+    {
+      date: "2025-12-20",
+      doctor: "Dr. Samir",
+      reason: "Follow-up",
+      diagnosis: "Improved",
+      medication: "None",
+      scan: "N/A",
+    },
+    {
+      date: "2025-12-20",
+      doctor: "Dr. Samir",
+      reason: "Follow-up",
+      diagnosis: "Improved",
+      medication: "None",
+      scan: "N/A",
+    },
+    {
+      date: "2025-12-20",
+      doctor: "Dr. Samir",
+      reason: "Follow-up",
+      diagnosis: "Improved",
+      medication: "None",
+      scan: "N/A",
+    },
+]);  // Appointments for selected patient
+const [patientScans, setPatientScans] = useState([
+  {
+      date: "2025-12-12",
+      radiologist: "Dr. Rami",
+      scan_name: "MRI Spine",
+      report: "Mild disc protrusion observed.",
+    },
+    {
+      date: "2025-12-22",
+      radiologist: "Dr. Mariam",
+      scan_name: "X-Ray Shoulder",
+      report: "No fracture detected.",
+    },
+    {
+      date: "2025-12-22",
+      radiologist: "Dr. Mariam",
+      scan_name: "X-Ray Shoulder",
+      report: "No fracture detected.",
+    },
+    {
+      date: "2025-12-22",
+      radiologist: "Dr. Mariam",
+      scan_name: "X-Ray Shoulder",
+      report: "No fracture detected.",
+    },
+  
+]);                // Scans for selected patient
+
+const [showReportModal, setShowReportModal] = useState(false);
+const [activeReport, setActiveReport] = useState(null);
+
+
 
 
   return (
@@ -2372,262 +2464,449 @@ const [pendingBills, setPendingBills] = useState(5);
 
 {/* ======================= PATIENTS PAGE ======================= */}
 {selected === "patients" && (
-  <div style={{ display: "flex", gap: "30px" }}>
-    {/* LEFT SIDE — Patients List */}
-    <div
-      style={{
-        width: "75%",
-        backgroundColor: "#f0f0f0",
-        padding: "25px",
-        borderRadius: "12px",
-        height: "550px",
-        position: "relative",
-        marginTop: "25px",
-      }}
-    >
-      <h2 style={{ color: "#075E68", marginBottom: "20px" }}>Patients</h2>
+  <>
+    {!selectedPatient ? (
+      // ---------------- MAIN PATIENTS LIST ----------------
+      <div style={{ display: "flex", gap: "30px" }}>
+        {/* LEFT — Patient Cards */}
+        <div
+          style={{
+            width: "75%",
+            backgroundColor: "#f0f0f0",
+            padding: "25px",
+            borderRadius: "12px",
+            height: "550px",
+            position: "relative",
+            marginTop: "25px",
+          }}
+        >
+          <h2 style={{ color: "#075E68", marginBottom: "20px" }}>Patients</h2>
 
-      {/* TODO: Replace placeholders with DB patients */}
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "15px",
-          borderRadius: "8px",
-          height: "450px",
-          overflowY: "auto",
-        }}
-      >
-        {[...Array(5)].map((_, i) => (
           <div
-            key={i}
             style={{
-              backgroundColor: "#f7f7f7",
-              padding: "18px",
-              borderRadius: "10px",
-              marginBottom: "15px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              cursor: "pointer",
+              backgroundColor: "white",
+              padding: "15px",
+              borderRadius: "8px",
+              height: "450px",
+              overflowY: "auto",
             }}
-            onClick={() =>
-              setSelectedPatient({
-                id: i,
-                name: `Patient ${i + 1}`,
-                age: 30 + i,
-                gender: i % 2 === 0 ? "Male" : "Female",
-                blood: i % 2 === 0 ? "A+" : "O−",
-                allergies: "N/A",
-                address: "Placeholder Address",
-                phone: "0123-456-7890",
-                insurance: "Standard Plan",
-                lastVisit: "2025-12-10",
-                lastScan: "X-Ray – Spine",
-                lastDiagnosis: "Lumbar strain",
-                balance: i % 2 === 0 ? 0 : 250,
-                appointments: [
-                  {
-                    date: "2025-12-15",
-                    doctor: "Dr. Placeholder",
-                    reason: "Back Pain",
-                    diagnosis: "Muscle strain",
-                    medication: "Pain relief",
-                    bill: 1500,
-                  },
-                ],
-                scans: [
-                  {
-                    id: 1,
-                    date: "2025-12-12",
-                    radiologist: "Dr. Radiologist",
-                    type: "MRI – Lumbar",
-                    report: "Report Placeholder",
-                    bill: 4500,
-                  },
-                ],
-              })
-            }
           >
-            <h3
+            {patientsList.length === 0 ? (
+              <p style={{ color: "#555" }}>No patients available…</p>
+            ) : (
+              patientsList.map((p) => (
+                <div
+                  key={p.patient_id}
+                  style={{
+                    backgroundColor: "#f7f7f7",
+                    padding: "18px",
+                    borderRadius: "10px",
+                    marginBottom: "15px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setSelectedPatient(p)}
+                >
+                  <h3
+                    style={{
+                      margin: 0,
+                      color: "#075E68",
+                      fontSize: "20px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {p.name}
+                  </h3>
+                  <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+                    {p.age} yrs &nbsp; • &nbsp; {p.gender}
+                  </p>
+                  <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+                    Last Diagnosis: {p.last_diagnosis}
+                  </p>
+                  <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+                    Last Visit: {p.last_visit} &nbsp; • &nbsp; Last Scan: {p.last_scan}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT — Stats */}
+        <div
+          style={{
+            width: "25%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "25px",
+            marginTop: "44px",
+          }}
+        >
+          {[
+            ["Total Patients", patientStats.total],
+            ["Active Patients (30d)", patientStats.active30d],
+            ["Pending Bills", patientStats.pendingBills],
+            ["Follow-ups Scheduled", patientStats.followups],
+          ].map(([label, value]) => (
+            <div
+              key={label}
               style={{
-                margin: 0,
-                color: "#075E68",
-                fontSize: "20px",
-                fontWeight: "700",
+                backgroundColor: "#f0f0f0",
+                padding: "25px",
+                borderRadius: "12px",
               }}
             >
-              Patient {i + 1}
-            </h3>
-            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
-              Last Visit: 2025-12-10
-            </p>
-            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
-              Last Scan: MRI – Lumbar
-            </p>
-            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
-              Diagnosis: Lumbar Strain
-            </p>
-            <p style={{ margin: "8px 0", color: "#075E68", fontWeight: "700" }}>
-              Balance: {i % 2 === 0 ? "Paid" : "250 EGP"}
-            </p>
-          </div>
-        ))}
+              <h3 style={{ color: "#075E68" }}>{label}</h3>
+              <p style={{ fontSize: "24px", fontWeight: "600" }}>{value}</p>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-
-    {/* RIGHT SIDE — Stats */}
-    <div
-      style={{
-        width: "25%",
-        display: "flex",
-        flexDirection: "column",
-        gap: "25px",
-        marginTop: "45px",
-      }}
-    >
-      {/* TODO: Replace with DB-driven stats */}
-      {[
-        ["Total Patients", 127],
-        ["Active Patients (30d)", 38],
-        ["Pending Bills", 5],
-        ["Follow-ups Scheduled", 12],
-      ].map(([label, value]) => (
+    ) : (
+      // ---------------- PATIENT DETAIL PAGE ----------------
+      <div style={{ display: "flex", gap: "30px", marginTop: "25px" }}>
+        {/* LEFT — Personal Info */}
         <div
-          key={label}
           style={{
+            flex: 1,
             backgroundColor: "#f0f0f0",
             padding: "25px",
             borderRadius: "12px",
           }}
         >
-          <h3 style={{ color: "#075E68" }}>{label}</h3>
-          <p style={{ fontSize: "24px", fontWeight: "600" }}>{value}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-{/* =================== PATIENT DETAIL OVERLAY =================== */}
-{selectedPatient && (
-  <div style={adminStyles.modalOverlay}>
-    <div
-      style={{
-        ...adminStyles.modalContent,
-        width: "80%",
-        maxHeight: "90vh",
-        overflowY: "auto",
-      }}
-    >
-      <button
-        onClick={() => setSelectedPatient(null)}
-        style={{
-          background: "none",
-          border: "none",
-          color: "#075E68",
-          fontWeight: "bold",
-          marginBottom: "10px",
-          cursor: "pointer",
-        }}
-      >
-        ← Back to Patients
-      </button>
-
-      <div style={{ display: "flex", gap: "20px" }}>
-        {/* LEFT COLUMN — Personal Info */}
-        <div
-          style={{
-            flex: "1",
-            backgroundColor: "#f7f7f7",
-            borderRadius: "10px",
-            padding: "25px",
-          }}
-        >
-          <h2 style={{ color: "#075E68", marginBottom: "10px" }}>
-            Personal Information
-          </h2>
-          <p><b>Name:</b> {selectedPatient.name}</p>
-          <p><b>Age:</b> {selectedPatient.age}</p>
-          <p><b>Gender:</b> {selectedPatient.gender}</p>
-          <p><b>Blood Type:</b> {selectedPatient.blood}</p>
-          <p><b>Allergies:</b> {selectedPatient.allergies}</p>
-          <p><b>Address:</b> {selectedPatient.address}</p>
-          <p><b>Contact:</b> {selectedPatient.phone}</p>
-          <p><b>Insurance:</b> {selectedPatient.insurance}</p>
           <button
+            onClick={() => {
+              setSelectedPatient(null);
+              setEditPatientMode(false);
+            }}
             style={{
-              backgroundColor: "#075E68",
+              backgroundColor: "transparent",
+              color: "#075E68",
+              fontWeight: "600",
+              fontSize: "16px",
               border: "none",
-              color: "white",
-              padding: "10px 20px",
-              borderRadius: "6px",
               cursor: "pointer",
-              marginTop: "10px",
+              marginBottom: "15px",
             }}
           >
-            Edit Info
+            ← Back to Patients
           </button>
+
+          {/* Profile Picture Upload */}
+        
+<div style={{ textAlign: "center", marginBottom: "25px", position: "relative" }}>
+  <img
+    src={selectedPatient.photo || "/placeholder-patient.png"}
+    alt="Patient"
+    style={{
+      width: "130px",
+      height: "130px",
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "4px solid #075E68",
+    }}
+  />
+
+  {editPatientMode && (
+    <div style={{ marginTop: "10px" }}>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) =>
+          setSelectedPatient({
+            ...selectedPatient,
+            photo: URL.createObjectURL(e.target.files[0]),
+          })
+        }
+      />
+    </div>
+  )}
+</div>
+
+          {/* INFO GRID */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "15px 30px",
+            }}
+          >
+            {[
+              ["Name", selectedPatient.name],
+              ["Patient ID", selectedPatient.patient_id],
+              ["Age", selectedPatient.age],
+              ["Gender", selectedPatient.gender],
+              ["Blood Type", selectedPatient.blood_type || "O+"],
+              ["Allergies", selectedPatient.allergies || "N/A"],
+              ["Insurance Provider", selectedPatient.insurance_provider || "N/A"],
+              ["Insurance Number", selectedPatient.insurance_number || "N/A"],
+              ["Emergency Name", selectedPatient.emergency_name || "N/A"],
+              ["Emergency Number", selectedPatient.emergency_phone || "N/A"],
+              ["Email", selectedPatient.email || "N/A"],
+              ["Registered At", selectedPatient.registered_at || "N/A"],
+              ["Phone", selectedPatient.phone || "N/A"],
+              ["Address", selectedPatient.address || "N/A"],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "bold",
+                    color: "#075E68",
+                    marginBottom: "3px",
+                  }}
+                >
+                  {label}
+                </label>
+                {editPatientMode ? (
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) =>
+                      setSelectedPatient({
+                        ...selectedPatient,
+                        [label.toLowerCase().replace(" ", "_")]: e.target.value,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      borderRadius: "6px",
+                      border: "1px solid #888",
+                    }}
+                  />
+                ) : (
+                  <span>{value}</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: "right", marginTop: "25px" }}>
+            {!editPatientMode ? (
+              <button
+                onClick={() => setEditPatientMode(true)}
+                style={{
+                  backgroundColor: "#0A7C88",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "6px",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Edit Info
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setEditPatientMode(false)}
+                  style={{
+                    backgroundColor: "#0A7C88",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "6px",
+                    color: "white",
+                    cursor: "pointer",
+                    marginRight: "10px",
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditPatientMode(false)}
+                  style={{
+                    backgroundColor: "white",
+                    border: "2px solid #0A7C88",
+                    padding: "10px 20px",
+                    borderRadius: "6px",
+                    color: "#0A7C88",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* RIGHT COLUMN — Appointments & Scans */}
-        <div style={{ flex: "2", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* RIGHT — Appointments + Scans */}
+        <div style={{ flex: 1.3, display: "flex", flexDirection: "column", gap: "25px" }}>
           {/* Appointments */}
           <div
             style={{
-              backgroundColor: "#f7f7f7",
-              borderRadius: "10px",
+              backgroundColor: "#f0f0f0",
               padding: "25px",
+              borderRadius: "12px",
+              maxHeight: "370px",
+              overflowY: "auto",
             }}
           >
-            <h2 style={{ color: "#075E68", marginBottom: "10px" }}>Appointments</h2>
-            {selectedPatient.appointments?.map((a, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  marginBottom: "10px",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              >
-                <p><b>Date:</b> {a.date}</p>
-                <p><b>Doctor:</b> {a.doctor}</p>
-                <p><b>Reason:</b> {a.reason}</p>
-                <p><b>Diagnosis:</b> {a.diagnosis}</p>
-                <p><b>Medication:</b> {a.medication}</p>
-                <p><b>Bill:</b> {a.bill} EGP</p>
-              </div>
-            ))}
+            <h3 style={{ color: "#075E68", marginBottom: "15px" }}>Appointments</h3>
+            {patientAppointments.length === 0 ? (
+              <p>No appointments yet.</p>
+            ) : (
+              patientAppointments.map((a, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: "white",
+                    padding: "15px",
+                    borderRadius: "8px",
+                    marginBottom: "10px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <p style={{ margin: "4px 0", fontWeight: "600" }}>
+                    {a.date} &nbsp; • &nbsp; {a.doctor}
+                  </p>
+                  <p style={{ margin: "4px 0" }}>
+                    Reason: <b>{a.reason}</b> &nbsp; • &nbsp; Diagnosis: <b>{a.diagnosis}</b>
+                  </p>
+                  <p style={{ margin: "4px 0" }}>
+                    Medication: <b>{a.medication}</b> &nbsp; • &nbsp; Scan: <b>{a.scan}</b>
+                  </p>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Scans */}
           <div
             style={{
-              backgroundColor: "#f7f7f7",
-              borderRadius: "10px",
+              backgroundColor: "#f0f0f0",
               padding: "25px",
+              borderRadius: "12px",
+              maxHeight: "340px",
+              overflowY: "auto",
             }}
           >
-            <h2 style={{ color: "#075E68", marginBottom: "10px" }}>Scans</h2>
-            {selectedPatient.scans?.map((s, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  marginBottom: "10px",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              >
-                <p><b>Date:</b> {s.date}</p>
-                <p><b>Radiologist:</b> {s.radiologist}</p>
-                <p><b>Scan Type:</b> {s.type}</p>
-                <p><b>Report:</b> {s.report}</p>
-                <p><b>Bill:</b> {s.bill} EGP</p>
-              </div>
-            ))}
+            <h3 style={{ color: "#075E68", marginBottom: "15px" }}>Scans</h3>
+            {patientScans.length === 0 ? (
+              <p>No scans found.</p>
+            ) : (
+              patientScans.map((s, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: "white",
+                    padding: "15px",
+                    borderRadius: "8px",
+                    marginBottom: "10px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <p style={{ margin: "4px 0", fontWeight: "600" }}>
+                    {s.date} &nbsp; • &nbsp; {s.radiologist}
+                  </p>
+                  <p style={{ margin: "4px 0" }}>
+                    <span
+                      style={{
+                        color: "#0A7C88",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        textDecoration: "underline",
+                        marginRight: "15px",
+                      }}
+                    >
+                      {s.scan_name}
+                    </span>
+                    <span
+                      style={{
+                        color: "#0A7C88",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        textDecoration: "underline",
+                      }}
+                       onClick={() => {
+    setActiveReport(s.report);
+    setShowReportModal(true);
+  }}
+                    >
+                      Report
+                    </span>
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </div>
+      </div>
+    )}
+  </>
+)}
+{/* ======================= REPORT POPUP MODAL ======================= */}
+{showReportModal && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0, 0, 0, 0.4)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        width: "600px",
+        maxWidth: "90%",
+        padding: "30px",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
+        position: "relative",
+      }}
+    >
+      <h3 style={{ color: "#075E68", marginBottom: "20px" }}>Scan Report</h3>
+
+      {/* Text Area Box */}
+      <div
+        style={{
+          height: "350px",              // larger visible area
+          overflowY: "auto",            // only vertical scrolling
+          overflowX: "hidden",          // no horizontal scroll
+          border: "1px solid #ddd",
+          borderRadius: "6px",
+          padding: "15px",
+          backgroundColor: "#fafafa",
+          wordWrap: "break-word",       // ensures long text wraps
+          whiteSpace: "pre-wrap",       // preserves line breaks
+          lineHeight: "1.6",
+          color: "#333",
+          boxSizing: "border-box",
+        }}
+      >
+        <p>{activeReport || "No report content available."}</p>
+      </div>
+
+      {/* Buttons */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end", // button to the right
+          marginTop: "25px",
+        }}
+      >
+        <button
+          onClick={() => setShowReportModal(false)}
+          style={{
+            backgroundColor: "white",
+            border: "2px solid #0A7C88",
+            color: "#0A7C88",
+            fontWeight: "600",
+            padding: "10px 25px",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   </div>
