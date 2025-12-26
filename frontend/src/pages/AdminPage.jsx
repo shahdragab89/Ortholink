@@ -122,6 +122,14 @@ const [completedToday, setCompletedToday] = useState(0);
 const [cancelledToday, setCancelledToday] = useState(0);
 const [avgWaitingTime, setAvgWaitingTime] = useState(0);
 
+// ============ PATIENTS STATE VARIABLES ============
+const [patientsList, setPatientsList] = useState([]); // TODO: Fetch from backend
+const [selectedPatient, setSelectedPatient] = useState(null);
+const [totalPatients, setTotalPatients] = useState(127);
+const [activePatients, setActivePatients] = useState(38);
+const [pendingBills, setPendingBills] = useState(5);
+
+
   return (
     <div style={adminStyles.layout}>
 
@@ -2355,6 +2363,271 @@ const [avgWaitingTime, setAvgWaitingTime] = useState(0);
     </div>
   </div>
 )}
+
+
+{/* ======================= PATIENTS PAGE ======================= */}
+{selected === "patients" && (
+  <div style={{ display: "flex", gap: "30px" }}>
+    {/* LEFT SIDE — Patients List */}
+    <div
+      style={{
+        width: "75%",
+        backgroundColor: "#f0f0f0",
+        padding: "25px",
+        borderRadius: "12px",
+        height: "550px",
+        position: "relative",
+        marginTop: "25px",
+      }}
+    >
+      <h2 style={{ color: "#075E68", marginBottom: "20px" }}>Patients</h2>
+
+      {/* TODO: Replace placeholders with DB patients */}
+      <div
+        style={{
+          backgroundColor: "white",
+          padding: "15px",
+          borderRadius: "8px",
+          height: "450px",
+          overflowY: "auto",
+        }}
+      >
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              backgroundColor: "#f7f7f7",
+              padding: "18px",
+              borderRadius: "10px",
+              marginBottom: "15px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              cursor: "pointer",
+            }}
+            onClick={() =>
+              setSelectedPatient({
+                id: i,
+                name: `Patient ${i + 1}`,
+                age: 30 + i,
+                gender: i % 2 === 0 ? "Male" : "Female",
+                blood: i % 2 === 0 ? "A+" : "O−",
+                allergies: "N/A",
+                address: "Placeholder Address",
+                phone: "0123-456-7890",
+                insurance: "Standard Plan",
+                lastVisit: "2025-12-10",
+                lastScan: "X-Ray – Spine",
+                lastDiagnosis: "Lumbar strain",
+                balance: i % 2 === 0 ? 0 : 250,
+                appointments: [
+                  {
+                    date: "2025-12-15",
+                    doctor: "Dr. Placeholder",
+                    reason: "Back Pain",
+                    diagnosis: "Muscle strain",
+                    medication: "Pain relief",
+                    bill: 1500,
+                  },
+                ],
+                scans: [
+                  {
+                    id: 1,
+                    date: "2025-12-12",
+                    radiologist: "Dr. Radiologist",
+                    type: "MRI – Lumbar",
+                    report: "Report Placeholder",
+                    bill: 4500,
+                  },
+                ],
+              })
+            }
+          >
+            <h3
+              style={{
+                margin: 0,
+                color: "#075E68",
+                fontSize: "20px",
+                fontWeight: "700",
+              }}
+            >
+              Patient {i + 1}
+            </h3>
+            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+              Last Visit: 2025-12-10
+            </p>
+            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+              Last Scan: MRI – Lumbar
+            </p>
+            <p style={{ margin: "8px 0", color: "#444", fontWeight: "600" }}>
+              Diagnosis: Lumbar Strain
+            </p>
+            <p style={{ margin: "8px 0", color: "#075E68", fontWeight: "700" }}>
+              Balance: {i % 2 === 0 ? "Paid" : "250 EGP"}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* RIGHT SIDE — Stats */}
+    <div
+      style={{
+        width: "25%",
+        display: "flex",
+        flexDirection: "column",
+        gap: "25px",
+        marginTop: "45px",
+      }}
+    >
+      {/* TODO: Replace with DB-driven stats */}
+      {[
+        ["Total Patients", 127],
+        ["Active Patients (30d)", 38],
+        ["Pending Bills", 5],
+        ["Follow-ups Scheduled", 12],
+      ].map(([label, value]) => (
+        <div
+          key={label}
+          style={{
+            backgroundColor: "#f0f0f0",
+            padding: "25px",
+            borderRadius: "12px",
+          }}
+        >
+          <h3 style={{ color: "#075E68" }}>{label}</h3>
+          <p style={{ fontSize: "24px", fontWeight: "600" }}>{value}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* =================== PATIENT DETAIL OVERLAY =================== */}
+{selectedPatient && (
+  <div style={adminStyles.modalOverlay}>
+    <div
+      style={{
+        ...adminStyles.modalContent,
+        width: "80%",
+        maxHeight: "90vh",
+        overflowY: "auto",
+      }}
+    >
+      <button
+        onClick={() => setSelectedPatient(null)}
+        style={{
+          background: "none",
+          border: "none",
+          color: "#075E68",
+          fontWeight: "bold",
+          marginBottom: "10px",
+          cursor: "pointer",
+        }}
+      >
+        ← Back to Patients
+      </button>
+
+      <div style={{ display: "flex", gap: "20px" }}>
+        {/* LEFT COLUMN — Personal Info */}
+        <div
+          style={{
+            flex: "1",
+            backgroundColor: "#f7f7f7",
+            borderRadius: "10px",
+            padding: "25px",
+          }}
+        >
+          <h2 style={{ color: "#075E68", marginBottom: "10px" }}>
+            Personal Information
+          </h2>
+          <p><b>Name:</b> {selectedPatient.name}</p>
+          <p><b>Age:</b> {selectedPatient.age}</p>
+          <p><b>Gender:</b> {selectedPatient.gender}</p>
+          <p><b>Blood Type:</b> {selectedPatient.blood}</p>
+          <p><b>Allergies:</b> {selectedPatient.allergies}</p>
+          <p><b>Address:</b> {selectedPatient.address}</p>
+          <p><b>Contact:</b> {selectedPatient.phone}</p>
+          <p><b>Insurance:</b> {selectedPatient.insurance}</p>
+          <button
+            style={{
+              backgroundColor: "#075E68",
+              border: "none",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              marginTop: "10px",
+            }}
+          >
+            Edit Info
+          </button>
+        </div>
+
+        {/* RIGHT COLUMN — Appointments & Scans */}
+        <div style={{ flex: "2", display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Appointments */}
+          <div
+            style={{
+              backgroundColor: "#f7f7f7",
+              borderRadius: "10px",
+              padding: "25px",
+            }}
+          >
+            <h2 style={{ color: "#075E68", marginBottom: "10px" }}>Appointments</h2>
+            {selectedPatient.appointments?.map((a, i) => (
+              <div
+                key={i}
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  marginBottom: "10px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <p><b>Date:</b> {a.date}</p>
+                <p><b>Doctor:</b> {a.doctor}</p>
+                <p><b>Reason:</b> {a.reason}</p>
+                <p><b>Diagnosis:</b> {a.diagnosis}</p>
+                <p><b>Medication:</b> {a.medication}</p>
+                <p><b>Bill:</b> {a.bill} EGP</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Scans */}
+          <div
+            style={{
+              backgroundColor: "#f7f7f7",
+              borderRadius: "10px",
+              padding: "25px",
+            }}
+          >
+            <h2 style={{ color: "#075E68", marginBottom: "10px" }}>Scans</h2>
+            {selectedPatient.scans?.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  marginBottom: "10px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <p><b>Date:</b> {s.date}</p>
+                <p><b>Radiologist:</b> {s.radiologist}</p>
+                <p><b>Scan Type:</b> {s.type}</p>
+                <p><b>Report:</b> {s.report}</p>
+                <p><b>Bill:</b> {s.bill} EGP</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       </main>
     </div>
