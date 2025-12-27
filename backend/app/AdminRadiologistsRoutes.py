@@ -203,12 +203,13 @@ def radiologists_page_stats():
         .count()
     )
 
-    # Scan capacity = total scans in last 30d
+    # Scan capacity = total upcoming scans (today + future)
     scan_capacity = (
         db.session.query(DicomScan)
-        .filter(DicomScan.scan_date >= past_30d)
+        .filter(DicomScan.scan_date >= now)
         .count()
     )
+
 
     # Most frequent scan type
     frequent_scan_type = (

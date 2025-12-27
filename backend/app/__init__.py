@@ -81,6 +81,14 @@ def create_app():
     except Exception as e:
         print(f"⚠️ Could not register Admin Radiologists blueprint: {e}")
 
+        # Admin Patients
+    try:
+        from .AdminPatientsRoutes import admin_patients_bp as admin_patients_blueprint
+        app.register_blueprint(admin_patients_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Patients blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Patients blueprint: {e}")
+
     # Register the main Admin Dashboard Blueprint
     try:
         from .AdminHomeRoutes import admin_bp as admin_dashboard_blueprint  # <--- NEW NAME
@@ -136,4 +144,9 @@ def create_app():
             os.makedirs(dir_path, exist_ok=True)
     
     print("✅ App created successfully")
+    @app.route('/scan_folders/<path:filename>')
+    def serve_scan_files(filename):
+        folder_path = os.path.join(app.root_path, "scan_folders")
+        return send_from_directory(folder_path, filename)
+    
     return app
