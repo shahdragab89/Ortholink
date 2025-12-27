@@ -81,6 +81,15 @@ def create_app():
     except Exception as e:
         print(f"⚠️ Could not register Admin Radiologists blueprint: {e}")
 
+        # Admin Patients
+    try:
+        from .AdminPatientsRoutes import admin_patients_bp as admin_patients_blueprint
+        app.register_blueprint(admin_patients_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Patients blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Patients blueprint: {e}")
+
+
     
     # ===== Simple test routes =====
     

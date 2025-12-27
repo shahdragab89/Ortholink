@@ -245,101 +245,54 @@ const [cancelledToday, setCancelledToday] = useState(0);
 const [avgWaitingTime, setAvgWaitingTime] = useState(0);
 
 // ======================= PATIENTS PAGE CONSTANTS =======================
-const [patientsList, setPatientsList] = useState([
-  {
-      patient_id: 1,
-      name: "John Doe",
-      age: 45,
-      gender: "Male",
-      last_diagnosis: "Lumbar Disc Herniation",
-      last_visit: "2025-12-10",
-      last_scan: "2025-12-12",
-    },
-    {
-      patient_id: 2,
-      name: "Sarah Ali",
-      age: 34,
-      gender: "Female",
-      last_diagnosis: "Cervical Strain",
-      last_visit: "2025-12-20",
-      last_scan: "2025-12-22",
-    },
-  
-  ]);          // All patients for cards
+const [patientsList, setPatientsList] = useState([]);          // All patients for cards
 const [selectedPatient, setSelectedPatient] = useState(null);  // One selected patient
 const [editPatientMode, setEditPatientMode] = useState(false); // Toggle editing mode
 
-const [patientStats, setPatientStats] = useState({
-  total: 0,
-  active30d: 0,
-  pendingBills: 0,
-  followups: 0,
-}); // Stats cards
+const [patientStats, setPatientStats] = useState({}); // Stats cards
 
-const [patientAppointments, setPatientAppointments] = useState([
-  {
-      date: "2025-12-10",
-      doctor: "Dr. Ali",
-      reason: "Back pain",
-      diagnosis: "Disc herniation",
-      medication: "Ibuprofen",
-      scan: "MRI Spine",
-    },
-    {
-      date: "2025-12-20",
-      doctor: "Dr. Samir",
-      reason: "Follow-up",
-      diagnosis: "Improved",
-      medication: "None",
-      scan: "N/A",
-    },
-    {
-      date: "2025-12-20",
-      doctor: "Dr. Samir",
-      reason: "Follow-up",
-      diagnosis: "Improved",
-      medication: "None",
-      scan: "N/A",
-    },
-    {
-      date: "2025-12-20",
-      doctor: "Dr. Samir",
-      reason: "Follow-up",
-      diagnosis: "Improved",
-      medication: "None",
-      scan: "N/A",
-    },
-]);  // Appointments for selected patient
-const [patientScans, setPatientScans] = useState([
-  {
-      date: "2025-12-12",
-      radiologist: "Dr. Rami",
-      scan_name: "MRI Spine",
-      report: "Mild disc protrusion observed.",
-    },
-    {
-      date: "2025-12-22",
-      radiologist: "Dr. Mariam",
-      scan_name: "X-Ray Shoulder",
-      report: "No fracture detected.",
-    },
-    {
-      date: "2025-12-22",
-      radiologist: "Dr. Mariam",
-      scan_name: "X-Ray Shoulder",
-      report: "No fracture detected.",
-    },
-    {
-      date: "2025-12-22",
-      radiologist: "Dr. Mariam",
-      scan_name: "X-Ray Shoulder",
-      report: "No fracture detected.",
-    },
-  
-]);                // Scans for selected patient
+const [patientAppointments, setPatientAppointments] = useState([]);  // Appointments for selected patient
+const [patientScans, setPatientScans] = useState([]);                // Scans for selected patient
 
 const [showReportModal, setShowReportModal] = useState(false);
 const [activeReport, setActiveReport] = useState(null);
+
+// Fetch patients list
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/patients")
+    .then((res) => res.json())
+    .then((data) => {
+      setPatientsList(data);
+      setPatientStats((prev) => ({ ...prev, total: data.length }));
+    })
+    .catch((err) => console.error("Error fetching patients:", err));
+}, []);
+
+// Fetch patient stats
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/patients/stats")
+    .then((res) => res.json())
+    .then((data) => setPatientStats(data))
+    .catch((err) => console.error("Error fetching patient stats:", err));
+}, []);
+
+useEffect(() => {
+  if (!selectedPatient) return;
+
+  // Fetch appointments
+  fetch(`http://127.0.0.1:5000/api/admin/patients/${selectedPatient.patient_id}/appointments`)
+    .then((res) => res.json())
+    .then((data) => setPatientAppointments(data))
+    .catch((err) => console.error("Error fetching appointments:", err));
+
+  // Fetch scans
+  fetch(`http://127.0.0.1:5000/api/admin/patients/${selectedPatient.patient_id}/scans`)
+    .then((res) => res.json())
+    .then((data) => setPatientScans(data))
+    .catch((err) => console.error("Error fetching scans:", err));
+}, [selectedPatient]);
+
+
 
 
 
