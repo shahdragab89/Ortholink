@@ -2,15 +2,12 @@
 from ..extensions import db
 from datetime import datetime
 
-# Add these columns to the existing Appointment model
 class Appointment(db.Model):
     __tablename__ = 'appointment'
     
     appointment_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.patient_id'), nullable=False)
     staff_id = db.Column(db.Integer, db.ForeignKey('staff.staff_id'), nullable=False)
-    # doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.doctor_id'))  # Add this line
-    #doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.doctor_id'))  # Add this line
     appointment_date = db.Column(db.Date)
     appointment_time = db.Column(db.Time)
     duration_minutes = db.Column(db.Integer)
@@ -24,6 +21,8 @@ class Appointment(db.Model):
     # Relationships
     patient = db.relationship("Patient", back_populates="appointments")
     staff = db.relationship("Staff", back_populates="appointments")
+    # Add this for direct doctor access
+    doctor = db.relationship("Staff", foreign_keys=[staff_id], viewonly=True)
     
     def __repr__(self):
         return f"<Appointment {self.appointment_id}>"

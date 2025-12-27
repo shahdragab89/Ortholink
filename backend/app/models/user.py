@@ -42,6 +42,9 @@ class User(db.Model):
         # 🔹 NEW FIELD
     profile_image = db.Column(db.String(255))  
     # e.g. "uploads/profile_images/23.jpg" or full URL
+
+    digital_signature = db.Column(db.String(500), nullable=True)  # Store the file path
+
     
     # Relationships - use string references to avoid circular imports
     patient = db.relationship("Patient", back_populates="user", uselist=False, foreign_keys="[Patient.user_id]")
