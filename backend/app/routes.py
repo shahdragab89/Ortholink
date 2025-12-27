@@ -20,6 +20,8 @@ from datetime import datetime
 from flask_cors import CORS, cross_origin
 from sqlalchemy import desc, asc
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import base64
+import os
 auth_bp = Blueprint('api/auth', __name__)
 doctor_bp = Blueprint('doctor', __name__)
 
@@ -310,7 +312,8 @@ def get_patient_profile(user_id):
         "insurance_provider": patient.insurance_provider,
         "insurance_number": patient.insurance_number,
         "emergency_contact_name": patient.emergency_contact_name,
-        "emergency_contact_phone": patient.emergency_contact_phone
+        "emergency_contact_phone": patient.emergency_contact_phone,
+        "profile_image": user.profile_image,
     })
 @auth_bp.route('/edit_patient/<int:user_id>',methods=["PUT"])
 @jwt_required()
@@ -323,13 +326,36 @@ def edit_patient_profile(user_id):
     if not user or not patient:
         return jsonify({"message": "Patient not found"}), 404
     
-    # Update User fields
+    image_data = data.get("profile_image")
+    if image_data:
+    
+        if "," in image_data:
+            header, encoded = image_data.split(",", 1)
+        else:
+            encoded = image_data
+        
+        binary_data = base64.b64decode(encoded)
+
+      
+        UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "..", "uploads", "profile_images")
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+  
+        filename = f"user_{user.user_id}.png"  
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+    
+        with open(file_path, "wb") as f:
+            f.write(binary_data)
+        
+        user.profile_image = filename  
+    
+   
     user.f_name = data.get("first_name", user.f_name)
     user.l_name = data.get("last_name", user.l_name)
     user.phone = data.get("phone", user.phone)
     user.address = data.get("address", user.address)
-    
-    # Update Patient fields
+
     patient.blood_type = data.get("blood_type", patient.blood_type)
     patient.allergies = data.get("allergies", patient.allergies)
     patient.chronic_conditions = data.get("chronic_conditions", patient.chronic_conditions)
@@ -341,6 +367,7 @@ def edit_patient_profile(user_id):
     db.session.commit()
     
     return jsonify({"message": "Patient profile updated successfully"})
+
 @auth_bp.route('/all_doctors', methods=["GET"])
 @jwt_required()
 def all_doctors():
@@ -525,8 +552,16 @@ def get_scan_results():
     )
 
     response = []
+    
 
     for scan, result in results:
+        folder_path=scan.folder_path
+        files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+        name = os.path.basename(folder_path)
+
+        # construct URLs for frontend
+        base_url = "http://127.0.0.1:5000/scan_folders"  # configure a static folder in Flask
+        file_urls = [f"{base_url}/{name}/{filename}" for filename in files]
         response.append({
             "id": scan.scan_id,
             "title": f"{scan.modality} Scan - {scan.body_part}",
@@ -537,7 +572,7 @@ def get_scan_results():
             "confidence_score": result.confidence_score if result else None,
             "doctor_notes": result.doctor_notes if result else None,
 
-            "images": [scan.folder_path] if scan.folder_path else []
+            "scan_folder": file_urls
         })
 
     return jsonify(response), 200
@@ -803,6 +838,19 @@ def get_patient_scans():
             if match:
                 scan_type = match.group(1).strip().upper()  # e.g., "MRI", "CT"
 
+        folder_path = scan.folder_path  # e.g., "C:\\Users\\dell\\Desktop\\HCIS Project\\Ortholink\\backend\\scan_folders\\scan_3"
+
+        if not os.path.exists(folder_path):
+            return jsonify([])
+
+        # get all files in the folder
+        files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+        name = os.path.basename(folder_path)
+
+        # construct URLs for frontend
+        base_url = "http://127.0.0.1:5000/scan_folders"  # configure a static folder in Flask
+        file_urls = [f"{base_url}/{name}/{filename}" for filename in files]
+
         scans_list.append({
             "scan_date": scan.scan_date.date().isoformat(),
             "scan_time": scan.scan_date.time().strftime("%H:%M"),
@@ -818,7 +866,8 @@ def get_patient_scans():
 
             "payment_date": payment.payment_date.date().isoformat() if payment and payment.payment_date else None,
             "payment_time": payment.payment_date.time().strftime("%H:%M") if payment and payment.payment_date else None,
-            "payment_method": payment.payment_method if payment else None
+            "payment_method": payment.payment_method if payment else None,
+            "scan_folder":file_urls ,
         })
 
     return jsonify(scans_list), 200

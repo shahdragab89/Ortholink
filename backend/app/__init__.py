@@ -61,4 +61,9 @@ def create_app():
         uploads_dir = os.path.join(app.root_path, '..', 'uploads')
         return send_from_directory(uploads_dir, filename)
     
+    @app.route('/scan_folders/<path:filename>')
+    def serve_scan_files(filename):
+        folder_path = os.path.join(app.root_path, "scan_folders")
+        return send_from_directory(folder_path, filename)
+    
     return app
