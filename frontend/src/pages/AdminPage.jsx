@@ -1,7 +1,9 @@
+
 import React, { useState } from "react";
 import { adminStyles } from "../styles/AdminStyles";
 import AdminHome from "./AdminHome";
 import { useEffect } from "react";
+
 
 export default function AdminPage() {
 
@@ -154,6 +156,63 @@ const [totalRadiologists, setTotalRadiologists] = useState(0);
 const [scanCapacity, setScanCapacity] = useState(0);
 const [frequentScanType, setFrequentScanType] = useState("");
 const [avgScanDuration, setAvgScanDuration] = useState(0);
+
+// Fetch radiologists list
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/radiologists")
+    .then((res) => res.json())
+    .then((data) => {
+      setRadiologistsList(data);
+      setTotalRadiologists(data.length);
+    })
+    .catch((err) => console.error("Error fetching radiologists:", err));
+}, []);
+
+// Fetch radiologist stats
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/radiologists/stats")
+    .then((res) => res.json())
+    .then((data) => {
+      setTotalRadiologists(data.total_radiologists);
+      setScanCapacity(data.scan_capacity);
+      setFrequentScanType(data.frequent_scan_type);
+      setAvgScanDuration(data.avg_scan_duration);
+    })
+    .catch((err) => console.error("Error fetching radiologist stats:", err));
+}, []);
+
+const saveRadiologist = (radiologistData, isEdit = false) => {
+  const formData = new FormData();
+  for (const key in radiologistData) {
+    if (key !== "photo" && key !== "photoFile" && radiologistData[key])
+      formData.append(key, radiologistData[key]);
+  }
+  if (radiologistData.photoFile) formData.append("photo", radiologistData.photoFile);
+
+  const url = isEdit
+    ? `http://127.0.0.1:5000/api/admin/radiologists/${radiologistData.id}`
+    : "http://127.0.0.1:5000/api/admin/radiologists";
+
+  fetch(url, {
+    method: isEdit ? "PUT" : "POST",
+    body: formData,
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.message) {
+        alert("✅ Radiologist saved successfully!");
+        fetch("http://127.0.0.1:5000/api/admin/radiologists")
+          .then((r) => r.json())
+          .then((rads) => setRadiologistsList(rads));
+        setSelectedRadiologist(null);
+        setShowAddRadiologist(false);
+      } else {
+        alert("⚠️ " + (data.error || "Operation failed"));
+      }
+    })
+    .catch((err) => console.error(err));
+};
+
 
  
 // ============== SCANS PAGE STATE ==============
@@ -1278,7 +1337,7 @@ const [activeReport, setActiveReport] = useState(null);
           {r.name}
         </h3>
         <p style={{ margin: "10px 0", color: "#444", fontWeight: "600" }}>
-          {r.specialty} &nbsp; • &nbsp; {r.status}
+          {r.professional_title} &nbsp; • &nbsp; {r.status}
         </p>
         <p style={{ margin: "10px 0", color: "#444", fontWeight: "600" }}>
           Schedule: {r.schedule}
@@ -1346,7 +1405,16 @@ const [activeReport, setActiveReport] = useState(null);
       {/* PROFILE PICTURE */}
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <img
-          src={selectedRadiologist.photo || "/placeholder-radiologist.png"}
+         src={
+    selectedRadiologist.photo?.startsWith("blob:")
+      ? selectedRadiologist.photo
+      : selectedRadiologist.photo?.startsWith("http")
+      ? selectedRadiologist.photo
+      : selectedRadiologist.photo
+      ? `http://127.0.0.1:5000/${selectedRadiologist.photo}`
+      : "/placeholder-radiologist.png"
+  }
+
           alt={selectedRadiologist.name}
           style={{
             width: "120px",
@@ -1362,17 +1430,14 @@ const [activeReport, setActiveReport] = useState(null);
           <input
             type="file"
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = () =>
-                  setSelectedRadiologist({
-                    ...selectedRadiologist,
-                    photo: reader.result,
-                  });
-                reader.readAsDataURL(file);
-              }
-            }}
+  const file = e.target.files[0];
+  if (file) {
+    const previewURL = URL.createObjectURL(file);
+    setSelectedRadiologist({ ...selectedRadiologist, photoFile: file, photo: previewURL });
+
+  }
+}}
+
           />
         )}
       </div>
@@ -1667,44 +1732,23 @@ const [activeReport, setActiveReport] = useState(null);
           </>
         ) : (
           <>
-            <button
-              onClick={() => {
-  fetch(`http://127.0.0.1:5000/api/admin/doctors/${selectedDoctor.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(selectedDoctor),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.message) {
-        alert("✅ Doctor updated successfully!");
-        setEditMode(false);
-        // Refresh list to show new data
-        fetch("http://127.0.0.1:5000/api/admin/doctors")
-          .then((r) => r.json())
-          .then((docs) => setDoctorsList(docs));
-      } else {
-        alert("⚠️ Failed: " + (data.error || "Unknown error"));
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      alert("❌ Error updating doctor");
-    });
-}}
+           <button
+  onClick={() => {
+    saveRadiologist(selectedRadiologist, true);
+  }}
+  style={{
+    backgroundColor: "#0A7C88",
+    border: "none",
+    padding: "10px 20px",
+    borderRadius: "6px",
+    color: "white",
+    cursor: "pointer",
+    marginRight: "10px",
+  }}
+>
+  Save
+</button>
 
-              style={{
-                backgroundColor: "#0A7C88",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "6px",
-                color: "white",
-                cursor: "pointer",
-                marginRight: "10px",
-              }}
-            >
-              Save
-            </button>
             <button
               onClick={() => setEditMode(false)}
               style={{
@@ -1743,7 +1787,16 @@ const [activeReport, setActiveReport] = useState(null);
       {/* PROFILE PICTURE */}
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <img
-          src={newRadiologist.photo || "/placeholder-radiologist.png"}
+          src={
+  newRadiologist.photo?.startsWith("blob:")
+    ? newRadiologist.photo
+    : newRadiologist.photo?.startsWith("http")
+    ? newRadiologist.photo
+    : newRadiologist.photo
+    ? `http://127.0.0.1:5000/${newRadiologist.photo}`
+    : "/placeholder-radiologist.png"
+}
+
           alt="Radiologist"
           style={{
             width: "120px",
@@ -1759,14 +1812,13 @@ const [activeReport, setActiveReport] = useState(null);
           type="file"
           accept="image/*"
           onChange={(e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () =>
-                setNewRadiologist({ ...newRadiologist, photo: reader.result });
-              reader.readAsDataURL(file);
-            }
-          }}
+  const file = e.target.files[0];
+  if (file) {
+    const previewURL = URL.createObjectURL(file);
+    setNewRadiologist({ ...newRadiologist, photoFile: file, photo: previewURL });
+  }
+}}
+ 
         />
       </div>
 
@@ -1985,10 +2037,7 @@ const [activeReport, setActiveReport] = useState(null);
         }}
       >
         <button
-          onClick={() => {
-            alert("New radiologist added (backend will handle DB insertion)");
-            setShowAddRadiologist(false);
-          }}
+         onClick={() => saveRadiologist(newRadiologist, false)}
           style={{
             backgroundColor: "#0A7C88",
             border: "none",
@@ -2018,6 +2067,9 @@ const [activeReport, setActiveReport] = useState(null);
     </div>
   </div>
 )}
+
+
+
 
 {/* ======================= SCANS PAGE ======================= */}
 {selected === "scans" && (
