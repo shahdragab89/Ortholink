@@ -10,6 +10,7 @@ export const dicomViewerStyles = {
     overflow: 'hidden',
   },
 
+  // --- TOOLBAR (Restored to original horizontal layout) ---
   toolbar: {
     backgroundColor: '#1f2937',
     padding: '8px 16px',
@@ -19,6 +20,7 @@ export const dicomViewerStyles = {
     borderBottom: '1px solid #374151',
     height: '60px',
     flexShrink: 0,
+    zIndex: 20, // Ensure it sits above other content
   },
 
   toolbarLeft: { display: 'flex', alignItems: 'center', gap: '16px' },
@@ -36,7 +38,11 @@ export const dicomViewerStyles = {
 
   toolbarTitle: { display: 'flex', alignItems: 'center', color: '#f3f4f6' },
 
-  toolGroup: { display: 'flex', gap: '6px' },
+  toolGroup: { 
+    display: 'flex', 
+    gap: '6px', 
+    alignItems: 'center' 
+  },
 
   toolBtn: {
     backgroundColor: '#374151',
@@ -51,6 +57,8 @@ export const dicomViewerStyles = {
     alignItems: 'center',
     gap: '6px',
     transition: 'all 0.1s',
+    height: '32px', // Fixed height to prevent stacking issues
+    whiteSpace: 'nowrap',
   },
 
   toolBtnActive: {
@@ -102,8 +110,9 @@ export const dicomViewerStyles = {
     overflow: 'hidden',
   },
 
+  // --- SIDEBAR (Updated with Dark Scrollbar) ---
   sidebar: {
-    width: '260px',
+    width: '320px', // Slightly wider for CDSS inputs
     backgroundColor: '#111827',
     borderRight: '1px solid #374151',
     overflowY: 'auto',
@@ -112,8 +121,193 @@ export const dicomViewerStyles = {
     flexDirection: 'column',
     gap: '12px',
     flexShrink: 0,
+    // Dark Scrollbar Styling
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#374151 #111827',
   },
 
+  // --- NEW: SIDEBAR TABS & CDSS STYLES ---
+  sidebarTabs: {
+    display: 'flex',
+    backgroundColor: '#1f2937',
+    borderRadius: '6px',
+    padding: '4px',
+    marginBottom: '8px',
+    border: '1px solid #374151',
+  },
+
+  sidebarTab: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    color: '#9ca3af',
+    border: 'none',
+    padding: '6px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+  },
+
+  sidebarTabActive: {
+    backgroundColor: '#374151',
+    color: '#e5e7eb',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+  },
+
+  cdssContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+
+  cdssRunBtn: {
+    backgroundColor: '#2563eb', // Blue to distinguish from tools
+    color: 'white',
+    border: 'none',
+    padding: '10px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '13px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+  },
+
+  confidenceWidget: {
+    backgroundColor: '#1f2937',
+    borderRadius: '8px',
+    padding: '12px',
+    border: '1px solid #374151',
+  },
+
+  confidenceHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px',
+    fontSize: '12px',
+    color: '#9ca3af',
+  },
+
+  confidenceScoreBig: {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#60a5fa', // Light blue
+  },
+
+  progressBarBg: {
+    height: '6px',
+    backgroundColor: '#111827',
+    borderRadius: '3px',
+    overflow: 'hidden',
+  },
+
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6',
+    borderRadius: '3px',
+    transition: 'width 0.5s ease-out',
+  },
+
+  sectionTitle: {
+    fontSize: '11px',
+    fontWeight: '700',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    marginTop: '8px',
+    marginBottom: '4px',
+  },
+
+  findingBox: {
+    backgroundColor: '#1f2937',
+    borderRadius: '6px',
+    padding: '10px',
+    border: '1px solid #374151',
+    marginBottom: '8px',
+  },
+
+  findingHeaderBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '6px',
+  },
+
+  findingTitleInput: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid transparent',
+    color: '#e5e7eb',
+    fontSize: '13px',
+    fontWeight: '500',
+    width: '100%',
+    padding: '2px 0',
+    outline: 'none',
+  },
+
+  findingMeta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '11px',
+    color: '#6b7280',
+    marginTop: '4px',
+  },
+
+  confidenceTag: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    color: '#60a5fa',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '10px',
+  },
+
+  addFindingBtn: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    border: '1px dashed #4b5563',
+    color: '#9ca3af',
+    padding: '8px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '11px',
+    marginTop: '4px',
+    transition: 'all 0.2s',
+  },
+
+  cdssTextArea: {
+    width: '100%',
+    backgroundColor: '#1f2937',
+    border: '1px solid #374151',
+    borderRadius: '6px',
+    color: '#e5e7eb',
+    padding: '8px',
+    fontSize: '12px',
+    fontFamily: 'inherit',
+    resize: 'vertical',
+    minHeight: '60px',
+    marginBottom: '8px',
+  },
+
+  cdssActionBtn: {
+    flex: 1,
+    backgroundColor: '#374151',
+    color: '#e5e7eb',
+    border: '1px solid #4b5563',
+    padding: '8px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+  },
+
+  // --- ORIGINAL CARDS (Kept exactly the same) ---
   patientCard: {
     backgroundColor: '#1f2937',
     borderRadius: '8px',
@@ -208,10 +402,10 @@ export const dicomViewerStyles = {
     height: '6px',
     borderRadius: '3px',
     outline: 'none',
-    background: '#1f2937',
+    background: '#111827',
     appearance: 'none',
     cursor: 'pointer',
-    border: '1px solid #374151',
+    border: '1px solid #4b5563',
   },
 
   presetGrid: {
@@ -323,6 +517,7 @@ export const dicomViewerStyles = {
     width: '60%',
     height: '4px',
     zIndex: 10,
+    accentColor: '#34d399'
   },
 
   volumeContainer: {

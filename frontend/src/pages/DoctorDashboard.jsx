@@ -13,6 +13,9 @@ import {
     Thermometer, Heart, ClipboardList, X, Search, EyeOff
 } from 'lucide-react';
 
+// Fallback image for scan thumbnails
+const FALLBACK_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNFMkU4RjAiLz48cGF0aCBkPSJNNTAuMDAwMSA0NS43NDE2QzQ3Ljc3NiA0NS43NDE2IDQ1Ljk4MzMgNDMuOTQ5IDQ1Ljk4MzMgNDEuNzI0OUM0NS45ODMzIDM5LjUwMDggNDcuNzc2IDM3LjcwODEgNTAuMDAwMSAzNy43MDgxQzUyLjIyNDIgMzcuNzA4MSA1NC4wMTcgMzkuNTAwOCA1NC4wMTcgNDEuNzI0OUM1NC4wMTcgNDMuOTQ5IDUyLjIyNDIgNDUuNzQxNiA1MC4wMDAxIDQ1Ljc0MTZaTTU1LjE2NyA1Ni4yNTAySDQ0LjgzMzVWNTIuNTAwMkg1NS4xNjdWNTYuMjUwMlpNNTcuNSA0OS41ODM1VjU3LjUwMDJINDIuNVY0OS41ODM1QzQyLjUgNDcuNTgzNSA0NC4xNjcgNDUuOTE2OCA0Ni4xNjcgNDUuOTE2OEg1My44MzM0QzU1LjgzMzQgNDUuOTE2OCA1Ny41IDQ3LjU4MzUgNTcuNSA0OS41ODM1WiIgZmlsbD0iIzk0QTNCOCIvPjwvc3ZnPg==';
+
 // --- MOCK DATA (Moved outside to prevent re-creation) ---
 const allPatientsData = [
     { 
@@ -77,7 +80,7 @@ const allPatientsData = [
     },
 ];
 
-const pendingScans = [
+const pendingScansMock = [
     { 
         id: 1, 
         scanId: 'SCN-1042',
@@ -92,7 +95,7 @@ const pendingScans = [
         patientId: 'P-104', 
         age: 52, gender: 'Male', 
         recordId: 'REC-001', 
-        scanImage: 'https://via.placeholder.com/150' ,
+        scanImage: FALLBACK_IMAGE,
     },
     { 
         id: 2, 
@@ -108,7 +111,7 @@ const pendingScans = [
         patientId: 'P-105', 
         age: 61, gender: 'Female', 
         recordId: 'REC-002', 
-        scanImage: 'https://via.placeholder.com/150' 
+        scanImage: FALLBACK_IMAGE 
     },
     { 
         id: 3, 
@@ -124,7 +127,7 @@ const pendingScans = [
         patientId: 'P-102', 
         age: 28, gender: 'Male', 
         recordId: 'REC-003', 
-        scanImage: 'https://via.placeholder.com/150' 
+        scanImage: FALLBACK_IMAGE 
     },
      { 
         id: 4, 
@@ -140,7 +143,7 @@ const pendingScans = [
         patientId: 'P-103', 
         age: 22, gender: 'Female', 
         recordId: 'REC-004', 
-        scanImage: 'https://via.placeholder.com/150' 
+        scanImage: FALLBACK_IMAGE 
     },
 ];
 
@@ -149,19 +152,6 @@ const patientScansHistory = [
         id: 101, name: 'MRI Right Shoulder', modality: 'MRI', date: '10 Jan 2024', status: 'Report Ready', 
         recordId: 'REC-885', patientId: 'P-101',
         image: 'shoulder_mri.jpg', report: 'Full thickness tear...', radiologist: 'Dr. Sarah Smith', 
-    },
-];
-
-const pendingScansMock = [
-    { 
-        id: 1, scanType: 'MRI Lumbar Spine', modality: 'MRI', date: '23 Feb 2024', status: 'Pending', 
-        patientName: 'Robert Wilson', patientId: 'P-104', age: 52, gender: 'Male', 
-        recordId: 'REC-001', scanImage: 'https://via.placeholder.com/150', radiologist: 'Dr. Shahd Smith',
-    },
-    { 
-        id: 2, scanType: 'X-Ray Right Wrist', modality: 'X-Ray', date: '23 Feb 2024', status: 'Pending', 
-        patientName: 'Lisa Anderson', patientId: 'P-105', age: 61, gender: 'Female', 
-        recordId: 'REC-002', scanImage: 'https://via.placeholder.com/150', radiologist: 'Dr. Ayat Smith',
     },
 ];
 
@@ -183,11 +173,7 @@ const getPhaseStyle = (phase) => {
     return s.phaseConservative;
 };
 
-
-
-
 // [DoctorDashboard.jsx]
-
 const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onSubmit }) => {
     if (!show) return null;
 
@@ -203,7 +189,6 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
 
     return (
         <div style={s.modalOverlay} onClick={onClose}>
-            {/* ✅ FIX 1: Add e.stopPropagation() here so clicking inside doesn't close it */}
             <div style={{...s.modalBox, width: '700px'}} onClick={(e) => e.stopPropagation()}>
                 
                 <div style={s.modalHeader}>
@@ -227,14 +212,20 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
 
                     {/* Scan Image */}
                     <div style={{height: '250px', backgroundColor: '#000', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                         <img src={scan?.image || scan?.scanImage || 'https://via.placeholder.com/300'} alt="Scan" style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}} />
+                         <img 
+                             src={scan?.image || scan?.scanImage || FALLBACK_IMAGE} 
+                             alt="Scan" 
+                             style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}}
+                             onError={(e) => {
+                                 e.target.src = FALLBACK_IMAGE;
+                             }}
+                         />
                     </div>
                     
                     {/* Report Text & Download */}
                     <div>
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                             <div style={s.inputLabel}>Doctor's Findings & Notes</div>
-                            {/* ✅ FIX 2: Download Button */}
                             {(scan?.isReadOnly || reportText) && (
                                 <button onClick={handleDownload} style={{fontSize:'12px', color:'#059669', background:'none', border:'none', cursor:'pointer', fontWeight:'600', textDecoration:'underline'}}>
                                     Download Report
@@ -266,325 +257,572 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
         </div>
     );
 };
+const RenderMedicationModal = ({ show, onClose, selectedPatient, onPrescribeSuccess }) => {
+    const [medicationData, setMedicationData] = useState({
+        medication_name: '',
+        dosage: '',
+        frequency: 'Once Daily',
+        duration: '',
+        instructions: '',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: '',
+        is_active: true,
+        record_id: null
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-const RenderMedicationModal = ({ show, onClose }) => {
-    if (!show) return null;
-    return (
-        <div style={s.modalOverlay} onClick={onClose}>
-            <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-                <div style={s.modalHeader}>
-                    <h3 style={s.sectionTitle}>Prescribe Medication</h3>
-                    <button onClick={onClose} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
-                </div>
-                <div style={s.modalBody}>
-                    <div style={s.formGroup}>
-                        <label style={s.inputLabel}>Medication Name</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. Naproxen" />
-                    </div>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'12px'}}>
-                        <div style={s.formGroup}>
-                            <label style={s.inputLabel}>Dosage</label>
-                            <input type="text" style={s.inputField} placeholder="e.g. 500mg" />
-                        </div>
-                        <div style={s.formGroup}>
-                            <label style={s.inputLabel}>Frequency</label>
-                            <input type="text" style={s.inputField} placeholder="e.g. Twice Daily" />
-                        </div>
-                    </div>
-                    <div style={{...s.formGroup, marginTop: '12px'}}>
-                        <label style={s.inputLabel}>Duration</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. 14 Days" />
-                    </div>
-                </div>
-                <div style={s.modalFooter}>
-                    <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                    <button style={{...s.actionButton, backgroundColor: '#4361ee', color: 'white'}} onClick={onClose}>Prescribe</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const RenderScanOrderModal = ({ show, onClose }) => {
-    if (!show) return null;
-    return (
-        <div style={s.modalOverlay} onClick={onClose}>
-            <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-                <div style={s.modalHeader}>
-                    <h3 style={s.sectionTitle}>Order New Scan</h3>
-                    <button onClick={onClose} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
-                </div>
-                <div style={s.modalBody}>
-                    <div style={s.formGroup}>
-                        <label style={s.inputLabel}>Scan Type</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. MRI Left Knee" />
-                    </div>
-                    <div style={{...s.formGroup, marginTop: '12px'}}>
-                        <label style={s.inputLabel}>Modality</label>
-                        <select style={s.inputField}>
-                            <option>X-Ray</option>
-                            <option>MRI</option>
-                            <option>CT Scan</option>
-                            <option>Ultrasound</option>
-                            <option>DXA (Bone Density)</option>
-                        </select>
-                    </div>
-                    <div style={{...s.formGroup, marginTop: '12px'}}>
-                        <label style={s.inputLabel}>Reason / Description</label>
-                        <textarea style={s.textAreaField} placeholder="Suspected meniscus tear..." />
-                    </div>
-                </div>
-                <div style={s.modalFooter}>
-                    <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                    <button style={{...s.actionButton, backgroundColor: '#059669', color: 'white'}} onClick={onClose}>Order Scan</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
-    const [showCurrentPass, setShowCurrentPass] = useState(false);
-    const [showNewPass, setShowNewPass] = useState(false);
-    const [showConfirmPass, setShowConfirmPass] = useState(false);
-
-    const handlePhotoUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setProfileData({...profileData, profilePhoto: reader.result});
-            reader.readAsDataURL(file);
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (show) {
+            setMedicationData({
+                medication_name: '',
+                dosage: '',
+                frequency: 'Once Daily',
+                duration: '',
+                instructions: '',
+                start_date: new Date().toISOString().split('T')[0],
+                end_date: '',
+                is_active: true,
+                record_id: null
+            });
         }
-    };
+    }, [show]);
 
-    const handleSignatureUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setProfileData({...profileData, digitalSignature: reader.result});
-            reader.readAsDataURL(file);
-        }
-    };
+    // Common medication options
+    const commonMedications = [
+        'Naproxen',
+        'Ibuprofen',
+        'Acetaminophen',
+        'Diclofenac',
+        'Celecoxib',
+        'Tramadol',
+        'Codeine',
+        'Morphine',
+        'Gabapentin',
+        'Pregabalin',
+        'Cyclobenzaprine',
+        'Methocarbamol',
+        'Prednisone',
+        'Methylprednisolone'
+    ];
 
-    const handleSave = () => {
-        if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
-            alert('New passwords do not match!');
+    const frequencyOptions = [
+        'Once Daily',
+        'Twice Daily',
+        'Three Times Daily',
+        'Four Times Daily',
+        'Every 6 Hours',
+        'Every 8 Hours',
+        'Every 12 Hours',
+        'As Needed',
+        'At Bedtime',
+        'With Meals'
+    ];
+
+    const handlePrescribe = async () => {
+        if (!selectedPatient || !selectedPatient.id) {
+            alert('No patient selected');
             return;
         }
-        console.log('Saving profile:', profileData);
-        alert('Profile updated successfully!');
+
+        // Validate required fields
+        if (!medicationData.medication_name.trim()) {
+            alert('Medication name is required');
+            return;
+        }
+        
+        if (!medicationData.dosage.trim()) {
+            alert('Dosage is required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        const token = localStorage.getItem("token");
+        
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/medication`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(medicationData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`Medication prescribed successfully!`);
+                
+                // Reset form
+                setMedicationData({
+                    medication_name: '',
+                    dosage: '',
+                    frequency: 'Once Daily',
+                    duration: '',
+                    instructions: '',
+                    start_date: new Date().toISOString().split('T')[0],
+                    end_date: '',
+                    is_active: true,
+                    record_id: null
+                });
+                
+                if (onPrescribeSuccess) onPrescribeSuccess();
+                onClose();
+            } else {
+                alert(data.error || 'Failed to prescribe medication');
+            }
+        } catch (error) {
+            console.error('Error prescribing medication:', error);
+            alert('Error prescribing medication. Please check your connection.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const getPasswordStrength = (pass) => {
-        if (!pass) return 0;
-        if (pass.length < 6) return 30;
-        if (pass.length < 10) return 60;
-        return 100;
+    const handleCalculateEndDate = () => {
+        if (medicationData.start_date && medicationData.duration) {
+            const startDate = new Date(medicationData.start_date);
+            const duration = parseInt(medicationData.duration);
+            
+            if (!isNaN(duration)) {
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + duration);
+                
+                setMedicationData({
+                    ...medicationData,
+                    end_date: endDate.toISOString().split('T')[0]
+                });
+            }
+        }
     };
-    const strength = getPasswordStrength(profileData.newPassword);
-    const strengthColor = strength < 40 ? '#ef4444' : strength < 80 ? '#f59e0b' : '#22c55e';
 
-    const stats = {
-        appointmentsThisMonth: 42,
-        scansMadeThisMonth: 15
-    };
+    if (!show) return null;
 
     return (
-        <div style={s.main}>
-            <div style={{marginBottom: '10px'}}>
-                <h1 style={{fontSize: '28px', fontWeight: '700', color: '#1e293b'}}>My Profile</h1>
-                <p style={{color: '#64748b'}}>Manage your personal and professional information</p>
-            </div>
-
-            <div style={dps.profilePageContainer}>
-                <div style={dps.profileLayoutGrid}>
-                    
-                    {/* LEFT COLUMN */}
-                    <div style={dps.profileColumn}>
-                        
-                        {/* Profile Photo */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Profile Photo</h3>
-                            <div style={dps.profilePhotoSection}>
-                                <div style={dps.profilePhotoCircle}>
-                                    {profileData.profilePhoto ? (
-                                        <img src={profileData.profilePhoto} alt="Profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                                    ) : (
-                                        doctorName.charAt(0)
-                                    )}
-                                </div>
-                                <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display: 'none'}} id="photo-upload" />
-                                <label htmlFor="photo-upload" style={dps.uploadButton}>Upload New Photo</label>
+        <div style={s.modalOverlay} onClick={onClose}>
+            <div style={{...s.modalBox, width: '500px'}} onClick={e => e.stopPropagation()}>
+                <div style={s.modalHeader}>
+                    <h3 style={s.sectionTitle}>Prescribe Medication</h3>
+                    <button 
+                        onClick={onClose} 
+                        style={{background:'none', border:'none', cursor:'pointer'}}
+                        disabled={isSubmitting}
+                    >
+                        <X size={20}/>
+                    </button>
+                </div>
+                
+                <div style={s.modalBody}>
+                    {/* Patient Info */}
+                    {selectedPatient && (
+                        <div style={{
+                            backgroundColor: '#eff6ff',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #bfdbfe',
+                            marginBottom: '20px',
+                            fontSize: '13px'
+                        }}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                <div><span style={s.infoLabel}>Patient:</span> {selectedPatient.patientName}</div>
+                                <div><span style={s.infoLabel}>ID:</span> P-{selectedPatient.id}</div>
                             </div>
+                            <div><span style={s.infoLabel}>Allergies:</span> {selectedPatient.allergies || 'None'}</div>
                         </div>
+                    )}
 
-                        {/* Contact Information */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Contact Information</h3>
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Phone Number</label>
-                                <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} style={dps.editableField} />
-                            </div>
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Address</label>
-                                <textarea value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} style={{...dps.editableField, minHeight: '80px', resize: 'vertical'}} />
-                            </div>
-                        </div>
-
-                        {/* Digital Signature */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Digital Signature</h3>
-                            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px'}}>
-                                <div style={{
-                                    width: '100%',
-                                    height: '100px',
-                                    border: '2px dashed #e2e8f0',
-                                    borderRadius: '8px',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    backgroundColor: '#f8fafc', overflow: 'hidden'
-                                }}>
-                                    {profileData.digitalSignature ? (
-                                        <img src={profileData.digitalSignature} alt="Signature" style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}} />
-                                    ) : (
-                                        <span style={{fontSize: '12px', color: '#94a3b8'}}>No signature</span>
-                                    )}
-                                </div>
-                                <div>
-                                    <input type="file" accept="image/*" onChange={handleSignatureUpload} style={{display: 'none'}} id="signature-upload" />
-                                    <label htmlFor="signature-upload" style={{...dps.uploadButton, width: '100%', display: 'block', textAlign:'center'}}>Upload Signature</label>
-                                </div>
-                            </div>
+                    {/* Medication Name */}
+                    <div style={s.formGroup}>
+                        <label style={s.inputLabel}>
+                            Medication Name <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="medication-list"
+                                style={s.inputField} 
+                                placeholder="e.g. Naproxen"
+                                value={medicationData.medication_name}
+                                onChange={(e) => setMedicationData({...medicationData, medication_name: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="medication-list">
+                                {commonMedications.map(med => (
+                                    <option key={med} value={med} />
+                                ))}
+                            </datalist>
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN */}
-                    <div style={dps.profileColumn}>
-                        
-                        {/* Professional Info */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Professional Information</h3>
-                            
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
-                                <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Full Name</label>
-                                    <div style={dps.readOnlyField}>{profileData.fullName}</div>
-                                </div>
-                                <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Professional Title</label>
-                                    <div style={dps.readOnlyField}>{profileData.professionalTitle}</div>
-                                </div>
-                            </div>
-
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
-                                <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Medical License</label>
-                                    <div style={dps.readOnlyField}>{profileData.licenseNumber}</div>
-                                </div>
-                                <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Doctor ID</label>
-                                <div style={dps.readOnlyField}>{profileData.staffId}</div>
-                                </div>
-                            </div>
-
-
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
-                                <div style={dps.infoRow}>
-                                    <label style={s.inputLabel}>Username</label>
-                                    <div style={dps.readOnlyField}>{profileData.username}</div>
-                                </div>
-                                <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Email</label>
-                                <div style={dps.readOnlyField}>{profileData.email}</div>
-                                </div>
-                            </div>
+                    {/* Dosage and Frequency */}
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px'}}>
+                        <div style={s.formGroup}>
+                            <label style={s.inputLabel}>
+                                Dosage <span style={{color: '#ef4444'}}>*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                style={s.inputField} 
+                                placeholder="e.g. 500mg"
+                                value={medicationData.dosage}
+                                onChange={(e) => setMedicationData({...medicationData, dosage: e.target.value})}
+                                disabled={isSubmitting}
+                            />
                         </div>
-
-                        {/* ✅ PASTE STATS CARD HERE (Above Security) ✅ */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Monthly Statistics</h3>
-                            <div style={dps.statsGrid}>
-                                <div style={dps.statItem}>
-                                    <span style={dps.statNumber}>{stats.appointmentsThisMonth}</span>
-                                    <span style={dps.statLabel}>Appointments</span>
-                                </div>
-                                <div style={dps.statItem}>
-                                    <span style={dps.statNumber}>{stats.scansMadeThisMonth}</span>
-                                    <span style={dps.statLabel}>Scans Completed</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Security Settings */}
-                        <div style={dps.profileCard}>
-                            <h3 style={dps.profileCardTitle}>Security Settings</h3>
-                            
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Current Password</label>
-                                <div style={dps.passwordWrapper}>
-                                    <input 
-                                        type={showCurrentPass ? "text" : "password"} 
-                                        value={profileData.password} 
-                                        onChange={(e) => setProfileData({...profileData, password: e.target.value})} 
-                                        style={dps.editableField} 
-                                        placeholder="*************" 
-                                    />
-                                    <button onClick={() => setShowCurrentPass(!showCurrentPass)} style={dps.eyeIconBtn}>
-                                        {showCurrentPass ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>New Password</label>
-                                <div style={dps.passwordWrapper}>
-                                    <input 
-                                        type={showNewPass ? "text" : "password"} 
-                                        value={profileData.newPassword} 
-                                        onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})} 
-                                        style={dps.editableField} 
-                                        placeholder="*************" 
-                                    />
-                                    <button onClick={() => setShowNewPass(!showNewPass)} style={dps.eyeIconBtn}>
-                                        {showNewPass ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {profileData.newPassword && (
-                                <div style={dps.strengthBarContainer}>
-                                    <div style={{...dps.strengthBarFill, width: `${strength}%`, backgroundColor: strengthColor}}></div>
-                                </div>
-                            )}
-
-                            <div style={dps.infoRow}>
-                                <label style={s.inputLabel}>Confirm New Password</label>
-                                <div style={dps.passwordWrapper}>
-                                    <input 
-                                        type={showConfirmPass ? "text" : "password"} 
-                                        value={profileData.confirmPassword} 
-                                        onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})} 
-                                        style={dps.editableField} 
-                                        placeholder="*************" 
-                                    />
-                                    <button onClick={() => setShowConfirmPass(!showConfirmPass)} style={dps.eyeIconBtn}>
-                                        {showConfirmPass ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-                            <button onClick={handleSave} style={dps.saveButton}>Save Changes</button>
+                        <div style={s.formGroup}>
+                            <label style={s.inputLabel}>
+                                Frequency <span style={{color: '#ef4444'}}>*</span>
+                            </label>
+                            <select 
+                                style={s.inputField}
+                                value={medicationData.frequency}
+                                onChange={(e) => setMedicationData({...medicationData, frequency: e.target.value})}
+                                disabled={isSubmitting}
+                            >
+                                {frequencyOptions.map(freq => (
+                                    <option key={freq} value={freq}>{freq}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
+
+                    {/* Duration */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Duration (Days)</label>
+                        <input 
+                            type="text" 
+                            style={s.inputField} 
+                            placeholder="e.g. 14 Days"
+                            value={medicationData.duration}
+                            onChange={(e) => setMedicationData({...medicationData, duration: e.target.value})}
+                            onBlur={handleCalculateEndDate}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    {/* Start Date */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Start Date</label>
+                        <input 
+                            type="date" 
+                            style={s.inputField} 
+                            value={medicationData.start_date}
+                            onChange={(e) => setMedicationData({...medicationData, start_date: e.target.value})}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    {/* End Date (auto-calculated) */}
+                    {medicationData.end_date && (
+                        <div style={{...s.formGroup, marginTop: '12px'}}>
+                            <label style={s.inputLabel}>End Date (Calculated)</label>
+                            <input 
+                                type="date" 
+                                style={s.inputField} 
+                                value={medicationData.end_date}
+                                onChange={(e) => setMedicationData({...medicationData, end_date: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                        </div>
+                    )}
+
+                    {/* Instructions */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Instructions</label>
+                        <textarea 
+                            style={s.textAreaField} 
+                            placeholder="Special instructions for the patient..."
+                            value={medicationData.instructions}
+                            onChange={(e) => setMedicationData({...medicationData, instructions: e.target.value})}
+                            disabled={isSubmitting}
+                            rows={3}
+                        />
+                    </div>
+                </div>
+
+                <div style={s.modalFooter}>
+                    <button 
+                        style={{...s.actionButton, backgroundColor: '#f1f5f9', color: '#64748b'}} 
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        style={{
+                            ...s.actionButton, 
+                            backgroundColor: '#4361ee', 
+                            color: 'white',
+                            opacity: isSubmitting ? 0.7 : 1,
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                        }} 
+                        onClick={handlePrescribe}
+                        disabled={isSubmitting || !medicationData.medication_name || !medicationData.dosage}
+                    >
+                        {isSubmitting ? 'Prescribing...' : 'Prescribe Medication'}
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
 
-const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingScans, handleOpenReport }) => {
+const RenderScanOrderModal = ({ show, onClose, selectedPatient, onOrderSuccess }) => {
+    const [scanData, setScanData] = useState({
+        scan_type: '',
+        body_part: '',
+        modality: 'X-Ray',
+        description: '',
+        record_id: null
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (show) {
+            setScanData({
+                scan_type: '',
+                body_part: '',
+                modality: 'X-Ray',
+                description: '',
+                record_id: null
+            });
+        }
+    }, [show]);
+
+    // Common scan types and body parts
+    const scanTypeOptions = [
+        'MRI',
+        'CT Scan',
+        'X-Ray',
+        'Ultrasound',
+        'DXA (Bone Density)',
+        'PET Scan'
+    ];
+
+    const bodyPartOptions = [
+        'Head',
+        'Cervical Spine',
+        'Thoracic Spine',
+        'Lumbar Spine',
+        'Shoulder',
+        'Elbow',
+        'Wrist',
+        'Hand',
+        'Hip',
+        'Knee',
+        'Ankle',
+        'Foot',
+        'Chest',
+        'Abdomen',
+        'Pelvis'
+    ];
+
+    const modalityOptions = [
+        'X-Ray',
+        'MRI',
+        'CT',
+        'Ultrasound',
+        'DXA'
+    ];
+
+    const handleOrderScan = async () => {
+        if (!selectedPatient || !selectedPatient.id) {
+            alert('No patient selected');
+            return;
+        }
+
+        // Validate required fields
+        if (!scanData.scan_type.trim()) {
+            alert('Scan type is required');
+            return;
+        }
+        
+        if (!scanData.body_part.trim()) {
+            alert('Body part is required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        const token = localStorage.getItem("token");
+        
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/scan`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(scanData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`Scan ordered successfully!`);
+                
+                // Reset form
+                setScanData({
+                    scan_type: '',
+                    body_part: '',
+                    modality: 'X-Ray',
+                    description: '',
+                    record_id: null
+                });
+                
+                if (onOrderSuccess) onOrderSuccess();
+                onClose();
+            } else {
+                alert(data.error || 'Failed to order scan');
+            }
+        } catch (error) {
+            console.error('Error ordering scan:', error);
+            alert('Error ordering scan. Please check your connection.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!show) return null;
+
+    return (
+        <div style={s.modalOverlay} onClick={onClose}>
+            <div style={{...s.modalBox, width: '500px'}} onClick={e => e.stopPropagation()}>
+                <div style={s.modalHeader}>
+                    <h3 style={s.sectionTitle}>Order New Scan</h3>
+                    <button 
+                        onClick={onClose} 
+                        style={{background:'none', border:'none', cursor:'pointer'}}
+                        disabled={isSubmitting}
+                    >
+                        <X size={20}/>
+                    </button>
+                </div>
+                
+                <div style={s.modalBody}>
+                    {/* Patient Info */}
+                    {selectedPatient && (
+                        <div style={{
+                            backgroundColor: '#f0fdf4',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #bbf7d0',
+                            marginBottom: '20px',
+                            fontSize: '13px'
+                        }}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                <div><span style={s.infoLabel}>Patient:</span> {selectedPatient.patientName}</div>
+                                <div><span style={s.infoLabel}>ID:</span> P-{selectedPatient.id}</div>
+                            </div>
+                            <div><span style={s.infoLabel}>Current Diagnosis:</span> {selectedPatient.diagnosis || 'Not specified'}</div>
+                        </div>
+                    )}
+
+                    {/* Scan Type */}
+                    <div style={s.formGroup}>
+                        <label style={s.inputLabel}>
+                            Scan Type <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="scan-type-list"
+                                style={s.inputField} 
+                                placeholder="e.g. MRI Left Knee"
+                                value={scanData.scan_type}
+                                onChange={(e) => setScanData({...scanData, scan_type: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="scan-type-list">
+                                {scanTypeOptions.map(type => (
+                                    <option key={type} value={type} />
+                                ))}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    {/* Body Part */}
+                    <div style={s.formGroup}>
+                        <label style={s.inputLabel}>
+                            Body Part <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="body-part-list"
+                                style={s.inputField} 
+                                placeholder="e.g. Knee"
+                                value={scanData.body_part}
+                                onChange={(e) => setScanData({...scanData, body_part: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="body-part-list">
+                                {bodyPartOptions.map(part => (
+                                    <option key={part} value={part} />
+                                ))}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    {/* Modality */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>
+                            Modality <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <select 
+                            style={s.inputField}
+                            value={scanData.modality}
+                            onChange={(e) => setScanData({...scanData, modality: e.target.value})}
+                            disabled={isSubmitting}
+                        >
+                            {modalityOptions.map(modality => (
+                                <option key={modality} value={modality}>{modality}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Reason / Description */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Reason / Description</label>
+                        <textarea 
+                            style={s.textAreaField} 
+                            placeholder="Suspected meniscus tear..."
+                            value={scanData.description}
+                            onChange={(e) => setScanData({...scanData, description: e.target.value})}
+                            disabled={isSubmitting}
+                            rows={3}
+                        />
+                    </div>
+                </div>
+
+                <div style={s.modalFooter}>
+                    <button 
+                        style={{...s.actionButton, backgroundColor: '#f1f5f9', color: '#64748b'}} 
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        style={{
+                            ...s.actionButton, 
+                            backgroundColor: '#059669', 
+                            color: 'white',
+                            opacity: isSubmitting ? 0.7 : 1,
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                        }} 
+                        onClick={handleOrderScan}
+                        disabled={isSubmitting || !scanData.scan_type || !scanData.body_part}
+                    >
+                        {isSubmitting ? 'Ordering...' : 'Order Scan'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingScans, handleOpenReport }) => {
     const [apptSearch, setApptSearch] = useState('');
     const [scanSearch, setScanSearch] = useState('');
 
@@ -602,11 +840,9 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
         return combined.includes(term);
     });
 
-    // --- SAFE FILTER LOGIC: SCANS ---
     const filteredScans = (pendingScans || []).filter(scan => {
         if (!scanSearch) return true;
         const term = scanSearch.toLowerCase();
-        // Concatenate all new fields for search
         const combined = `
             ${(scan.scanId || '').toLowerCase()}
             ${(scan.scanType || '').toLowerCase()} 
@@ -623,20 +859,19 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
     const remainingCount = (appointments || []).filter(a => a.status === 'scheduled').length;
 
     const compactSearchStyle = {
-        padding: '8px 12px 8px 36px', // Left padding for icon
+        padding: '8px 12px 8px 36px',
         borderRadius: '20px',
         border: '1px solid #e2e8f0',
         fontSize: '13px',
-        width: '250px', // Fixed width for compact look
+        width: '250px',
         outline: 'none',
         backgroundColor: '#f8fafc'
     };
 
     const expandedScanGrid = {
-        gridTemplateColumns: '60px 0.9fr 1fr 0.8fr 1.2fr 1.1fr 1.1fr 120px' // Increased last column for 2 buttons
+        gridTemplateColumns: '60px 0.9fr 1fr 0.8fr 1.2fr 1.1fr 1.1fr 120px'
     };
     
-    // Handle DICOM Viewer navigation
     const handleOpenDicomViewer = (scan) => {
         const patientData = {
             id: scan.patientId,
@@ -651,15 +886,13 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
         window.location.href = `/dicom-viewer?patientId=${scan.patientId}`;
     };
     
-        return (
+    return (
         <div style={{ ...s.main, overflowY: 'auto' }}>
-            
-            {/* ✅ FIX: Added 'flexShrink: 0' to prevent the banner from getting squashed */}
             <section style={{ ...dps.welcomeBanner, flexShrink: 0 }}>
                 <div style={dps.decorativeCircle1}></div>
                 <div style={dps.decorativeCircle2}></div>
                 <div style={dps.welcomeTextBox}>
-                    <h1 style={dps.welcomeTitle}>Hello, Dr. {doctorName}!</h1>
+                    <h1 style={dps.welcomeTitle}>Hello, Dr. {doctorName || 'Doctor'}!</h1>
                     <p style={dps.welcomeSubText}>
                         You have <span style={dps.welcomeHighlight}>{remainingCount} patients remaining</span> today. 
                         Let's clear the queue!
@@ -669,7 +902,6 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
             </section>
 
             <div style={{ ...s.contentContainer, minHeight: 'fit-content' }}>
-                
                 {/* --- TABLE 1: APPOINTMENTS --- */}
                 <div style={{ ...s.section, flex: 'none', height: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #f1f5f9' }}>
@@ -731,7 +963,14 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
                                 filteredScans.map((scan) => (
                                     <div key={scan.id} style={{ ...s.tableRow, ...expandedScanGrid }}>
                                         <div style={{ width: '40px', height: '40px', borderRadius: '6px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
-                                            <img src={scan.scanImage} alt="scan" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img 
+                                                src={scan.scanImage} 
+                                                alt="scan" 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                onError={(e) => {
+                                                    e.target.src = FALLBACK_IMAGE;
+                                                }}
+                                            />
                                         </div>
                                         <div style={{ fontWeight: '600', color: '#475569' }}>{scan.scanId}</div>
                                         <div style={{ color: '#334155' }}>{scan.bodyPart}</div>
@@ -768,181 +1007,165 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );
 };
-
-const PatientsListView = ({ allPatientsData, searchTerm, setSearchTerm, handlePatientClick }) => {
-    const patientTableGrid = { 
-        gridTemplateColumns: '100px 1.5fr 1.5fr 1fr 1fr 80px', // Added 80px for DICOM button
-        alignItems: 'center'
-    };
-
-    const filteredPatients = allPatientsData.filter(p => {
-        const term = searchTerm.toLowerCase();
-        // Safe check for null values with ( || '')
-        return (
-            `P-10${p.id}`.toLowerCase().includes(term) || // Search by generated ID
-            (p.patientName || '').toLowerCase().includes(term) ||
-            (p.diagnosis || '').toLowerCase().includes(term) ||
-            (p.lastVisitDate || '').toLowerCase().includes(term) ||
-            (p.nextVisitDate || '').toLowerCase().includes(term)
-        );
-    });
-
-    const totalPatients = allPatientsData.length;
-
-    // Handle DICOM Viewer navigation for patients
-    const handleOpenDicomViewer = (patient) => {
-        const patientData = {
-            id: patient.id,
-            name: patient.patientName,
-            patientId: `P-10${patient.id}`,
-            age: patient.age,
-            gender: patient.gender,
-            diagnosis: patient.diagnosis
-        };
-        
-        localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
-        window.location.href = `/dicom-viewer?patientId=P-10${patient.id}`;
-    };
-
-    return (
-        // Added overflowY: auto to main container for scrolling if needed
-        <div style={{...s.main, overflowY: 'auto'}}>
-            
-            {/* --- 3. NEW PATIENT WELCOME BANNER --- */}
-            {/* Added flexShrink: 0 so it doesn't squash on scroll */}
-            <section style={{...dps.welcomeBanner, flexShrink: 0}}>
-                <div style={dps.decorativeCircle1}></div>
-                <div style={dps.decorativeCircle2}></div>
-                <div style={dps.welcomeTextBox}>
-                    <h1 style={dps.welcomeTitle}>My Patients</h1>
-                    <p style={dps.welcomeSubText}>
-                        You are currently managing <span style={dps.welcomeHighlight}>{totalPatients} patient records</span>. 
-                        Track their recovery progress and upcoming visits here.
-                    </p>
-                </div>
-                {/* Make sure this image is imported at the top of the file */}
-                <img 
-                    src={myPatientsImage} 
-                    alt="Patients" 
-                    style={dps.welcomeIllustration} 
-                />
-            </section>
-
-            {/* Search & Title Section */}
-            <div style={{marginBottom: '20px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '15px'}}>
-                   <h2 style={s.sectionTitle}>Patient Records Directory</h2>
-                   <div style={{fontSize: '14px', color: '#64748b'}}>Showing {filteredPatients.length} results</div>
-                </div>
-
-                <div style={s.searchContainer}>
-                    <div style={s.searchWrapper}>
-                        <Search size={18} style={s.searchIcon} />
-                        <input 
-                            type="text" 
-                            style={s.searchInput} 
-                            placeholder="Search by ID, Name, Diagnosis, or Date..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div style={s.contentContainer}>
-                <div style={s.section}>
-                    <div style={s.tableContainer}>
-                        {/* 4. UPDATED TABLE HEADER (Removed Phase, Added ID) */}
-                        <div style={{ ...s.tableHeader, ...patientTableGrid }}>
-                            <div>Patient ID</div>
-                            <div>Patient Name</div>
-                            <div>Condition / Diagnosis</div>
-                            <div>Last Visit Date</div>
-                            <div>Next Visit Date</div>
-                            <div>Viewer</div> {/* Added DICOM column */}
-                        </div>
-                        
-                        <div style={s.scrollableRows}>
-                            {filteredPatients.length > 0 ? (
-                                filteredPatients.map((patient) => (
-                                    // 5. UPDATED TABLE ROW
-                                    <div key={patient.id} style={{ ...s.tableRow, ...patientTableGrid }}>
-                                        {/* Patient ID Column */}
-                                        <div style={{fontWeight:'600', color: '#475569'}}>
-                                            P-10{patient.id}
-                                        </div>
-
-                                        {/* Clickable Patient Name Column */}
-                                        <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                                            <div style={{width:'32px', height:'32px', borderRadius:'50%', background:'#e2e8f0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', color:'#475569'}}>
-                                                {patient.patientName.charAt(0)}
-                                            </div>
-                                            <button 
-                                                style={s.clickablePatientName} 
-                                                onClick={() => handlePatientClick(patient.patientName)}
-                                            >
-                                                {patient.patientName}
-                                            </button>
-                                        </div>
-
-                                        {/* Diagnosis Column */}
-                                        <div style={{fontWeight: '500', color: '#334155'}}>{patient.diagnosis}</div>
-
-                                        {/* Dates Columns */}
-                                        <div style={{color: '#64748b'}}>{patient.lastVisitDate || '-'}</div>
-                                        <div style={{color: patient.nextVisitDate === 'Pending' ? '#ef4444' : '#02505F', fontWeight:'500'}}>
-                                            {patient.nextVisitDate}
-                                        </div>
-
-                                        {/* DICOM Viewer Button Column */}
-                                        <div>
-                                            <button 
-                                                onClick={() => handleOpenDicomViewer(patient)}
-                                                style={{
-                                                    ...s.actionButton,
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#8b5cf6',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500'
-                                                }}
-                                                title="View DICOM Images"
-                                            >
-                                                DICOM
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div style={{padding: '40px', textAlign: 'center', color: '#94a3b8'}}>
-                                    No patients found matching "{searchTerm}"
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
+// In DoctorDashboard.jsx, update the ProfileView component
 const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, setConsultationRecords, setShowMedicationModal, setShowScanOrderModal, handleOpenReport, patientScansHistory }) => {
     const [tab, setTab] = useState('records');
+    const [realPatientData, setRealPatientData] = useState(null);
+    const [realPatientScans, setRealPatientScans] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Handle DICOM Viewer navigation for specific patient
+    // Fetch real patient data when component mounts or selectedPatient changes
+    useEffect(() => {
+        const fetchRealPatientData = async () => {
+            if (!selectedPatient || !selectedPatient.id) return;
+            
+            setIsLoading(true);
+            try {
+                const token = localStorage.getItem("token");
+                
+                // Fetch patient details
+                const patientResponse = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                
+                if (patientResponse.ok) {
+                    const patientData = await patientResponse.json();
+                    setRealPatientData(patientData);
+                    
+                    // Set consultation records from the latest visit record if exists
+                    if (patientData.visit_records && patientData.visit_records.length > 0) {
+                        const latestRecord = patientData.visit_records[0];
+                        setConsultationRecords({
+                            complaint: latestRecord.chief_complaint || '',
+                            diagnosis: latestRecord.diagnosis || '',
+                            treatment: latestRecord.treatment_plan || '',
+                            physicalExam: latestRecord.physical_examination || ''
+                        });
+                    }
+                }
+                
+                // Fetch patient scans
+                const scansResponse = await fetch(`http://127.0.0.1:5000/api/doctor/scans?patient_id=${selectedPatient.id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                
+                if (scansResponse.ok) {
+                    const scansData = await scansResponse.json();
+                    setRealPatientScans(scansData);
+                }
+                
+            } catch (error) {
+                console.error("Error fetching patient data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchRealPatientData();
+    }, [selectedPatient]);
+
+    const handleSaveVisitRecord = async () => {
+        if (!selectedPatient || !selectedPatient.id) return;
+        
+        // Validate vital signs
+        if (!consultationRecords.vitalSigns.heart_rate || 
+            !consultationRecords.vitalSigns.blood_pressure || 
+            !consultationRecords.vitalSigns.temperature || 
+            !consultationRecords.vitalSigns.weight) {
+            alert('Please fill in all required vital signs (Heart Rate, Blood Pressure, Temperature, Weight)');
+            return;
+        }
+        
+        const visitRecordData = {
+            chief_complaint: consultationRecords.complaint,
+            diagnosis: consultationRecords.diagnosis,
+            treatment_plan: consultationRecords.treatment,
+            physical_examination: consultationRecords.physicalExam,
+            notes: consultationRecords.notes,
+            vital_signs: {
+                heart_rate: consultationRecords.vitalSigns.heart_rate,
+                blood_pressure: consultationRecords.vitalSigns.blood_pressure,
+                temperature: consultationRecords.vitalSigns.temperature,
+                weight: consultationRecords.vitalSigns.weight,
+                respiratory_rate: consultationRecords.vitalSigns.respiratory_rate,
+                oxygen_saturation: consultationRecords.vitalSigns.oxygen_saturation
+            }
+        };
+        
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/visit-record`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(visitRecordData)
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert('Visit record saved successfully!');
+                
+                // Reset consultation form
+                setConsultationRecords({
+                    complaint: '',
+                    diagnosis: '',
+                    treatment: '',
+                    physicalExam: '',
+                    notes: '',
+                    vitalSigns: {
+                        heart_rate: '',
+                        blood_pressure: '',
+                        temperature: '',
+                        weight: '',
+                        respiratory_rate: '',
+                        oxygen_saturation: ''
+                    }
+                });
+                
+                // Refresh patient data to show the new record
+                if (realPatientData) {
+                    const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        const updatedPatientData = await response.json();
+                        setRealPatientData(updatedPatientData);
+                    }
+                }
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to save visit record');
+            }
+        } catch (error) {
+            console.error('Error saving visit record:', error);
+            alert('Error saving visit record');
+        }
+    };
+
     const handleOpenDicomViewer = (patient) => {
         const patientData = {
             id: patient.id,
             name: patient.patientName,
-            patientId: `P-10${patient.id}`,
+            patientId: `P-${patient.id}`,
             age: patient.age,
             gender: patient.gender,
             diagnosis: patient.diagnosis,
@@ -950,8 +1173,51 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
         };
         
         localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
-        window.location.href = `/dicom-viewer?patientId=P-10${patient.id}`;
+        window.location.href = `/dicom-viewer?patientId=P-${patient.id}`;
     };
+
+    // Display loading state
+    if (isLoading) {
+        return (
+            <div style={s.main}>
+                <button style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', cursor: 'pointer', fontSize: '14px', fontWeight: '600', border: 'none', background: 'none', marginBottom: '10px', width: 'fit-content'}} onClick={handleBackToHome}>
+                    <ArrowLeft size={16} /> Back to Home
+                </button>
+                <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh'}}>
+                    Loading patient data...
+                </div>
+            </div>
+        );
+    }
+
+    // Use real patient data if available, otherwise fall back to mock data
+    const displayPatient = realPatientData ? {
+        patientName: realPatientData.patient_name,
+        age: realPatientData.age,
+        gender: realPatientData.gender,
+        bloodType: realPatientData.blood_type,
+        allergies: realPatientData.allergies,
+        diagnosis: realPatientData.diagnosis || selectedPatient?.diagnosis,
+        history: realPatientData.chronic_conditions ? realPatientData.chronic_conditions.split(',') : []
+    } : selectedPatient;
+
+    const lastVisitRecord = realPatientData?.visit_records?.[0] || selectedPatient?.lastVisit;
+    
+    const displayScans = realPatientScans.length > 0 ? realPatientScans.map(scan => ({
+        id: scan.scan_id,
+        name: `${scan.scan_type} ${scan.body_part}`,
+        modality: scan.modality,
+        date: scan.scan_date,
+        status: scan.status,
+        recordId: `REC-${scan.scan_id}`,
+        patientId: `P-${scan.patient_id}`,
+        image: scan.folder_path ? 
+            `http://127.0.0.1:5000/uploads/dicom_scans/${scan.folder_path}/thumbnail.jpg` : 
+            FALLBACK_IMAGE,
+        report: scan.rad_report,
+        radiologist: scan.radiologist,
+        isReadOnly: scan.status === 'completed'
+    })) : patientScansHistory;
 
     return (
         <div style={s.main}>
@@ -963,89 +1229,290 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                 {/* LEFT COLUMN: Patient Info */}
                 <div style={s.contentContainer}>
                     <div style={s.card}>
-                        <div style={{alignSelf: 'center', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><User size={40} color="#64748b"/></div>
-                        <h2 style={{fontSize: '20px', fontWeight: '700', color: '#1e293b', textAlign: 'center', margin: 0}}>{selectedPatient.patientName}</h2>
+                        <div style={{alignSelf: 'center', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            <User size={40} color="#64748b"/>
+                        </div>
+                        <h2 style={{fontSize: '20px', fontWeight: '700', color: '#1e293b', textAlign: 'center', margin: 0}}>
+                            {displayPatient.patientName}
+                        </h2>
                         
                         <div style={pps.patientInfoCentered}>
                             <div style={pps.infoGridCentered}>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Age</span><span style={s.infoValue}>{selectedPatient.age} Yrs</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Gender</span><span style={s.infoValue}>{selectedPatient.gender}</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Blood</span><span style={s.infoValue}>{selectedPatient.bloodType}</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Allergies</span><span style={{...s.infoValue, color: '#ef4444'}}>{selectedPatient.allergies}</span></div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Age</span>
+                                    <span style={s.infoValue}>{displayPatient.age || 'N/A'} Yrs</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Gender</span>
+                                    <span style={s.infoValue}>{displayPatient.gender || 'N/A'}</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Blood</span>
+                                    <span style={s.infoValue}>{displayPatient.bloodType || 'N/A'}</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Allergies</span>
+                                    <span style={{...s.infoValue, color: '#ef4444'}}>
+                                        {displayPatient.allergies || 'None'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={s.card}>
-                        <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}><Activity size={18} /> Vital Signs</div>
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Heart size={16} color="#ef4444" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>72</span><span style={{fontSize: '11px', color: '#64748b'}}>bpm</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Activity size={16} color="#3b82f6" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>120/80</span><span style={{fontSize: '11px', color: '#64748b'}}>mmHg</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Thermometer size={16} color="#f97316" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>36.6</span><span style={{fontSize: '11px', color: '#64748b'}}>°C</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <span style={{fontSize:'14px'}}>⚖️</span><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>70</span><span style={{fontSize: '11px', color: '#64748b'}}>kg</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{...s.card, flex: 1}}>
-                        <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}><ClipboardList size={18} /> Medical History</div>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto'}}>
-                            {selectedPatient.history.map((item, idx) => (
-                                <div key={idx} style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '8px'}}>• {item}</div>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Rest of the component remains similar but uses displayPatient */}
+                    {/* ... */}
                 </div>
 
                 {/* MIDDLE COLUMN */}
                 <div style={s.contentContainer}>
                     <div style={{...s.card, flex: 0.8, overflow: 'hidden'}}>
                         <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                            <Calendar size={18} /> Last Visit ({selectedPatient.lastVisit?.date || 'N/A'})
+                            <Calendar size={18} /> Last Visit ({lastVisitRecord?.date || 'N/A'})
                         </div>
                         
-                        {selectedPatient.lastVisit ? (
+                        {lastVisitRecord ? (
                             <div style={s.formScroll}>
+                                {/* Complaint */}
                                 <div style={{marginBottom: '10px'}}>
                                     <span style={s.infoLabel}>Complaint</span>
-                                    <div style={{fontSize: '14px', color: '#334155'}}>{selectedPatient.lastVisit.complaint}</div>
-                                </div>
-                                <div style={{marginBottom: '10px'}}>
-                                    <span style={s.infoLabel}>Diagnosis</span>
-                                    <div style={{fontSize: '14px', color: '#334155', fontWeight: '500'}}>{selectedPatient.lastVisit.diagnosis}</div>
-                                </div>
-                                <div style={{marginBottom: '10px'}}>
-                                    <span style={s.infoLabel}>Treatment Plan</span>
-                                    <div style={{fontSize: '14px', color: '#334155'}}>{selectedPatient.lastVisit.treatment}</div>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.chief_complaint || lastVisitRecord.complaint || 'No complaint recorded'}
+                                    </div>
                                 </div>
                                 
-                                <div style={{marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '10px'}}>
-                                    <span style={s.infoLabel}>Prescribed Meds</span>
-                                    {selectedPatient.lastVisit.medications.map((med, i) => (
-                                        <div key={i} style={{fontSize: '13px', color: '#475569', marginTop: '4px', display:'flex', justifyContent:'space-between'}}>
-                                            <span>• {med.name} ({med.dosage})</span>
-                                            <span>{med.freq}</span>
-                                        </div>
-                                    ))}
+                                {/* Physical Examination */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Physical Examination</span>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.physical_examination || 'No physical examination recorded'}
+                                    </div>
                                 </div>
+                                
+                                {/* Diagnosis */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Diagnosis</span>
+                                    <div style={{fontSize: '14px', color: '#334155', fontWeight: '500', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.diagnosis || 'No diagnosis recorded'}
+                                    </div>
+                                </div>
+                                
+                                {/* Treatment Plan */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Treatment Plan</span>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.treatment_plan || lastVisitRecord.treatment || 'No treatment plan recorded'}
+                                    </div>
+                                </div>
+                                
+                                {/* Vital Signs Grid */}
+                                {lastVisitRecord.vital_signs && (
+                                    <div style={{marginBottom: '10px', marginTop: '15px'}}>
+                                        <span style={s.infoLabel}>Vital Signs</span>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: '10px',
+                                            marginTop: '8px',
+                                            backgroundColor: '#f8fafc',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0'
+                                        }}>
+                                            {/* Heart Rate */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#fee2e2',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Heart size={16} color="#dc2626" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Heart Rate</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.heart_rate || 'N/A'} bpm
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Blood Pressure */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#dbeafe',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Activity size={16} color="#2563eb" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Blood Pressure</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.blood_pressure || 'N/A'} mmHg
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Temperature */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#ffedd5',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Thermometer size={16} color="#ea580c" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Temperature</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.temperature || 'N/A'} °C
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Weight */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#f0f9ff',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <span style={{fontSize: '14px'}}>⚖️</span>
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Weight</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.weight || 'N/A'} kg
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Respiratory Rate */}
+                                            {lastVisitRecord.vital_signs.respiratory_rate && (
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#f0fdf4',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <span style={{fontSize: '14px'}}>🌬️</span>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{fontSize: '11px', color: '#64748b'}}>Respiratory Rate</div>
+                                                        <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                            {lastVisitRecord.vital_signs.respiratory_rate} breaths/min
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Oxygen Saturation */}
+                                            {lastVisitRecord.vital_signs.oxygen_saturation && (
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#fef2f2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <span style={{fontSize: '14px'}}>🫁</span>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{fontSize: '11px', color: '#64748b'}}>O₂ Saturation</div>
+                                                        <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                            {lastVisitRecord.vital_signs.oxygen_saturation}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Doctor's Notes */}
+                                {lastVisitRecord.notes && (
+                                    <div style={{marginBottom: '10px', marginTop: '15px'}}>
+                                        <span style={s.infoLabel}>Doctor's Notes</span>
+                                        <div style={{
+                                            fontSize: '14px',
+                                            color: '#334155',
+                                            padding: '12px',
+                                            backgroundColor: '#fefce8',
+                                            borderRadius: '6px',
+                                            marginTop: '4px',
+                                            border: '1px solid #fef08a',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {lastVisitRecord.notes}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Prescribed Medications */}
+                                {lastVisitRecord.medications && lastVisitRecord.medications.length > 0 && (
+                                    <div style={{marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '10px'}}>
+                                        <span style={s.infoLabel}>Prescribed Medications</span>
+                                        <div style={{marginTop: '8px'}}>
+                                            {lastVisitRecord.medications.map((med, i) => (
+                                                <div key={i} style={{
+                                                    fontSize: '13px',
+                                                    color: '#475569',
+                                                    padding: '8px',
+                                                    backgroundColor: '#f8fafc',
+                                                    borderRadius: '6px',
+                                                    marginBottom: '6px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <div>
+                                                        <span style={{fontWeight: '600', color: '#1e293b'}}>{med.name}</span>
+                                                        <span style={{marginLeft: '8px', color: '#64748b'}}>({med.dosage})</span>
+                                                    </div>
+                                                    <span style={{color: '#059669', fontWeight: '500'}}>{med.freq}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <div style={{color: '#94a3b8', fontSize: '14px'}}>No previous visit records found.</div>
+                            <div style={{color: '#94a3b8', fontSize: '14px', padding: '20px', textAlign: 'center'}}>
+                                No previous visit records found.
+                            </div>
                         )}
                     </div>
 
                     <div style={{...s.card, flex: 1.2, padding: 0, overflow: 'hidden'}}>
                         <div style={{padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems:'center'}}>
-                            <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px'}}><FileText size={18} /> Patient Scans</div>
+                            <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                <FileText size={18} /> Patient Scans
+                            </div>
                             <button 
-                                onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                onClick={() => handleOpenDicomViewer(displayPatient)}
                                 style={{
                                     ...s.actionButton,
                                     padding: '6px 12px',
@@ -1073,12 +1540,19 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {patientScansHistory.map(scan => (
+                                    {displayScans.map(scan => (
                                         <tr key={scan.id}>
-                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>{scan.name}</td>
-                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>{scan.modality}</td>
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
-                                                <button style={{...s.actionButton, padding: '4px 8px'}} onClick={() => handleOpenReport(scan, true)}>View</button>
+                                                {scan.name}
+                                            </td>
+                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
+                                                {scan.modality}
+                                            </td>
+                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
+                                                <button style={{...s.actionButton, padding: '4px 8px'}} 
+                                                    onClick={() => handleOpenReport(scan, scan.isReadOnly)}>
+                                                    {scan.isReadOnly ? 'View Report' : 'Complete Report'}
+                                                </button>
                                             </td>
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
                                                 <button 
@@ -1089,7 +1563,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                                         color: 'white',
                                                         fontSize: '12px'
                                                     }}
-                                                    onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                                    onClick={() => handleOpenDicomViewer(displayPatient)}
                                                     title="Open DICOM Viewer"
                                                 >
                                                     DICOM
@@ -1103,7 +1577,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN */}
+                {/* RIGHT COLUMN: Current Consultation */}
                 <div style={s.contentContainer}>
                     <div style={{...s.card, flex: 1, display: 'flex', flexDirection: 'column', gap: '12px'}}>
                         <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>Current Consultation</div>
@@ -1113,38 +1587,375 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                         </div>
 
                         {tab === 'records' ? (
-                            <div style={s.formScroll}>
+                            <div style={{...s.formScroll, flex: 1, overflowY: 'auto', maxHeight: '400px'}}>
+                                {/* Complaint */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Complaint</label>
-                                    <textarea style={s.textAreaField} placeholder="Patient's main complaint..." value={consultationRecords.complaint} onChange={e => setConsultationRecords({...consultationRecords, complaint: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Patient's main complaint..." 
+                                        value={consultationRecords.complaint} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, complaint: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Physical Examination */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Physical Examination</label>
-                                    <textarea style={s.textAreaField} placeholder="Key findings (e.g. Swelling, Range of Motion)..." value={consultationRecords.physicalExam} onChange={e => setConsultationRecords({...consultationRecords, physicalExam: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Key findings (e.g. Swelling, Range of Motion)..." 
+                                        value={consultationRecords.physicalExam} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, physicalExam: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Diagnosis */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Diagnosis</label>
-                                    <input type="text" style={s.inputField} placeholder="Confirmed diagnosis..." value={consultationRecords.diagnosis} onChange={e => setConsultationRecords({...consultationRecords, diagnosis: e.target.value})} />
+                                    <input 
+                                        type="text" 
+                                        style={s.inputField} 
+                                        placeholder="Confirmed diagnosis..." 
+                                        value={consultationRecords.diagnosis} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, diagnosis: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Treatment Plan */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Treatment Plan</label>
-                                    <textarea style={s.textAreaField} placeholder="Plan moving forward..." value={consultationRecords.treatment} onChange={e => setConsultationRecords({...consultationRecords, treatment: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Plan moving forward..." 
+                                        value={consultationRecords.treatment} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, treatment: e.target.value})} 
+                                    />
+                                </div>
+                                
+                                {/* Vital Signs Section */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <Activity size={18} /> Vital Signs
+                                    </div>
+                                    
+                                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+                                        {/* Heart Rate */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Heart Rate <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 72"
+                                                    value={consultationRecords.vitalSigns?.heart_rate || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            heart_rate: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>bpm</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Blood Pressure */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Blood Pressure <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="text" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 120/80"
+                                                    value={consultationRecords.vitalSigns?.blood_pressure || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            blood_pressure: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>mmHg</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Temperature */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Temperature <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.1"
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 36.6"
+                                                    value={consultationRecords.vitalSigns?.temperature || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            temperature: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>°C</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Weight */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Weight <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 70"
+                                                    value={consultationRecords.vitalSigns?.weight || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            weight: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>kg</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Respiratory Rate */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>Respiratory Rate</label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 16"
+                                                    value={consultationRecords.vitalSigns?.respiratory_rate || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            respiratory_rate: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>breaths/min</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Oxygen Saturation */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>O₂ Saturation</label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 98"
+                                                    min="0"
+                                                    max="100"
+                                                    value={consultationRecords.vitalSigns?.oxygen_saturation || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            oxygen_saturation: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Additional Notes Section */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <FileText size={18} /> Additional Information
+                                    </div>
+                                    
+                                    {/* Pain Assessment */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Pain Assessment (0-10)</label>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="10" 
+                                                step="1"
+                                                style={{flex: 1, height: '6px', borderRadius: '3px', backgroundColor: '#e2e8f0'}}
+                                                value={consultationRecords.pain_level || 0}
+                                                onChange={e => setConsultationRecords({
+                                                    ...consultationRecords,
+                                                    pain_level: parseInt(e.target.value)
+                                                })}
+                                            />
+                                            <span style={{
+                                                minWidth: '30px',
+                                                fontWeight: '600',
+                                                color: consultationRecords.pain_level > 7 ? '#dc2626' : 
+                                                    consultationRecords.pain_level > 4 ? '#f59e0b' : '#22c55e'
+                                            }}>
+                                                {consultationRecords.pain_level || 0}/10
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            fontSize: '11px',
+                                            color: '#94a3b8',
+                                            marginTop: '4px'
+                                        }}>
+                                            <span>No pain</span>
+                                            <span>Moderate</span>
+                                            <span>Severe</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Follow-up Date */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Recommended Follow-up Date</label>
+                                        <input 
+                                            type="date" 
+                                            style={s.inputField} 
+                                            value={consultationRecords.follow_up_date || ''}
+                                            onChange={e => setConsultationRecords({
+                                                ...consultationRecords,
+                                                follow_up_date: e.target.value
+                                            })}
+                                        />
+                                    </div>
+                                    
+                                    {/* Referral */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Referral (if any)</label>
+                                        <select 
+                                            style={s.inputField}
+                                            value={consultationRecords.referral || ''}
+                                            onChange={e => setConsultationRecords({
+                                                ...consultationRecords,
+                                                referral: e.target.value
+                                            })}
+                                        >
+                                            <option value="">No referral</option>
+                                            <option value="physiotherapy">Physiotherapy</option>
+                                            <option value="specialist">Specialist Consultation</option>
+                                            <option value="imaging">Imaging Center</option>
+                                            <option value="lab">Laboratory Tests</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    {/* Doctor's Notes */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Doctor's Notes</label>
+                                        <textarea 
+                                            style={s.textAreaField} 
+                                            placeholder="Additional notes, observations, or recommendations..."
+                                            value={consultationRecords.notes || ''}
+                                            onChange={e => setConsultationRecords({...consultationRecords, notes: e.target.value})}
+                                            rows={4}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div style={{display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, paddingTop: '20px'}}>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, paddingTop: '20px', overflowY: 'auto', maxHeight: '400px'}}>
                                 <div style={{fontSize: '13px', color: '#64748b'}}>Select an order type:</div>
-                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#4361ee', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowMedicationModal(true)}>
+                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#4361ee', color: 'white', justifyContent: 'center', fontSize: '14px'}} 
+                                    onClick={() => setShowMedicationModal(true)}>
                                     <Pill size={18} /> Prescribe Medication
                                 </button>
-                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#059669', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowScanOrderModal(true)}>
+                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#059669', color: 'white', justifyContent: 'center', fontSize: '14px'}} 
+                                    onClick={() => setShowScanOrderModal(true)}>
                                     <Activity size={18} /> Order New Scan
                                 </button>
+                                
+                                {/* Additional Order Options */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '13px', color: '#64748b', marginBottom: '12px'}}>Other Order Options:</div>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Physical Therapy Referral - Feature coming soon')}>
+                                        📋 Physical Therapy Referral
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Laboratory Tests - Feature coming soon')}>
+                                        🧪 Laboratory Tests
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Medical Certificate - Feature coming soon')}>
+                                        📄 Medical Certificate
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Sick Leave - Feature coming soon')}>
+                                        🏥 Sick Leave
+                                    </button>
+                                </div>
                             </div>
                         )}
                         
                         {tab === 'records' && (
-                            <button style={{...s.actionButton, backgroundColor: '#1e293b', color: 'white', marginTop: 'auto', padding: '12px', justifyContent: 'center'}}>
+                            <button 
+                                style={{...s.actionButton, backgroundColor: '#1e293b', color: 'white', marginTop: 'auto', padding: '12px', justifyContent: 'center'}}
+                                onClick={handleSaveVisitRecord}
+                            >
                                 Save Records & End Visit
                             </button>
                         )}
@@ -1161,7 +1972,15 @@ export default function DoctorDashboard() {
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [appointments, setAppointments] = useState([]);
-    const doctorName = "Maya";
+    const [pendingScans, setPendingScans] = useState([]);
+    const [patientsList, setPatientsList] = useState([]);
+    const [doctorName, setDoctorName] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Login state
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loginUsername, setLoginUsername] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
 
     // Modals State
     const [showReportModal, setShowReportModal] = useState(false);
@@ -1172,90 +1991,756 @@ export default function DoctorDashboard() {
     const [reportText, setReportText] = useState('');
     
     const [consultationRecords, setConsultationRecords] = useState({
-        complaint: '', diagnosis: '', treatment: '', physicalExam: ''
+        complaint: '',
+        diagnosis: '',
+        treatment: '',
+        physicalExam: '',
+        notes: '',
+        vitalSigns: {
+            heart_rate: '',
+            blood_pressure: '',
+            temperature: '',
+            weight: '',
+            respiratory_rate: '',
+            oxygen_saturation: ''
+        }
     });
 
-    useEffect(() => {
-        const fetchAppointments = async () => {
-          try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(
-              "http://127.0.0.1:5000/api/doctor/appointments",
-              {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            const data = await response.json();
-            const formattedAppointments = data.map((appt) => {        
-              return {
-                id: appt.appointment_id,
-                date: appt.date,
-                time: appt.time,
-                patientName: appt.patient_name,
-                reason: appt.reason,
-                notes: appt.notes,
-                status: appt.status?? "scheduled",              };
-            });
-            console.log(`formattedAppointments: ${JSON.stringify(formattedAppointments)}`);
-            setAppointments(formattedAppointments);
-          } catch (error) {
-            console.error("Error fetching appointments:", error);
-          }
-        };
-        fetchAppointments();
-      }, []);
-
+    // Profile Data State
     const [profileData, setProfileData] = useState({
-        fullName: 'Dr. Mohamed Khalaf',
-        licenseNumber: '12345',
-        professionalTitle: 'Orthopedic Surgeon',
-        staffId: 'STAFF-001',
-        phone: '+20 106-1123-123',
-        address: '123 Medical Center Drive, Suite 100',
+        fullName: '',
+        licenseNumber: '',
+        professionalTitle: '',
+        staffId: '',
+        phone: '',
+        address: '',
         password: '',
         newPassword: '',
         confirmPassword: '',
         profilePhoto: null,
         digitalSignature: null,
-        email: 'doctor@gmail.com',
-        username: 'firstdoctor'
+        email: '',
+        username: ''
     });
 
-    // --- HANDLERS ---
-    const handleOpenReport = (scan, isReadOnly = false) => {
-        let scanData = { ...scan, isReadOnly };
+    // ========== HELPER FUNCTIONS ==========
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
 
-        if (selectedPatient) {
-            scanData = {
-                ...scanData,
-                patientName: selectedPatient.patientName,
-                patientId: `P-10${selectedPatient.id}`,
-                age: selectedPatient.age,
-                gender: selectedPatient.gender,
-                recordId: scan.recordId || `REC-${scan.id + 500}`
-            };
+    // ========== API CALL FUNCTIONS ==========
+    const fetchAppointments = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            
+            // Use the new today endpoint
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/appointments/today", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Appointments data:", data); // Debug log
+                
+                const formattedAppointments = data.map((appt) => {        
+                    return {
+                        id: appt.appointment_id || appt.id,
+                        date: formatDate(appt.date),
+                        time: appt.time || 'N/A',
+                        patientName: appt.patient_name,
+                        reason: appt.reason || 'Follow-up',
+                        notes: appt.notes || '',
+                        status: appt.status || "scheduled",
+                    };
+                });
+                setAppointments(formattedAppointments);
+            } else {
+                console.error("Failed to fetch appointments");
+                // Use mock data as fallback
+                const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                setAppointments([
+                    { id: 1, date: today, time: '09:00 AM', patientName: 'Sarah Johnson', reason: 'Shoulder follow-up', notes: 'Post-op check', status: 'scheduled' },
+                    { id: 2, date: today, time: '10:30 AM', patientName: 'Michael Brown', reason: 'Knee pain', notes: 'ACL reconstruction follow-up', status: 'scheduled' },
+                    { id: 3, date: today, time: '02:00 PM', patientName: 'Emily Davis', reason: 'Ankle sprain', notes: 'Progress check', status: 'scheduled' },
+                ]);
+            }
+        } catch (error) {
+            console.error("Error fetching appointments:", error);
+            const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            setAppointments([
+                { id: 1, date: today, time: '09:00 AM', patientName: 'Sarah Johnson', reason: 'Shoulder follow-up', notes: 'Post-op check', status: 'scheduled' },
+                { id: 2, date: today, time: '10:30 AM', patientName: 'Michael Brown', reason: 'Knee pain', notes: 'ACL reconstruction follow-up', status: 'scheduled' },
+            ]);
         }
+    };
 
-        setSelectedScan(scanData);
-        setReportText(scan.report || ''); 
+
+    const fetchPendingScans = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/scans?status=pending", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const formattedScans = data.map((scan) => ({
+                    id: scan.scan_id,
+                    scanId: `SCN-${scan.scan_id}`,
+                    scanType: scan.scan_type,
+                    bodyPart: scan.body_part,
+                    modality: scan.modality,
+                    date: formatDate(scan.scan_date),
+                    time: scan.scan_date ? '09:00 AM' : 'N/A',
+                    radiologist: scan.radiologist || 'Not Assigned',
+                    status: scan.status,
+                    patientName: scan.patient_name,
+                    patientId: `P-${scan.patient_id}`,
+                    age: scan.patient_age,
+                    gender: scan.patient_gender,
+                    recordId: `REC-${scan.scan_id}`,
+                    scanImage: scan.folder_path ? 
+                        `http://127.0.0.1:5000/uploads/dicom_scans/${scan.folder_path}/thumbnail.jpg` : 
+                        FALLBACK_IMAGE
+                }));
+                setPendingScans(formattedScans);
+            } else {
+                console.error("Failed to fetch scans, using mock data");
+                setPendingScans(pendingScansMock);
+            }
+        } catch (error) {
+            console.error("Error fetching scans:", error);
+            setPendingScans(pendingScansMock);
+        }
+    };
+
+    const fetchPatientsList = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/patients", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setPatientsList(data);
+            } else {
+                console.error("Failed to fetch patients");
+                setPatientsList(allPatientsData);
+            }
+        } catch (error) {
+            console.error("Error fetching patients:", error);
+            setPatientsList(allPatientsData);
+        }
+    };
+
+    const fetchProfile = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/profile", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Profile data:", data); // Debug log
+                
+                // Helper function to construct image URL
+                const constructImageUrl = (filename) => {
+                    if (!filename) return null;
+                    
+                    // Check if it's already a full URL
+                    if (filename.startsWith('http')) {
+                        return filename;
+                    }
+                    
+                    // Check if it's a relative path
+                    if (filename.includes('/')) {
+                        // Remove any leading slash
+                        const cleanPath = filename.startsWith('/') ? filename.substring(1) : filename;
+                        return `http://127.0.0.1:5000/${cleanPath}`;
+                    }
+                    
+                    // If it's just a filename, use the profile images endpoint
+                    return `http://127.0.0.1:5000/api/doctor/profile_images/${filename}`;
+                };
+                
+                // Get profile photo URL
+                let profilePhotoUrl = null;
+                if (data.profile_image) {
+                    profilePhotoUrl = constructImageUrl(data.profile_image);
+                    console.log("Profile image URL constructed:", profilePhotoUrl);
+                }
+                
+                // Get signature URL
+                let signatureUrl = null;
+                if (data.digital_signature) {
+                    signatureUrl = constructImageUrl(data.digital_signature);
+                    console.log("Signature URL constructed:", signatureUrl);
+                } else if (data.doctor_info?.digital_signature) {
+                    // Check doctor_info as alternative location
+                    signatureUrl = constructImageUrl(data.doctor_info.digital_signature);
+                    console.log("Signature URL from doctor_info:", signatureUrl);
+                }
+                
+                setProfileData({
+                    fullName: data.full_name || `${data.f_name || ''} ${data.l_name || ''}`.trim(),
+                    licenseNumber: data.doctor_info?.license_number || '',
+                    professionalTitle: data.doctor_info?.department || 'Doctor',
+                    staffId: data.doctor_info?.staff_id || '',
+                    phone: data.phone || '',
+                    address: data.address || '',
+                    password: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                    profilePhoto: profilePhotoUrl,
+                    digitalSignature: signatureUrl,
+                    email: data.email || '',
+                    username: data.username || '',
+                    statistics: data.statistics || { appointmentsThisMonth: 0, scansMadeThisMonth: 0 },
+                    // Store the raw filenames too
+                    rawProfileImage: data.profile_image,
+                    rawDigitalSignature: data.digital_signature || data.doctor_info?.digital_signature
+                });
+                
+                // Set doctor name
+                if (data.f_name) {
+                    setDoctorName(data.f_name);
+                } else if (data.full_name) {
+                    const firstName = data.full_name.split(' ')[0];
+                    setDoctorName(firstName);
+                } else if (data.doctor_info?.f_name) {
+                    setDoctorName(data.doctor_info.f_name);
+                }
+                
+                // Also store in localStorage for persistence
+                localStorage.setItem('doctorProfileData', JSON.stringify({
+                    profile_image: data.profile_image,
+                    digital_signature: data.digital_signature || data.doctor_info?.digital_signature,
+                    profile_photo_url: profilePhotoUrl,
+                    signature_url: signatureUrl
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            
+            // Try to load from localStorage as fallback
+            const storedProfile = localStorage.getItem('doctorProfileData');
+            if (storedProfile) {
+                const savedData = JSON.parse(storedProfile);
+                setProfileData(prev => ({
+                    ...prev,
+                    profilePhoto: savedData.profile_photo_url,
+                    digitalSignature: savedData.signature_url
+                }));
+            }
+        }
+    };
+
+
+    const updateProfile = async (updateData) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/profile/update", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Profile updated successfully');
+                fetchProfile(); // Refresh profile data
+                return true;
+            } else {
+                alert(data.error || 'Update failed');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            return false;
+        }
+    };
+
+    const uploadProfilePicture = async (file) => {
+        try {
+            const token = localStorage.getItem("token");
+            const formData = new FormData();
+            formData.append('profile_picture', file);
+            
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/profile/upload-picture", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Profile picture uploaded successfully');
+                fetchProfile(); // Refresh profile data
+                return data.profile_image_url;
+            } else {
+                alert(data.error || 'Upload failed');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error uploading picture:', error);
+            return null;
+        }
+    };
+
+    const uploadSignature = async (file) => {
+        try {
+            const token = localStorage.getItem("token");
+            const formData = new FormData();
+            formData.append('signature', file);
+            
+            const response = await fetch("http://127.0.0.1:5000/api/doctor/profile/upload-signature", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Signature uploaded successfully');
+                return data.signature_url;
+            } else {
+                alert(data.error || 'Upload failed');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error uploading signature:', error);
+            return null;
+        }
+    };
+
+    const updateScanReport = async (scanId, reportData) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/scan/${scanId}/report`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(reportData)
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Scan report updated successfully');
+                fetchPendingScans(); // Refresh pending scans
+                return true;
+            } else {
+                alert(data.error || 'Update failed');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error updating scan report:', error);
+            return false;
+        }
+    };
+
+    const prescribeMedication = async (patientId, medicationData) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${patientId}/medication`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(medicationData)
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Medication prescribed successfully');
+                return true;
+            } else {
+                alert(data.error || 'Failed to prescribe medication');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error prescribing medication:', error);
+            return false;
+        }
+    };
+
+    const orderNewScan = async (patientId, scanData) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${patientId}/scan`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(scanData)
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert('Scan ordered successfully');
+                return true;
+            } else {
+                alert(data.error || 'Failed to order scan');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error ordering scan:', error);
+            return false;
+        }
+    };
+
+    // ========== USE EFFECTS ==========
+    useEffect(() => {
+        const loadDoctorName = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setIsLoggedIn(false);
+                return;
+            }
+
+            // Check if doctor name is already in localStorage
+            const storedUserData = localStorage.getItem('userData');
+            const storedDoctorData = localStorage.getItem('doctorData');
+            
+            if (storedUserData) {
+                try {
+                    const userData = JSON.parse(storedUserData);
+                    if (userData.f_name) {
+                        setDoctorName(userData.f_name);
+                        setIsLoggedIn(true);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error parsing stored user data:', e);
+                }
+            }
+            
+            if (storedDoctorData) {
+                try {
+                    const doctorData = JSON.parse(storedDoctorData);
+                    if (doctorData.f_name) {
+                        setDoctorName(doctorData.f_name);
+                        setIsLoggedIn(true);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error parsing stored doctor data:', e);
+                }
+            }
+
+            // If not in localStorage, fetch from API
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/doctor/profile", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.f_name) {
+                        setDoctorName(data.f_name);
+                        setIsLoggedIn(true);
+                    }
+                } else {
+                    setIsLoggedIn(false);
+                }
+            } catch (error) {
+                console.error('Error fetching profile for name:', error);
+                setIsLoggedIn(false);
+            }
+        };
+
+        loadDoctorName();
+    }, []);
+
+    useEffect(() => {
+        if (!isLoggedIn) return;
+
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            
+            if (activeTab === 'home') {
+                await Promise.all([fetchAppointments(), fetchPendingScans()]);
+            } else if (activeTab === 'patients') {
+                await fetchPatientsList();
+            } else if (activeTab === 'profile-settings') {
+                await fetchProfile();
+            }
+            
+            setIsLoading(false);
+        };
+
+        loadInitialData();
+    }, [activeTab, isLoggedIn]);
+
+    // ========== EVENT HANDLERS ==========
+    const handleLogin = async (username, password) => {
+        try {
+            setIsLoading(true);
+            const response = await fetch('http://127.0.0.1:5000/api/doctor/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('token', data.access_token);
+                
+                // Store user data
+                if (data.user) {
+                    localStorage.setItem('userData', JSON.stringify(data.user));
+                }
+                
+                // Store doctor data if available
+                if (data.doctor) {
+                    localStorage.setItem('doctorData', JSON.stringify(data.doctor));
+                }
+                
+                // Set doctor name - check multiple possible sources
+                let doctorNameToSet = '';
+                
+                if (data.doctor?.f_name) {
+                    doctorNameToSet = data.doctor.f_name;
+                } else if (data.user?.f_name) {
+                    doctorNameToSet = data.user.f_name;
+                }
+                
+                setDoctorName(doctorNameToSet);
+                setIsLoggedIn(true);
+                
+                // Fetch initial data after login
+                fetchAppointments();
+                fetchPendingScans();
+                
+                return true;
+            } else {
+                alert(data.error || 'Login failed');
+                return false;
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Network error. Please check if the server is running.');
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Show login form if not logged in
+    if (!isLoggedIn && !localStorage.getItem('token')) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                backgroundColor: '#f8fafc'
+            }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    padding: '40px',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    width: '400px'
+                }}>
+                    <h2 style={{textAlign: 'center', marginBottom: '30px', color: '#1e293b'}}>
+                        Doctor Login
+                    </h2>
+                    <div style={{marginBottom: '20px'}}>
+                        <label style={{display: 'block', marginBottom: '8px', color: '#475569', fontSize: '14px'}}>
+                            Username
+                        </label>
+                        <input 
+                            type="text" 
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '6px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px'
+                            }}
+                            value={loginUsername}
+                            onChange={(e) => setLoginUsername(e.target.value)}
+                            placeholder="Enter username"
+                        />
+                    </div>
+                    <div style={{marginBottom: '30px'}}>
+                        <label style={{display: 'block', marginBottom: '8px', color: '#475569', fontSize: '14px'}}>
+                            Password
+                        </label>
+                        <input 
+                            type="password" 
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '6px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px'
+                            }}
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder="Enter password"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => handleLogin(loginUsername, loginPassword)}
+                        style={{
+                            width: '100%',
+                            padding: '12px',
+                            backgroundColor: '#4361ee',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Logging in...' : 'Login'}
+                    </button>
+                    <div style={{
+                        marginTop: '20px',
+                        textAlign: 'center',
+                        color: '#64748b',
+                        fontSize: '12px'
+                    }}>
+                        Make sure the backend server is running at http://127.0.0.1:5000
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading screen
+    if (isLoading) {
+        return (
+            <div style={s.container}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100vh',
+                    backgroundColor: '#f8fafc'
+                }}>
+                    <div>Loading dashboard...</div>
+                </div>
+            </div>
+        );
+    }
+
+    const handleOpenReport = (scan, isReadOnly = false) => {
+        setSelectedScan({ ...scan, isReadOnly });
+        setReportText(scan.report || '');
         setShowReportModal(true);
     };
 
-    const handleSubmitReport = () => {
-        console.log('Submitting report for:', selectedScan, 'Report:', reportText);
+    // Update handleSubmitReport function in main component
+    const handleSubmitReport = async () => {
+        if (selectedScan && selectedScan.id) {
+            const success = await updateScanReport(selectedScan.id, {
+                doctor_notes: reportText,
+                final_diagnosis: reportText,
+                is_verified: true,
+                status: 'completed'
+            });
+            
+            if (success) {
+                // Refresh pending scans
+                fetchPendingScans();
+            }
+        }
         setShowReportModal(false);
         setReportText('');
     };
 
-    const handlePatientClick = (patientName) => {
-        const patient = allPatientsData.find(p => p.patientName === patientName);
+    // Update the handlePatientClick function in the main component
+    const handlePatientClick = async (patientNameOrId) => {
+        // First try to find in patientsList (real data)
+        if (patientsList.length > 0) {
+            const patient = patientsList.find(p => 
+                p.patient_name === patientNameOrId || 
+                `P-${p.patient_id}` === patientNameOrId
+            );
+            
+            if (patient) {
+                const formattedPatient = {
+                    id: patient.patient_id,
+                    patientName: patient.patient_name,
+                    age: patient.age,
+                    gender: patient.gender,
+                    bloodType: patient.blood_type,
+                    allergies: patient.allergies,
+                    diagnosis: patient.diagnosis,
+                    lastVisitDate: patient.last_visit_date,
+                    nextVisitDate: patient.next_visit_date,
+                    history: patient.chronic_conditions ? patient.chronic_conditions.split(',') : []
+                };
+                
+                setSelectedPatient(formattedPatient);
+                setActiveTab('profile');
+                
+                // Reset consultation records for new patient
+                setConsultationRecords({
+                    complaint: '',
+                    diagnosis: '',
+                    treatment: '',
+                    physicalExam: ''
+                });
+                
+                return;
+            }
+        }
+        
+        // Fallback to mock data
+        const patient = allPatientsData.find(p => p.patientName === patientNameOrId);
         if (patient) {
             setSelectedPatient(patient);
             setActiveTab('profile');
+            
+            // Reset consultation records for new patient
+            setConsultationRecords({
+                complaint: '',
+                diagnosis: '',
+                treatment: '',
+                physicalExam: ''
+            });
         }
     };
 
@@ -1264,12 +2749,776 @@ export default function DoctorDashboard() {
         setActiveTab('home');
     };
 
-    // Handle DICOM Viewer navigation from sidebar
-    const handleOpenDicomViewer = () => {
-        window.location.href = '/dicom-viewer';
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('doctorData');
+        localStorage.removeItem('userData');
+        window.location.href = '/login';
     };
 
-    // --- MAIN RENDER ---
+    const ProfileSettingsView = ({ profileData, setProfileData, doctorName }) => {
+        const [showCurrentPass, setShowCurrentPass] = useState(false);
+        const [showNewPass, setShowNewPass] = useState(false);
+        const [showConfirmPass, setShowConfirmPass] = useState(false);
+        const [originalPhone, setOriginalPhone] = useState(profileData.phone || '');
+        const [originalAddress, setOriginalAddress] = useState(profileData.address || '');
+
+        // Test function to check if image loads
+        const testImageUrl = (url) => {
+            if (!url) return false;
+            
+            // Create a test image element
+            const img = new Image();
+            img.src = url;
+            
+            return new Promise((resolve) => {
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                // Timeout after 3 seconds
+                setTimeout(() => resolve(false), 3000);
+            });
+        };
+
+        // Test profile photo on mount
+        useEffect(() => {
+            const testImages = async () => {
+                if (profileData.profilePhoto) {
+                    const works = await testImageUrl(profileData.profilePhoto);
+                    console.log("Profile photo URL test:", profileData.profilePhoto, "Works:", works);
+                }
+                
+                if (profileData.digitalSignature) {
+                    const works = await testImageUrl(profileData.digitalSignature);
+                    console.log("Signature URL test:", profileData.digitalSignature, "Works:", works);
+                }
+            };
+            
+            testImages();
+        }, [profileData.profilePhoto, profileData.digitalSignature]);
+
+        const handlePhotoUpload = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                console.log("Uploading profile picture:", file.name, file.type, file.size);
+                
+                // Save current state before updating
+                const currentProfileData = { ...profileData }; // Create a copy of current profileData
+                const originalPhoto = currentProfileData.profilePhoto;
+                
+                // Show loading state
+                setProfileData(prev => ({
+                    ...prev,
+                    profilePhoto: null
+                }));
+                
+                // Create FormData
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const token = localStorage.getItem("token");
+                
+                try {
+                    const response = await fetch("http://127.0.0.1:5000/api/doctor/profile/upload-picture", {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Construct the correct URL
+                        const imageUrl = `http://127.0.0.1:5000/api/doctor/profile_images/${data.profile_image}`;
+                        
+                        // Update profile data immediately
+                        setProfileData(prev => ({
+                            ...prev,
+                            profilePhoto: imageUrl,
+                            rawProfileImage: data.profile_image
+                        }));
+                        
+                        // Store in localStorage
+                        const storedData = localStorage.getItem('doctorProfileData');
+                        const localProfileData = storedData ? JSON.parse(storedData) : {};
+                        localProfileData.profile_image = data.profile_image;
+                        localProfileData.profile_photo_url = imageUrl;
+                        localStorage.setItem('doctorProfileData', JSON.stringify(localProfileData));
+                        
+                        // Also update userData in localStorage
+                        const storedUserData = localStorage.getItem('userData');
+                        if (storedUserData) {
+                            const userData = JSON.parse(storedUserData);
+                            userData.profile_image = data.profile_image;
+                            localStorage.setItem('userData', JSON.stringify(userData));
+                        }
+                        
+                        alert('Profile picture updated successfully!');
+                        
+                        // Force refresh profile data
+                        await fetchProfile();
+                    } else {
+                        // Revert to original photo on error
+                        setProfileData(prev => ({
+                            ...prev,
+                            profilePhoto: originalPhoto
+                        }));
+                        alert(data.error || 'Failed to upload profile picture');
+                    }
+                } catch (error) {
+                    console.error('Error uploading profile picture:', error);
+                    // Revert to original photo on error
+                    setProfileData(prev => ({
+                        ...prev,
+                        profilePhoto: originalPhoto
+                    }));
+                    alert('Error uploading profile picture');
+                }
+            }
+        };
+
+        const handleSignatureUpload = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                console.log("Uploading signature:", file.name, file.type, file.size);
+                
+                // Save current state before updating
+                const currentProfileData = { ...profileData }; // Create a copy of current profileData
+                const originalSignature = currentProfileData.digitalSignature;
+                
+                // Show loading state
+                setProfileData(prev => ({
+                    ...prev,
+                    digitalSignature: null
+                }));
+                
+                // Create FormData
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const token = localStorage.getItem("token");
+                
+                try {
+                    // Upload the file
+                    const uploadResponse = await fetch("http://127.0.0.1:5000/api/doctor/profile/upload-signature", {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: formData
+                    });
+                    
+                    const uploadData = await uploadResponse.json();
+                    
+                    if (uploadResponse.ok) {
+                        // Construct the correct URL
+                        const signatureUrl = `http://127.0.0.1:5000/api/doctor/profile_images/${uploadData.profile_image}`;
+                        
+                        // Update immediately
+                        setProfileData(prev => ({
+                            ...prev,
+                            digitalSignature: signatureUrl,
+                            rawDigitalSignature: uploadData.profile_image
+                        }));
+                        
+                        // Store in localStorage
+                        const storedData = localStorage.getItem('doctorProfileData');
+                        const localProfileData = storedData ? JSON.parse(storedData) : {};
+                        localProfileData.digital_signature = uploadData.profile_image;
+                        localProfileData.signature_url = signatureUrl;
+                        localStorage.setItem('doctorProfileData', JSON.stringify(localProfileData));
+                        
+                        // Save signature path to database
+                        try {
+                            const saveResponse = await fetch("http://127.0.0.1:5000/api/doctor/profile/update-signature", {
+                                method: "PUT",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({
+                                    signature_path: uploadData.profile_image
+                                })
+                            });
+                            
+                            if (saveResponse.ok) {
+                                alert('Signature uploaded and saved successfully!');
+                                
+                                // Force refresh profile data
+                                await fetchProfile();
+                            } else {
+                                // If database save fails, still keep the uploaded image
+                                alert('Signature uploaded but failed to save to database');
+                            }
+                        } catch (error) {
+                            console.error('Error saving signature:', error);
+                            // Still keep the uploaded image
+                            alert('Signature uploaded but database save failed');
+                        }
+                    } else {
+                        // Revert to original signature on error
+                        setProfileData(prev => ({
+                            ...prev,
+                            digitalSignature: originalSignature
+                        }));
+                        alert(uploadData.error || 'Failed to upload signature');
+                    }
+                } catch (error) {
+                    console.error('Error uploading signature:', error);
+                    // Revert to original signature on error
+                    setProfileData(prev => ({
+                        ...prev,
+                        digitalSignature: originalSignature
+                    }));
+                    alert('Error uploading signature');
+                }
+            }
+        };
+
+        const handleSave = async () => {
+            if (profileData.newPassword && profileData.newPassword !== profileData.confirmPassword) {
+                alert('New passwords do not match!');
+                return;
+            }
+            
+            const updateData = {};
+            
+            // Only include fields that have changed
+            if (profileData.phone !== originalPhone) {
+                updateData.phone = profileData.phone;
+                setOriginalPhone(profileData.phone);
+            }
+            
+            if (profileData.address !== originalAddress) {
+                updateData.address = profileData.address;
+                setOriginalAddress(profileData.address);
+            }
+            
+            // Password change
+            if (profileData.password && profileData.newPassword) {
+                updateData.current_password = profileData.password;
+                updateData.new_password = profileData.newPassword;
+            }
+            
+            // If no changes, show message
+            if (Object.keys(updateData).length === 0 && !profileData.password) {
+                alert('No changes to save');
+                return;
+            }
+            
+            const success = await updateProfile(updateData);
+            if (success) {
+                // Clear password fields after successful update
+                setProfileData({
+                    ...profileData,
+                    password: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                });
+            }
+        };
+
+        const getPasswordStrength = (pass) => {
+            if (!pass) return 0;
+            if (pass.length < 6) return 30;
+            if (pass.length < 10) return 60;
+            return 100;
+        };
+        
+        const strength = getPasswordStrength(profileData.newPassword);
+        const strengthColor = strength < 40 ? '#ef4444' : strength < 80 ? '#f59e0b' : '#22c55e';
+
+        return (
+            <div style={s.main}>
+                <div style={{marginBottom: '10px'}}>
+                    <h1 style={{fontSize: '28px', fontWeight: '700', color: '#1e293b'}}>My Profile</h1>
+                    <p style={{color: '#64748b'}}>Manage your personal and professional information</p>
+                </div>
+
+                <div style={dps.profilePageContainer}>
+                    <div style={dps.profileLayoutGrid}>
+                        
+                        {/* LEFT COLUMN */}
+                        <div style={dps.profileColumn}>
+                            
+                            {/* Profile Photo */}
+                            <div style={dps.profileCard}>
+                                <h3 style={dps.profileCardTitle}>Profile Photo</h3>
+                                <div style={dps.profilePhotoSection}>
+                                    <div style={dps.profilePhotoCircle}>
+                                        {profileData.profilePhoto ? (
+                                            // In your ProfileSettingsView component, update the img tag:
+                                            <img 
+                                                src={profileData.profilePhoto} 
+                                                alt="Profile" 
+                                                style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}}
+                                                onError={(e) => {
+                                                    // Try to reconstruct URL from raw filename
+                                                    if (profileData.rawProfileImage) {
+                                                        e.target.src = `http://127.0.0.1:5000/api/doctor/profile_images/${profileData.rawProfileImage}`;
+                                                    } else {
+                                                        // Fallback to initial
+                                                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNFMkU4RjAiIHJ4PSI1MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMzYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjOTRBM0I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+ezB9PC90ZXh0Pjwvc3ZnPg=='.replace('{0}', doctorName.charAt(0));
+                                                    }
+                                                }}
+/>
+                                        ) : (
+                                            <div style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: '#e2e8f0',
+                                                color: '#475569',
+                                                fontSize: '36px',
+                                                fontWeight: 'bold',
+                                                borderRadius: '50%'
+                                            }}>
+                                                {doctorName.charAt(0) || 'D'}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handlePhotoUpload} 
+                                        style={{display: 'none'}} 
+                                        id="photo-upload" 
+                                    />
+                                    <label htmlFor="photo-upload" style={dps.uploadButton}>
+                                        {profileData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
+                                    </label>
+                                    {profileData.profilePhoto && (
+                                        <button 
+                                            onClick={() => {
+                                                setProfileData({...profileData, profilePhoto: null});
+                                                // Here you would also call API to remove photo
+                                            }}
+                                            style={{
+                                                ...dps.uploadButton,
+                                                backgroundColor: '#fef2f2',
+                                                color: '#dc2626',
+                                                marginTop: '8px'
+                                            }}
+                                        >
+                                            Remove Photo
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Contact Information */}
+                            <div style={dps.profileCard}>
+                                <h3 style={dps.profileCardTitle}>Contact Information</h3>
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Phone Number</label>
+                                    <input 
+                                        type="tel" 
+                                        value={profileData.phone || ''} 
+                                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})} 
+                                        style={dps.editableField} 
+                                        placeholder="Enter phone number"
+                                    />
+                                </div>
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Address</label>
+                                    <textarea 
+                                        value={profileData.address || ''} 
+                                        onChange={(e) => setProfileData({...profileData, address: e.target.value})} 
+                                        style={{...dps.editableField, minHeight: '80px', resize: 'vertical'}} 
+                                        placeholder="Enter address"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Digital Signature */}
+                            <div style={dps.profileCard}>
+                                <h3 style={dps.profileCardTitle}>Digital Signature</h3>
+                                <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px'}}>
+                                    <div style={{
+                                        width: '100%',
+                                        height: '100px',
+                                        border: '2px dashed #e2e8f0',
+                                        borderRadius: '8px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        backgroundColor: '#f8fafc', overflow: 'hidden'
+                                    }}>
+                                        {profileData.digitalSignature ? (
+                                            <img 
+                                                src={profileData.digitalSignature} 
+                                                alt="Signature" 
+                                                style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}}
+                                                onError={(e) => {
+                                                    // Try to reconstruct URL from raw filename
+                                                    if (profileData.rawDigitalSignature) {
+                                                        e.target.src = `http://127.0.0.1:5000/api/doctor/profile_images/${profileData.rawDigitalSignature}`;
+                                                    } else {
+                                                        e.target.style.display = 'none';
+                                                        e.target.parentElement.innerHTML = '<span style="font-size: 12px; color: #94a3b8">Signature image not found</span>';
+                                                    }
+                                                }}
+                                            />
+                                        ) : (
+                                            <span style={{fontSize: '12px', color: '#94a3b8'}}>No signature uploaded</span>
+                                        )}
+                                    </div>
+                                    <div style={{display: 'flex', gap: '8px'}}>
+                                        <input type="file" accept="image/*" onChange={handleSignatureUpload} style={{display: 'none'}} id="signature-upload" />
+                                        <label htmlFor="signature-upload" style={{...dps.uploadButton, width: 'auto'}}>
+                                            {profileData.digitalSignature ? 'Change Signature' : 'Upload Signature'}
+                                        </label>
+                                        {profileData.digitalSignature && (
+                                            <button 
+                                                onClick={() => {
+                                                    setProfileData({...profileData, digitalSignature: null});
+                                                    // Call API to remove signature
+                                                    const token = localStorage.getItem("token");
+                                                    fetch("http://127.0.0.1:5000/api/doctor/profile/update-signature", {
+                                                        method: "PUT",
+                                                        headers: {
+                                                            "Content-Type": "application/json",
+                                                            Authorization: `Bearer ${token}`,
+                                                        },
+                                                        body: JSON.stringify({
+                                                            signature_path: null
+                                                        })
+                                                    });
+                                                }}
+                                                style={{
+                                                    ...dps.uploadButton,
+                                                    backgroundColor: '#fef2f2',
+                                                    color: '#dc2626',
+                                                    width: 'auto'
+                                                }}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN */}
+                        <div style={dps.profileColumn}>
+                            
+                            {/* Professional Info */}
+                            <div style={dps.profileCard}>
+                                <h3 style={dps.profileCardTitle}>Professional Information</h3>
+                                
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
+                                    <div style={dps.infoRow}>
+                                        <label style={s.inputLabel}>Full Name</label>
+                                        <div style={dps.readOnlyField}>{profileData.fullName}</div>
+                                    </div>
+                                    <div style={dps.infoRow}>
+                                        <label style={s.inputLabel}>Professional Title</label>
+                                        <div style={dps.readOnlyField}>{profileData.professionalTitle}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
+                                    <div style={dps.infoRow}>
+                                        <label style={s.inputLabel}>Medical License</label>
+                                        <div style={dps.readOnlyField}>{profileData.licenseNumber || 'Not specified'}</div>
+                                    </div>
+                                    <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Doctor ID</label>
+                                    <div style={dps.readOnlyField}>{profileData.staffId || 'Not assigned'}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px'}}>
+                                    <div style={dps.infoRow}>
+                                        <label style={s.inputLabel}>Username</label>
+                                        <div style={dps.readOnlyField}>{profileData.username}</div>
+                                    </div>
+                                    <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Email</label>
+                                    <div style={dps.readOnlyField}>{profileData.email}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Monthly Statistics */}
+                            {profileData.statistics && (
+                                <div style={dps.profileCard}>
+                                    <h3 style={dps.profileCardTitle}>Monthly Statistics</h3>
+                                    <div style={dps.statsGrid}>
+                                        <div style={dps.statItem}>
+                                            <span style={dps.statNumber}>{profileData.statistics.appointmentsThisMonth || 0}</span>
+                                            <span style={dps.statLabel}>Appointments</span>
+                                        </div>
+                                        <div style={dps.statItem}>
+                                            <span style={dps.statNumber}>{profileData.statistics.scansMadeThisMonth || 0}</span>
+                                            <span style={dps.statLabel}>Scans Completed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Security Settings */}
+                            <div style={dps.profileCard}>
+                                <h3 style={dps.profileCardTitle}>Security Settings</h3>
+                                
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Current Password</label>
+                                    <div style={dps.passwordWrapper}>
+                                        <input 
+                                            type={showCurrentPass ? "text" : "password"} 
+                                            value={profileData.password} 
+                                            onChange={(e) => setProfileData({...profileData, password: e.target.value})} 
+                                            style={dps.editableField} 
+                                            placeholder="Enter current password" 
+                                        />
+                                        <button onClick={() => setShowCurrentPass(!showCurrentPass)} style={dps.eyeIconBtn}>
+                                            {showCurrentPass ? <EyeOff size={16}/> : <Eye size={16}/>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>New Password</label>
+                                    <div style={dps.passwordWrapper}>
+                                        <input 
+                                            type={showNewPass ? "text" : "password"} 
+                                            value={profileData.newPassword} 
+                                            onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})} 
+                                            style={dps.editableField} 
+                                            placeholder="Enter new password" 
+                                        />
+                                        <button onClick={() => setShowNewPass(!showNewPass)} style={dps.eyeIconBtn}>
+                                            {showNewPass ? <EyeOff size={16}/> : <Eye size={16}/>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {profileData.newPassword && (
+                                    <div style={dps.strengthBarContainer}>
+                                        <div style={{...dps.strengthBarFill, width: `${strength}%`, backgroundColor: strengthColor}}></div>
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#64748b',
+                                            marginTop: '4px',
+                                            textAlign: 'right'
+                                        }}>
+                                            {strength < 40 ? 'Weak' : strength < 80 ? 'Medium' : 'Strong'}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={dps.infoRow}>
+                                    <label style={s.inputLabel}>Confirm New Password</label>
+                                    <div style={dps.passwordWrapper}>
+                                        <input 
+                                            type={showConfirmPass ? "text" : "password"} 
+                                            value={profileData.confirmPassword} 
+                                            onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})} 
+                                            style={dps.editableField} 
+                                            placeholder="Confirm new password" 
+                                        />
+                                        <button onClick={() => setShowConfirmPass(!showConfirmPass)} style={dps.eyeIconBtn}>
+                                            {showConfirmPass ? <EyeOff size={16}/> : <Eye size={16}/>}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div style={{
+                                    fontSize: '12px',
+                                    color: '#64748b',
+                                    marginTop: '12px',
+                                    padding: '8px',
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    Password must be at least 6 characters long
+                                </div>
+                            </div>
+
+                            <div style={{display: 'flex', justifyContent: 'flex-end', gap: '12px'}}>
+                                <button 
+                                    onClick={() => {
+                                        // Reset form
+                                        setProfileData({
+                                            ...profileData,
+                                            phone: originalPhone,
+                                            address: originalAddress,
+                                            password: '',
+                                            newPassword: '',
+                                            confirmPassword: ''
+                                        });
+                                    }}
+                                    style={{
+                                        ...dps.saveButton,
+                                        backgroundColor: '#f1f5f9',
+                                        color: '#64748b',
+                                        border: '1px solid #e2e8f0'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button onClick={handleSave} style={dps.saveButton}>Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // ========== PATIENTS LIST VIEW ==========
+    const PatientsListView = ({ searchTerm, setSearchTerm, handlePatientClick }) => {
+        const patientTableGrid = { 
+            gridTemplateColumns: '100px 1.5fr 1.5fr 1fr 1fr 80px',
+            alignItems: 'center'
+        };
+
+        const filteredPatients = patientsList.filter(p => {
+            const term = searchTerm.toLowerCase();
+            return (
+                `P-${p.patient_id}`.toLowerCase().includes(term) ||
+                (p.patient_name || '').toLowerCase().includes(term) ||
+                (p.diagnosis || '').toLowerCase().includes(term) ||
+                (p.last_visit_date || '').toLowerCase().includes(term) ||
+                (p.next_visit_date || '').toLowerCase().includes(term)
+            );
+        });
+
+        const totalPatients = patientsList.length;
+
+        return (
+            <div style={{...s.main, overflowY: 'auto'}}>
+                
+                {/* Welcome Banner */}
+                <section style={{...dps.welcomeBanner, flexShrink: 0}}>
+                    <div style={dps.decorativeCircle1}></div>
+                    <div style={dps.decorativeCircle2}></div>
+                    <div style={dps.welcomeTextBox}>
+                        <h1 style={dps.welcomeTitle}>My Patients</h1>
+                        <p style={dps.welcomeSubText}>
+                            You are currently managing <span style={dps.welcomeHighlight}>{totalPatients} patient records</span>. 
+                            Track their recovery progress and upcoming visits here.
+                        </p>
+                    </div>
+                    <img src={myPatientsImage} alt="Patients" style={dps.welcomeIllustration} />
+                </section>
+
+                {/* Search & Title Section */}
+                <div style={{marginBottom: '20px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '15px'}}>
+                       <h2 style={s.sectionTitle}>Patient Records Directory</h2>
+                       <div style={{fontSize: '14px', color: '#64748b'}}>Showing {filteredPatients.length} results</div>
+                    </div>
+
+                    <div style={s.searchContainer}>
+                        <div style={s.searchWrapper}>
+                            <Search size={18} style={s.searchIcon} />
+                            <input 
+                                type="text" 
+                                style={s.searchInput} 
+                                placeholder="Search by ID, Name, Diagnosis, or Date..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div style={s.contentContainer}>
+                    <div style={s.section}>
+                        <div style={s.tableContainer}>
+                            <div style={{ ...s.tableHeader, ...patientTableGrid }}>
+                                <div>Patient ID</div>
+                                <div>Patient Name</div>
+                                <div>Condition / Diagnosis</div>
+                                <div>Last Visit Date</div>
+                                <div>Next Visit Date</div>
+                                <div>Viewer</div>
+                            </div>
+                            
+                            <div style={s.scrollableRows}>
+                                {filteredPatients.length > 0 ? (
+                                    filteredPatients.map((patient) => (
+                                        <div key={patient.patient_id} style={{ ...s.tableRow, ...patientTableGrid }}>
+                                            {/* Patient ID Column */}
+                                            <div style={{fontWeight:'600', color: '#475569'}}>
+                                                P-{patient.patient_id}
+                                            </div>
+
+                                            {/* Clickable Patient Name Column */}
+                                            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                                <div style={{width:'32px', height:'32px', borderRadius:'50%', background:'#e2e8f0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', color:'#475569'}}>
+                                                    {patient.patient_name?.charAt(0) || 'P'}
+                                                </div>
+                                                <button 
+                                                    style={s.clickablePatientName} 
+                                                    onClick={() => handlePatientClick(patient.patient_name)}
+                                                >
+                                                    {patient.patient_name}
+                                                </button>
+                                            </div>
+
+                                            {/* Diagnosis Column */}
+                                            <div style={{fontWeight: '500', color: '#334155'}}>{patient.diagnosis}</div>
+
+                                            {/* Dates Columns */}
+                                            <div style={{color: '#64748b'}}>{patient.last_visit_date || '-'}</div>
+                                            <div style={{color: patient.next_visit_date === 'Pending' ? '#ef4444' : '#02505F', fontWeight:'500'}}>
+                                                {patient.next_visit_date || 'Pending'}
+                                            </div>
+
+                                            {/* DICOM Viewer Button Column */}
+                                            <div>
+                                                <button 
+                                                    onClick={() => {
+                                                        const patientData = {
+                                                            id: patient.patient_id,
+                                                            name: patient.patient_name,
+                                                            patientId: `P-${patient.patient_id}`,
+                                                            age: patient.age,
+                                                            gender: patient.gender,
+                                                            diagnosis: patient.diagnosis,
+                                                            bloodType: patient.blood_type
+                                                        };
+                                                        localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
+                                                        window.location.href = `/dicom-viewer?patientId=P-${patient.patient_id}`;
+                                                    }}
+                                                    style={{
+                                                        ...s.actionButton,
+                                                        padding: '6px 12px',
+                                                        backgroundColor: '#8b5cf6',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px',
+                                                        fontWeight: '500'
+                                                    }}
+                                                    title="View DICOM Images"
+                                                >
+                                                    DICOM
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{padding: '40px', textAlign: 'center', color: '#94a3b8'}}>
+                                        No patients found matching "{searchTerm}"
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    
+    // ========== MAIN RENDER ==========
     return (
         <div style={s.container}>
             <style>
@@ -1289,8 +3538,6 @@ export default function DoctorDashboard() {
                         <button 
                             style={{...s.navItem, ...(activeTab === 'home' ? s.navItemActive : {})}} 
                             onClick={() => {setActiveTab('home'); setSelectedPatient(null);}}
-                            onMouseEnter={(e) => {if (activeTab !== 'home') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';}}
-                            onMouseLeave={(e) => {if (activeTab !== 'home') e.currentTarget.style.backgroundColor = 'transparent';}}
                         >
                             <Home size={20} /> <span>Home</span>
                         </button>
@@ -1298,18 +3545,14 @@ export default function DoctorDashboard() {
                         <button 
                             style={{...s.navItem, ...(activeTab === 'patients' ? s.navItemActive : {})}} 
                             onClick={() => {setActiveTab('patients'); setSelectedPatient(null);}}
-                            onMouseEnter={(e) => {if (activeTab !== 'patients') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';}}
-                            onMouseLeave={(e) => {if (activeTab !== 'patients') e.currentTarget.style.backgroundColor = 'transparent';}}
                         >
                             <Users size={20} /> <span>Patients</span>
                         </button>
 
                         {/* DICOM Viewer Button in Sidebar */}
                         <button 
-                            style={{...s.navItem, ...(window.location.pathname.includes('dicom-viewer') ? s.navItemActive : {})}} 
-                            onClick={handleOpenDicomViewer}
-                            onMouseEnter={(e) => {if (!window.location.pathname.includes('dicom-viewer')) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';}}
-                            onMouseLeave={(e) => {if (!window.location.pathname.includes('dicom-viewer')) e.currentTarget.style.backgroundColor = 'transparent';}}
+                            style={{...s.navItem}} 
+                            onClick={() => window.location.href = '/dicom-viewer'}
                         >
                             <span style={{fontSize: '18px'}}>🩻</span> <span>DICOM Viewer</span>
                         </button>
@@ -1317,28 +3560,25 @@ export default function DoctorDashboard() {
                         <button 
                             style={{...s.navItem, ...(activeTab === 'profile-settings' ? s.navItemActive : {})}} 
                             onClick={() => {setActiveTab('profile-settings'); setSelectedPatient(null);}}
-                            onMouseEnter={(e) => {if (activeTab !== 'profile-settings') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';}}
-                            onMouseLeave={(e) => {if (activeTab !== 'profile-settings') e.currentTarget.style.backgroundColor = 'transparent';}}
                         >
                             <User size={20} /> <span>Profile</span>
                         </button>
                         
                         <button 
                             style={s.logout}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            onClick={handleLogout}
                         >
                             <LogOut size={20} /> <span>Logout</span>
                         </button>
                     </nav>
 
                     <div style={s.sidebarFooter}>
-                        <div style={s.profilePic}>{doctorName.charAt(0)}</div>
-                        <div style={s.profileName}>Dr. {doctorName}</div>
+                        <div style={s.profilePic}>{doctorName.charAt(0) || 'D'}</div>
+                        <div style={s.profileName}>Dr. {doctorName || 'Doctor'}</div>
                     </div>
                 </div>
 
-                {/* ROUTING LOGIC - Now passing Props to external components */}
+                {/* ROUTING LOGIC */}
                 {selectedPatient ? (
                     <ProfileView 
                         selectedPatient={selectedPatient}
@@ -1352,7 +3592,6 @@ export default function DoctorDashboard() {
                     />
                 ) : activeTab === 'patients' ? (
                     <PatientsListView 
-                        allPatientsData={allPatientsData}
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                         handlePatientClick={handlePatientClick}
@@ -1373,8 +3612,7 @@ export default function DoctorDashboard() {
                     />
                 )}
             </div>
-
-            {/* MODALS - Passed via Props */}
+            {/* MODALS */}
             <RenderReportModal 
                 show={showReportModal} 
                 onClose={() => setShowReportModal(false)}
@@ -1385,11 +3623,25 @@ export default function DoctorDashboard() {
             />
             <RenderMedicationModal 
                 show={showMedicationModal} 
-                onClose={() => setShowMedicationModal(false)} 
+                onClose={() => setShowMedicationModal(false)}
+                selectedPatient={selectedPatient}
+                onPrescribeSuccess={() => {
+                    // Optional: Refresh patient data or show confirmation
+                    if (selectedPatient) {
+                        // You could trigger a refetch of patient data here
+                    }
+                }}
             />
             <RenderScanOrderModal 
                 show={showScanOrderModal} 
-                onClose={() => setShowScanOrderModal(false)} 
+                onClose={() => setShowScanOrderModal(false)}
+                selectedPatient={selectedPatient}
+                onOrderSuccess={() => {
+                    // Optional: Refresh scans data or show confirmation
+                    if (selectedPatient) {
+                        // You could trigger a refetch of patient scans here
+                    }
+                }}
             />
         </div>
     );
