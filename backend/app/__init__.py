@@ -6,6 +6,7 @@ from .config import Config
 from .extensions import db
 import os
 from datetime import timedelta
+from flask import send_from_directory
 
 def create_app():
     app = Flask(__name__, static_folder='../static')
@@ -64,6 +65,15 @@ def create_app():
         print(f"⚠️ Could not register DICOM blueprint: {e}")
         
         
+        # Admin Doctors
+    try:
+        from .AdminDoctorsRoutes import admin_doctors_bp as admin_doctors_blueprint
+        app.register_blueprint(admin_doctors_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Doctors blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Doctors blueprint: {e}")
+
+    
     # ===== Simple test routes =====
     
     @app.route('/')
@@ -77,6 +87,10 @@ def create_app():
     @app.route('/api/health')
     def health():
         return {"status": "healthy"}
+
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        return send_from_directory(os.path.join(app.root_path, '..', 'uploads'), filename)
     
     # Create uploads directory
     with app.app_context():
