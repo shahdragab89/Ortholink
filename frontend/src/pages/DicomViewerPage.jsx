@@ -477,7 +477,7 @@ export default function DicomViewerPage() {
           <button style={dicomViewerStyles.zoomBtn} onClick={handleZoomOut}>−</button>
           <span style={dicomViewerStyles.zoomDisplay}>{zoomLevel}%</span>
           <button style={dicomViewerStyles.zoomBtn} onClick={handleZoomIn}>+</button>
-          <button style={dicomViewerStyles.logoutBtn} onClick={handleLogout}>Logout</button>
+          {/* <button style={dicomViewerStyles.logoutBtn} onClick={handleLogout}>Logout</button> */}
         </div>
       </div>
 
@@ -493,13 +493,13 @@ export default function DicomViewerPage() {
               style={sidebarMode === 'viewer' ? {...dicomViewerStyles.sidebarTab, ...dicomViewerStyles.sidebarTabActive} : dicomViewerStyles.sidebarTab}
               onClick={() => toggleSidebarMode('viewer')}
             >
-              👁️ Viewer
+               Viewer
             </button>
             <button 
               style={sidebarMode === 'cdss' ? {...dicomViewerStyles.sidebarTab, ...dicomViewerStyles.sidebarTabActive} : dicomViewerStyles.sidebarTab}
               onClick={() => toggleSidebarMode('cdss')}
             >
-              🤖 CDSS Analysis
+               CDSS Analysis
             </button>
           </div>
           {/* ------------------------- */}
