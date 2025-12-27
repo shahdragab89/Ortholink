@@ -257,83 +257,571 @@ const RenderReportModal = ({ show, onClose, scan, reportText, setReportText, onS
         </div>
     );
 };
+const RenderMedicationModal = ({ show, onClose, selectedPatient, onPrescribeSuccess }) => {
+    const [medicationData, setMedicationData] = useState({
+        medication_name: '',
+        dosage: '',
+        frequency: 'Once Daily',
+        duration: '',
+        instructions: '',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: '',
+        is_active: true,
+        record_id: null
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-const RenderMedicationModal = ({ show, onClose }) => {
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (show) {
+            setMedicationData({
+                medication_name: '',
+                dosage: '',
+                frequency: 'Once Daily',
+                duration: '',
+                instructions: '',
+                start_date: new Date().toISOString().split('T')[0],
+                end_date: '',
+                is_active: true,
+                record_id: null
+            });
+        }
+    }, [show]);
+
+    // Common medication options
+    const commonMedications = [
+        'Naproxen',
+        'Ibuprofen',
+        'Acetaminophen',
+        'Diclofenac',
+        'Celecoxib',
+        'Tramadol',
+        'Codeine',
+        'Morphine',
+        'Gabapentin',
+        'Pregabalin',
+        'Cyclobenzaprine',
+        'Methocarbamol',
+        'Prednisone',
+        'Methylprednisolone'
+    ];
+
+    const frequencyOptions = [
+        'Once Daily',
+        'Twice Daily',
+        'Three Times Daily',
+        'Four Times Daily',
+        'Every 6 Hours',
+        'Every 8 Hours',
+        'Every 12 Hours',
+        'As Needed',
+        'At Bedtime',
+        'With Meals'
+    ];
+
+    const handlePrescribe = async () => {
+        if (!selectedPatient || !selectedPatient.id) {
+            alert('No patient selected');
+            return;
+        }
+
+        // Validate required fields
+        if (!medicationData.medication_name.trim()) {
+            alert('Medication name is required');
+            return;
+        }
+        
+        if (!medicationData.dosage.trim()) {
+            alert('Dosage is required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        const token = localStorage.getItem("token");
+        
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/medication`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(medicationData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`Medication prescribed successfully!`);
+                
+                // Reset form
+                setMedicationData({
+                    medication_name: '',
+                    dosage: '',
+                    frequency: 'Once Daily',
+                    duration: '',
+                    instructions: '',
+                    start_date: new Date().toISOString().split('T')[0],
+                    end_date: '',
+                    is_active: true,
+                    record_id: null
+                });
+                
+                if (onPrescribeSuccess) onPrescribeSuccess();
+                onClose();
+            } else {
+                alert(data.error || 'Failed to prescribe medication');
+            }
+        } catch (error) {
+            console.error('Error prescribing medication:', error);
+            alert('Error prescribing medication. Please check your connection.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCalculateEndDate = () => {
+        if (medicationData.start_date && medicationData.duration) {
+            const startDate = new Date(medicationData.start_date);
+            const duration = parseInt(medicationData.duration);
+            
+            if (!isNaN(duration)) {
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + duration);
+                
+                setMedicationData({
+                    ...medicationData,
+                    end_date: endDate.toISOString().split('T')[0]
+                });
+            }
+        }
+    };
+
     if (!show) return null;
+
     return (
         <div style={s.modalOverlay} onClick={onClose}>
-            <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={{...s.modalBox, width: '500px'}} onClick={e => e.stopPropagation()}>
                 <div style={s.modalHeader}>
                     <h3 style={s.sectionTitle}>Prescribe Medication</h3>
-                    <button onClick={onClose} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
+                    <button 
+                        onClick={onClose} 
+                        style={{background:'none', border:'none', cursor:'pointer'}}
+                        disabled={isSubmitting}
+                    >
+                        <X size={20}/>
+                    </button>
                 </div>
+                
                 <div style={s.modalBody}>
+                    {/* Patient Info */}
+                    {selectedPatient && (
+                        <div style={{
+                            backgroundColor: '#eff6ff',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #bfdbfe',
+                            marginBottom: '20px',
+                            fontSize: '13px'
+                        }}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                <div><span style={s.infoLabel}>Patient:</span> {selectedPatient.patientName}</div>
+                                <div><span style={s.infoLabel}>ID:</span> P-{selectedPatient.id}</div>
+                            </div>
+                            <div><span style={s.infoLabel}>Allergies:</span> {selectedPatient.allergies || 'None'}</div>
+                        </div>
+                    )}
+
+                    {/* Medication Name */}
                     <div style={s.formGroup}>
-                        <label style={s.inputLabel}>Medication Name</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. Naproxen" />
+                        <label style={s.inputLabel}>
+                            Medication Name <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="medication-list"
+                                style={s.inputField} 
+                                placeholder="e.g. Naproxen"
+                                value={medicationData.medication_name}
+                                onChange={(e) => setMedicationData({...medicationData, medication_name: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="medication-list">
+                                {commonMedications.map(med => (
+                                    <option key={med} value={med} />
+                                ))}
+                            </datalist>
+                        </div>
                     </div>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'12px'}}>
+
+                    {/* Dosage and Frequency */}
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px'}}>
                         <div style={s.formGroup}>
-                            <label style={s.inputLabel}>Dosage</label>
-                            <input type="text" style={s.inputField} placeholder="e.g. 500mg" />
+                            <label style={s.inputLabel}>
+                                Dosage <span style={{color: '#ef4444'}}>*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                style={s.inputField} 
+                                placeholder="e.g. 500mg"
+                                value={medicationData.dosage}
+                                onChange={(e) => setMedicationData({...medicationData, dosage: e.target.value})}
+                                disabled={isSubmitting}
+                            />
                         </div>
                         <div style={s.formGroup}>
-                            <label style={s.inputLabel}>Frequency</label>
-                            <input type="text" style={s.inputField} placeholder="e.g. Twice Daily" />
+                            <label style={s.inputLabel}>
+                                Frequency <span style={{color: '#ef4444'}}>*</span>
+                            </label>
+                            <select 
+                                style={s.inputField}
+                                value={medicationData.frequency}
+                                onChange={(e) => setMedicationData({...medicationData, frequency: e.target.value})}
+                                disabled={isSubmitting}
+                            >
+                                {frequencyOptions.map(freq => (
+                                    <option key={freq} value={freq}>{freq}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
+
+                    {/* Duration */}
                     <div style={{...s.formGroup, marginTop: '12px'}}>
-                        <label style={s.inputLabel}>Duration</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. 14 Days" />
+                        <label style={s.inputLabel}>Duration (Days)</label>
+                        <input 
+                            type="text" 
+                            style={s.inputField} 
+                            placeholder="e.g. 14 Days"
+                            value={medicationData.duration}
+                            onChange={(e) => setMedicationData({...medicationData, duration: e.target.value})}
+                            onBlur={handleCalculateEndDate}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    {/* Start Date */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Start Date</label>
+                        <input 
+                            type="date" 
+                            style={s.inputField} 
+                            value={medicationData.start_date}
+                            onChange={(e) => setMedicationData({...medicationData, start_date: e.target.value})}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    {/* End Date (auto-calculated) */}
+                    {medicationData.end_date && (
+                        <div style={{...s.formGroup, marginTop: '12px'}}>
+                            <label style={s.inputLabel}>End Date (Calculated)</label>
+                            <input 
+                                type="date" 
+                                style={s.inputField} 
+                                value={medicationData.end_date}
+                                onChange={(e) => setMedicationData({...medicationData, end_date: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                        </div>
+                    )}
+
+                    {/* Instructions */}
+                    <div style={{...s.formGroup, marginTop: '12px'}}>
+                        <label style={s.inputLabel}>Instructions</label>
+                        <textarea 
+                            style={s.textAreaField} 
+                            placeholder="Special instructions for the patient..."
+                            value={medicationData.instructions}
+                            onChange={(e) => setMedicationData({...medicationData, instructions: e.target.value})}
+                            disabled={isSubmitting}
+                            rows={3}
+                        />
                     </div>
                 </div>
+
                 <div style={s.modalFooter}>
-                    <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                    <button style={{...s.actionButton, backgroundColor: '#4361ee', color: 'white'}} onClick={onClose}>Prescribe</button>
+                    <button 
+                        style={{...s.actionButton, backgroundColor: '#f1f5f9', color: '#64748b'}} 
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        style={{
+                            ...s.actionButton, 
+                            backgroundColor: '#4361ee', 
+                            color: 'white',
+                            opacity: isSubmitting ? 0.7 : 1,
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                        }} 
+                        onClick={handlePrescribe}
+                        disabled={isSubmitting || !medicationData.medication_name || !medicationData.dosage}
+                    >
+                        {isSubmitting ? 'Prescribing...' : 'Prescribe Medication'}
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
 
-const RenderScanOrderModal = ({ show, onClose }) => {
+const RenderScanOrderModal = ({ show, onClose, selectedPatient, onOrderSuccess }) => {
+    const [scanData, setScanData] = useState({
+        scan_type: '',
+        body_part: '',
+        modality: 'X-Ray',
+        description: '',
+        record_id: null
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (show) {
+            setScanData({
+                scan_type: '',
+                body_part: '',
+                modality: 'X-Ray',
+                description: '',
+                record_id: null
+            });
+        }
+    }, [show]);
+
+    // Common scan types and body parts
+    const scanTypeOptions = [
+        'MRI',
+        'CT Scan',
+        'X-Ray',
+        'Ultrasound',
+        'DXA (Bone Density)',
+        'PET Scan'
+    ];
+
+    const bodyPartOptions = [
+        'Head',
+        'Cervical Spine',
+        'Thoracic Spine',
+        'Lumbar Spine',
+        'Shoulder',
+        'Elbow',
+        'Wrist',
+        'Hand',
+        'Hip',
+        'Knee',
+        'Ankle',
+        'Foot',
+        'Chest',
+        'Abdomen',
+        'Pelvis'
+    ];
+
+    const modalityOptions = [
+        'X-Ray',
+        'MRI',
+        'CT',
+        'Ultrasound',
+        'DXA'
+    ];
+
+    const handleOrderScan = async () => {
+        if (!selectedPatient || !selectedPatient.id) {
+            alert('No patient selected');
+            return;
+        }
+
+        // Validate required fields
+        if (!scanData.scan_type.trim()) {
+            alert('Scan type is required');
+            return;
+        }
+        
+        if (!scanData.body_part.trim()) {
+            alert('Body part is required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        const token = localStorage.getItem("token");
+        
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/scan`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(scanData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(`Scan ordered successfully!`);
+                
+                // Reset form
+                setScanData({
+                    scan_type: '',
+                    body_part: '',
+                    modality: 'X-Ray',
+                    description: '',
+                    record_id: null
+                });
+                
+                if (onOrderSuccess) onOrderSuccess();
+                onClose();
+            } else {
+                alert(data.error || 'Failed to order scan');
+            }
+        } catch (error) {
+            console.error('Error ordering scan:', error);
+            alert('Error ordering scan. Please check your connection.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     if (!show) return null;
+
     return (
         <div style={s.modalOverlay} onClick={onClose}>
-            <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={{...s.modalBox, width: '500px'}} onClick={e => e.stopPropagation()}>
                 <div style={s.modalHeader}>
                     <h3 style={s.sectionTitle}>Order New Scan</h3>
-                    <button onClick={onClose} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
+                    <button 
+                        onClick={onClose} 
+                        style={{background:'none', border:'none', cursor:'pointer'}}
+                        disabled={isSubmitting}
+                    >
+                        <X size={20}/>
+                    </button>
                 </div>
+                
                 <div style={s.modalBody}>
+                    {/* Patient Info */}
+                    {selectedPatient && (
+                        <div style={{
+                            backgroundColor: '#f0fdf4',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #bbf7d0',
+                            marginBottom: '20px',
+                            fontSize: '13px'
+                        }}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                                <div><span style={s.infoLabel}>Patient:</span> {selectedPatient.patientName}</div>
+                                <div><span style={s.infoLabel}>ID:</span> P-{selectedPatient.id}</div>
+                            </div>
+                            <div><span style={s.infoLabel}>Current Diagnosis:</span> {selectedPatient.diagnosis || 'Not specified'}</div>
+                        </div>
+                    )}
+
+                    {/* Scan Type */}
                     <div style={s.formGroup}>
-                        <label style={s.inputLabel}>Scan Type</label>
-                        <input type="text" style={s.inputField} placeholder="e.g. MRI Left Knee" />
+                        <label style={s.inputLabel}>
+                            Scan Type <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="scan-type-list"
+                                style={s.inputField} 
+                                placeholder="e.g. MRI Left Knee"
+                                value={scanData.scan_type}
+                                onChange={(e) => setScanData({...scanData, scan_type: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="scan-type-list">
+                                {scanTypeOptions.map(type => (
+                                    <option key={type} value={type} />
+                                ))}
+                            </datalist>
+                        </div>
                     </div>
+
+                    {/* Body Part */}
+                    <div style={s.formGroup}>
+                        <label style={s.inputLabel}>
+                            Body Part <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <div style={{position: 'relative'}}>
+                            <input 
+                                type="text" 
+                                list="body-part-list"
+                                style={s.inputField} 
+                                placeholder="e.g. Knee"
+                                value={scanData.body_part}
+                                onChange={(e) => setScanData({...scanData, body_part: e.target.value})}
+                                disabled={isSubmitting}
+                            />
+                            <datalist id="body-part-list">
+                                {bodyPartOptions.map(part => (
+                                    <option key={part} value={part} />
+                                ))}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    {/* Modality */}
                     <div style={{...s.formGroup, marginTop: '12px'}}>
-                        <label style={s.inputLabel}>Modality</label>
-                        <select style={s.inputField}>
-                            <option>X-Ray</option>
-                            <option>MRI</option>
-                            <option>CT Scan</option>
-                            <option>Ultrasound</option>
-                            <option>DXA (Bone Density)</option>
+                        <label style={s.inputLabel}>
+                            Modality <span style={{color: '#ef4444'}}>*</span>
+                        </label>
+                        <select 
+                            style={s.inputField}
+                            value={scanData.modality}
+                            onChange={(e) => setScanData({...scanData, modality: e.target.value})}
+                            disabled={isSubmitting}
+                        >
+                            {modalityOptions.map(modality => (
+                                <option key={modality} value={modality}>{modality}</option>
+                            ))}
                         </select>
                     </div>
+
+                    {/* Reason / Description */}
                     <div style={{...s.formGroup, marginTop: '12px'}}>
                         <label style={s.inputLabel}>Reason / Description</label>
-                        <textarea style={s.textAreaField} placeholder="Suspected meniscus tear..." />
+                        <textarea 
+                            style={s.textAreaField} 
+                            placeholder="Suspected meniscus tear..."
+                            value={scanData.description}
+                            onChange={(e) => setScanData({...scanData, description: e.target.value})}
+                            disabled={isSubmitting}
+                            rows={3}
+                        />
                     </div>
                 </div>
+
                 <div style={s.modalFooter}>
-                    <button style={s.actionButton} onClick={onClose}>Cancel</button>
-                    <button style={{...s.actionButton, backgroundColor: '#059669', color: 'white'}} onClick={onClose}>Order Scan</button>
+                    <button 
+                        style={{...s.actionButton, backgroundColor: '#f1f5f9', color: '#64748b'}} 
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        style={{
+                            ...s.actionButton, 
+                            backgroundColor: '#059669', 
+                            color: 'white',
+                            opacity: isSubmitting ? 0.7 : 1,
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                        }} 
+                        onClick={handleOrderScan}
+                        disabled={isSubmitting || !scanData.scan_type || !scanData.body_part}
+                    >
+                        {isSubmitting ? 'Ordering...' : 'Order Scan'}
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
-
 const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingScans, handleOpenReport }) => {
     const [apptSearch, setApptSearch] = useState('');
     const [scanSearch, setScanSearch] = useState('');
@@ -523,15 +1011,161 @@ const DashboardView = ({ doctorName, appointments, handlePatientClick, pendingSc
         </div>
     );
 };
-
+// In DoctorDashboard.jsx, update the ProfileView component
 const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, setConsultationRecords, setShowMedicationModal, setShowScanOrderModal, handleOpenReport, patientScansHistory }) => {
     const [tab, setTab] = useState('records');
+    const [realPatientData, setRealPatientData] = useState(null);
+    const [realPatientScans, setRealPatientScans] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch real patient data when component mounts or selectedPatient changes
+    useEffect(() => {
+        const fetchRealPatientData = async () => {
+            if (!selectedPatient || !selectedPatient.id) return;
+            
+            setIsLoading(true);
+            try {
+                const token = localStorage.getItem("token");
+                
+                // Fetch patient details
+                const patientResponse = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                
+                if (patientResponse.ok) {
+                    const patientData = await patientResponse.json();
+                    setRealPatientData(patientData);
+                    
+                    // Set consultation records from the latest visit record if exists
+                    if (patientData.visit_records && patientData.visit_records.length > 0) {
+                        const latestRecord = patientData.visit_records[0];
+                        setConsultationRecords({
+                            complaint: latestRecord.chief_complaint || '',
+                            diagnosis: latestRecord.diagnosis || '',
+                            treatment: latestRecord.treatment_plan || '',
+                            physicalExam: latestRecord.physical_examination || ''
+                        });
+                    }
+                }
+                
+                // Fetch patient scans
+                const scansResponse = await fetch(`http://127.0.0.1:5000/api/doctor/scans?patient_id=${selectedPatient.id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                
+                if (scansResponse.ok) {
+                    const scansData = await scansResponse.json();
+                    setRealPatientScans(scansData);
+                }
+                
+            } catch (error) {
+                console.error("Error fetching patient data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchRealPatientData();
+    }, [selectedPatient]);
+
+    const handleSaveVisitRecord = async () => {
+        if (!selectedPatient || !selectedPatient.id) return;
+        
+        // Validate vital signs
+        if (!consultationRecords.vitalSigns.heart_rate || 
+            !consultationRecords.vitalSigns.blood_pressure || 
+            !consultationRecords.vitalSigns.temperature || 
+            !consultationRecords.vitalSigns.weight) {
+            alert('Please fill in all required vital signs (Heart Rate, Blood Pressure, Temperature, Weight)');
+            return;
+        }
+        
+        const visitRecordData = {
+            chief_complaint: consultationRecords.complaint,
+            diagnosis: consultationRecords.diagnosis,
+            treatment_plan: consultationRecords.treatment,
+            physical_examination: consultationRecords.physicalExam,
+            notes: consultationRecords.notes,
+            vital_signs: {
+                heart_rate: consultationRecords.vitalSigns.heart_rate,
+                blood_pressure: consultationRecords.vitalSigns.blood_pressure,
+                temperature: consultationRecords.vitalSigns.temperature,
+                weight: consultationRecords.vitalSigns.weight,
+                respiratory_rate: consultationRecords.vitalSigns.respiratory_rate,
+                oxygen_saturation: consultationRecords.vitalSigns.oxygen_saturation
+            }
+        };
+        
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}/visit-record`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(visitRecordData)
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert('Visit record saved successfully!');
+                
+                // Reset consultation form
+                setConsultationRecords({
+                    complaint: '',
+                    diagnosis: '',
+                    treatment: '',
+                    physicalExam: '',
+                    notes: '',
+                    vitalSigns: {
+                        heart_rate: '',
+                        blood_pressure: '',
+                        temperature: '',
+                        weight: '',
+                        respiratory_rate: '',
+                        oxygen_saturation: ''
+                    }
+                });
+                
+                // Refresh patient data to show the new record
+                if (realPatientData) {
+                    const response = await fetch(`http://127.0.0.1:5000/api/doctor/patient/${selectedPatient.id}`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        const updatedPatientData = await response.json();
+                        setRealPatientData(updatedPatientData);
+                    }
+                }
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to save visit record');
+            }
+        } catch (error) {
+            console.error('Error saving visit record:', error);
+            alert('Error saving visit record');
+        }
+    };
 
     const handleOpenDicomViewer = (patient) => {
         const patientData = {
             id: patient.id,
             name: patient.patientName,
-            patientId: `P-10${patient.id}`,
+            patientId: `P-${patient.id}`,
             age: patient.age,
             gender: patient.gender,
             diagnosis: patient.diagnosis,
@@ -539,8 +1173,51 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
         };
         
         localStorage.setItem('selectedPatientForDicom', JSON.stringify(patientData));
-        window.location.href = `/dicom-viewer?patientId=P-10${patient.id}`;
+        window.location.href = `/dicom-viewer?patientId=P-${patient.id}`;
     };
+
+    // Display loading state
+    if (isLoading) {
+        return (
+            <div style={s.main}>
+                <button style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', cursor: 'pointer', fontSize: '14px', fontWeight: '600', border: 'none', background: 'none', marginBottom: '10px', width: 'fit-content'}} onClick={handleBackToHome}>
+                    <ArrowLeft size={16} /> Back to Home
+                </button>
+                <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh'}}>
+                    Loading patient data...
+                </div>
+            </div>
+        );
+    }
+
+    // Use real patient data if available, otherwise fall back to mock data
+    const displayPatient = realPatientData ? {
+        patientName: realPatientData.patient_name,
+        age: realPatientData.age,
+        gender: realPatientData.gender,
+        bloodType: realPatientData.blood_type,
+        allergies: realPatientData.allergies,
+        diagnosis: realPatientData.diagnosis || selectedPatient?.diagnosis,
+        history: realPatientData.chronic_conditions ? realPatientData.chronic_conditions.split(',') : []
+    } : selectedPatient;
+
+    const lastVisitRecord = realPatientData?.visit_records?.[0] || selectedPatient?.lastVisit;
+    
+    const displayScans = realPatientScans.length > 0 ? realPatientScans.map(scan => ({
+        id: scan.scan_id,
+        name: `${scan.scan_type} ${scan.body_part}`,
+        modality: scan.modality,
+        date: scan.scan_date,
+        status: scan.status,
+        recordId: `REC-${scan.scan_id}`,
+        patientId: `P-${scan.patient_id}`,
+        image: scan.folder_path ? 
+            `http://127.0.0.1:5000/uploads/dicom_scans/${scan.folder_path}/thumbnail.jpg` : 
+            FALLBACK_IMAGE,
+        report: scan.rad_report,
+        radiologist: scan.radiologist,
+        isReadOnly: scan.status === 'completed'
+    })) : patientScansHistory;
 
     return (
         <div style={s.main}>
@@ -552,89 +1229,290 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                 {/* LEFT COLUMN: Patient Info */}
                 <div style={s.contentContainer}>
                     <div style={s.card}>
-                        <div style={{alignSelf: 'center', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><User size={40} color="#64748b"/></div>
-                        <h2 style={{fontSize: '20px', fontWeight: '700', color: '#1e293b', textAlign: 'center', margin: 0}}>{selectedPatient.patientName}</h2>
+                        <div style={{alignSelf: 'center', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            <User size={40} color="#64748b"/>
+                        </div>
+                        <h2 style={{fontSize: '20px', fontWeight: '700', color: '#1e293b', textAlign: 'center', margin: 0}}>
+                            {displayPatient.patientName}
+                        </h2>
                         
                         <div style={pps.patientInfoCentered}>
                             <div style={pps.infoGridCentered}>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Age</span><span style={s.infoValue}>{selectedPatient.age} Yrs</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Gender</span><span style={s.infoValue}>{selectedPatient.gender}</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Blood</span><span style={s.infoValue}>{selectedPatient.bloodType}</span></div>
-                                <div style={pps.infoItemCentered}><span style={s.infoLabel}>Allergies</span><span style={{...s.infoValue, color: '#ef4444'}}>{selectedPatient.allergies}</span></div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Age</span>
+                                    <span style={s.infoValue}>{displayPatient.age || 'N/A'} Yrs</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Gender</span>
+                                    <span style={s.infoValue}>{displayPatient.gender || 'N/A'}</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Blood</span>
+                                    <span style={s.infoValue}>{displayPatient.bloodType || 'N/A'}</span>
+                                </div>
+                                <div style={pps.infoItemCentered}>
+                                    <span style={s.infoLabel}>Allergies</span>
+                                    <span style={{...s.infoValue, color: '#ef4444'}}>
+                                        {displayPatient.allergies || 'None'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={s.card}>
-                        <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}><Activity size={18} /> Vital Signs</div>
-                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Heart size={16} color="#ef4444" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>72</span><span style={{fontSize: '11px', color: '#64748b'}}>bpm</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Activity size={16} color="#3b82f6" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>120/80</span><span style={{fontSize: '11px', color: '#64748b'}}>mmHg</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <Thermometer size={16} color="#f97316" /><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>36.6</span><span style={{fontSize: '11px', color: '#64748b'}}>°C</span>
-                            </div>
-                            <div style={{backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                                <span style={{fontSize:'14px'}}>⚖️</span><span style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>70</span><span style={{fontSize: '11px', color: '#64748b'}}>kg</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{...s.card, flex: 1}}>
-                        <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}><ClipboardList size={18} /> Medical History</div>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto'}}>
-                            {selectedPatient.history.map((item, idx) => (
-                                <div key={idx} style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '8px'}}>• {item}</div>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Rest of the component remains similar but uses displayPatient */}
+                    {/* ... */}
                 </div>
 
                 {/* MIDDLE COLUMN */}
                 <div style={s.contentContainer}>
                     <div style={{...s.card, flex: 0.8, overflow: 'hidden'}}>
                         <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                            <Calendar size={18} /> Last Visit ({selectedPatient.lastVisit?.date || 'N/A'})
+                            <Calendar size={18} /> Last Visit ({lastVisitRecord?.date || 'N/A'})
                         </div>
                         
-                        {selectedPatient.lastVisit ? (
+                        {lastVisitRecord ? (
                             <div style={s.formScroll}>
+                                {/* Complaint */}
                                 <div style={{marginBottom: '10px'}}>
                                     <span style={s.infoLabel}>Complaint</span>
-                                    <div style={{fontSize: '14px', color: '#334155'}}>{selectedPatient.lastVisit.complaint}</div>
-                                </div>
-                                <div style={{marginBottom: '10px'}}>
-                                    <span style={s.infoLabel}>Diagnosis</span>
-                                    <div style={{fontSize: '14px', color: '#334155', fontWeight: '500'}}>{selectedPatient.lastVisit.diagnosis}</div>
-                                </div>
-                                <div style={{marginBottom: '10px'}}>
-                                    <span style={s.infoLabel}>Treatment Plan</span>
-                                    <div style={{fontSize: '14px', color: '#334155'}}>{selectedPatient.lastVisit.treatment}</div>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.chief_complaint || lastVisitRecord.complaint || 'No complaint recorded'}
+                                    </div>
                                 </div>
                                 
-                                <div style={{marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '10px'}}>
-                                    <span style={s.infoLabel}>Prescribed Meds</span>
-                                    {selectedPatient.lastVisit.medications.map((med, i) => (
-                                        <div key={i} style={{fontSize: '13px', color: '#475569', marginTop: '4px', display:'flex', justifyContent:'space-between'}}>
-                                            <span>• {med.name} ({med.dosage})</span>
-                                            <span>{med.freq}</span>
-                                        </div>
-                                    ))}
+                                {/* Physical Examination */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Physical Examination</span>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.physical_examination || 'No physical examination recorded'}
+                                    </div>
                                 </div>
+                                
+                                {/* Diagnosis */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Diagnosis</span>
+                                    <div style={{fontSize: '14px', color: '#334155', fontWeight: '500', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.diagnosis || 'No diagnosis recorded'}
+                                    </div>
+                                </div>
+                                
+                                {/* Treatment Plan */}
+                                <div style={{marginBottom: '10px'}}>
+                                    <span style={s.infoLabel}>Treatment Plan</span>
+                                    <div style={{fontSize: '14px', color: '#334155', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', marginTop: '4px'}}>
+                                        {lastVisitRecord.treatment_plan || lastVisitRecord.treatment || 'No treatment plan recorded'}
+                                    </div>
+                                </div>
+                                
+                                {/* Vital Signs Grid */}
+                                {lastVisitRecord.vital_signs && (
+                                    <div style={{marginBottom: '10px', marginTop: '15px'}}>
+                                        <span style={s.infoLabel}>Vital Signs</span>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: '10px',
+                                            marginTop: '8px',
+                                            backgroundColor: '#f8fafc',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0'
+                                        }}>
+                                            {/* Heart Rate */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#fee2e2',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Heart size={16} color="#dc2626" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Heart Rate</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.heart_rate || 'N/A'} bpm
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Blood Pressure */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#dbeafe',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Activity size={16} color="#2563eb" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Blood Pressure</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.blood_pressure || 'N/A'} mmHg
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Temperature */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#ffedd5',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Thermometer size={16} color="#ea580c" />
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Temperature</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.temperature || 'N/A'} °C
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Weight */}
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <div style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    borderRadius: '6px',
+                                                    backgroundColor: '#f0f9ff',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <span style={{fontSize: '14px'}}>⚖️</span>
+                                                </div>
+                                                <div>
+                                                    <div style={{fontSize: '11px', color: '#64748b'}}>Weight</div>
+                                                    <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                        {lastVisitRecord.vital_signs.weight || 'N/A'} kg
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Respiratory Rate */}
+                                            {lastVisitRecord.vital_signs.respiratory_rate && (
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#f0fdf4',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <span style={{fontSize: '14px'}}>🌬️</span>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{fontSize: '11px', color: '#64748b'}}>Respiratory Rate</div>
+                                                        <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                            {lastVisitRecord.vital_signs.respiratory_rate} breaths/min
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Oxygen Saturation */}
+                                            {lastVisitRecord.vital_signs.oxygen_saturation && (
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#fef2f2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <span style={{fontSize: '14px'}}>🫁</span>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{fontSize: '11px', color: '#64748b'}}>O₂ Saturation</div>
+                                                        <div style={{fontSize: '14px', fontWeight: '600', color: '#1e293b'}}>
+                                                            {lastVisitRecord.vital_signs.oxygen_saturation}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Doctor's Notes */}
+                                {lastVisitRecord.notes && (
+                                    <div style={{marginBottom: '10px', marginTop: '15px'}}>
+                                        <span style={s.infoLabel}>Doctor's Notes</span>
+                                        <div style={{
+                                            fontSize: '14px',
+                                            color: '#334155',
+                                            padding: '12px',
+                                            backgroundColor: '#fefce8',
+                                            borderRadius: '6px',
+                                            marginTop: '4px',
+                                            border: '1px solid #fef08a',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {lastVisitRecord.notes}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Prescribed Medications */}
+                                {lastVisitRecord.medications && lastVisitRecord.medications.length > 0 && (
+                                    <div style={{marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '10px'}}>
+                                        <span style={s.infoLabel}>Prescribed Medications</span>
+                                        <div style={{marginTop: '8px'}}>
+                                            {lastVisitRecord.medications.map((med, i) => (
+                                                <div key={i} style={{
+                                                    fontSize: '13px',
+                                                    color: '#475569',
+                                                    padding: '8px',
+                                                    backgroundColor: '#f8fafc',
+                                                    borderRadius: '6px',
+                                                    marginBottom: '6px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <div>
+                                                        <span style={{fontWeight: '600', color: '#1e293b'}}>{med.name}</span>
+                                                        <span style={{marginLeft: '8px', color: '#64748b'}}>({med.dosage})</span>
+                                                    </div>
+                                                    <span style={{color: '#059669', fontWeight: '500'}}>{med.freq}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <div style={{color: '#94a3b8', fontSize: '14px'}}>No previous visit records found.</div>
+                            <div style={{color: '#94a3b8', fontSize: '14px', padding: '20px', textAlign: 'center'}}>
+                                No previous visit records found.
+                            </div>
                         )}
                     </div>
 
                     <div style={{...s.card, flex: 1.2, padding: 0, overflow: 'hidden'}}>
                         <div style={{padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems:'center'}}>
-                            <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px'}}><FileText size={18} /> Patient Scans</div>
+                            <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                <FileText size={18} /> Patient Scans
+                            </div>
                             <button 
-                                onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                onClick={() => handleOpenDicomViewer(displayPatient)}
                                 style={{
                                     ...s.actionButton,
                                     padding: '6px 12px',
@@ -662,12 +1540,19 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {patientScansHistory.map(scan => (
+                                    {displayScans.map(scan => (
                                         <tr key={scan.id}>
-                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>{scan.name}</td>
-                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>{scan.modality}</td>
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
-                                                <button style={{...s.actionButton, padding: '4px 8px'}} onClick={() => handleOpenReport(scan, true)}>View</button>
+                                                {scan.name}
+                                            </td>
+                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
+                                                {scan.modality}
+                                            </td>
+                                            <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
+                                                <button style={{...s.actionButton, padding: '4px 8px'}} 
+                                                    onClick={() => handleOpenReport(scan, scan.isReadOnly)}>
+                                                    {scan.isReadOnly ? 'View Report' : 'Complete Report'}
+                                                </button>
                                             </td>
                                             <td style={{padding: '10px', color: '#334155', borderBottom: '1px solid #f1f5f9'}}>
                                                 <button 
@@ -678,7 +1563,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                                                         color: 'white',
                                                         fontSize: '12px'
                                                     }}
-                                                    onClick={() => handleOpenDicomViewer(selectedPatient)}
+                                                    onClick={() => handleOpenDicomViewer(displayPatient)}
                                                     title="Open DICOM Viewer"
                                                 >
                                                     DICOM
@@ -692,7 +1577,7 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN */}
+                {/* RIGHT COLUMN: Current Consultation */}
                 <div style={s.contentContainer}>
                     <div style={{...s.card, flex: 1, display: 'flex', flexDirection: 'column', gap: '12px'}}>
                         <div style={{fontSize: '16px', fontWeight: '700', color: '#02505F'}}>Current Consultation</div>
@@ -702,38 +1587,375 @@ const ProfileView = ({ selectedPatient, handleBackToHome, consultationRecords, s
                         </div>
 
                         {tab === 'records' ? (
-                            <div style={s.formScroll}>
+                            <div style={{...s.formScroll, flex: 1, overflowY: 'auto', maxHeight: '400px'}}>
+                                {/* Complaint */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Complaint</label>
-                                    <textarea style={s.textAreaField} placeholder="Patient's main complaint..." value={consultationRecords.complaint} onChange={e => setConsultationRecords({...consultationRecords, complaint: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Patient's main complaint..." 
+                                        value={consultationRecords.complaint} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, complaint: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Physical Examination */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Physical Examination</label>
-                                    <textarea style={s.textAreaField} placeholder="Key findings (e.g. Swelling, Range of Motion)..." value={consultationRecords.physicalExam} onChange={e => setConsultationRecords({...consultationRecords, physicalExam: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Key findings (e.g. Swelling, Range of Motion)..." 
+                                        value={consultationRecords.physicalExam} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, physicalExam: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Diagnosis */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Diagnosis</label>
-                                    <input type="text" style={s.inputField} placeholder="Confirmed diagnosis..." value={consultationRecords.diagnosis} onChange={e => setConsultationRecords({...consultationRecords, diagnosis: e.target.value})} />
+                                    <input 
+                                        type="text" 
+                                        style={s.inputField} 
+                                        placeholder="Confirmed diagnosis..." 
+                                        value={consultationRecords.diagnosis} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, diagnosis: e.target.value})} 
+                                    />
                                 </div>
+                                
+                                {/* Treatment Plan */}
                                 <div style={s.formGroup}>
                                     <label style={s.inputLabel}>Treatment Plan</label>
-                                    <textarea style={s.textAreaField} placeholder="Plan moving forward..." value={consultationRecords.treatment} onChange={e => setConsultationRecords({...consultationRecords, treatment: e.target.value})} />
+                                    <textarea 
+                                        style={s.textAreaField} 
+                                        placeholder="Plan moving forward..." 
+                                        value={consultationRecords.treatment} 
+                                        onChange={e => setConsultationRecords({...consultationRecords, treatment: e.target.value})} 
+                                    />
+                                </div>
+                                
+                                {/* Vital Signs Section */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <Activity size={18} /> Vital Signs
+                                    </div>
+                                    
+                                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+                                        {/* Heart Rate */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Heart Rate <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 72"
+                                                    value={consultationRecords.vitalSigns?.heart_rate || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            heart_rate: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>bpm</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Blood Pressure */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Blood Pressure <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="text" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 120/80"
+                                                    value={consultationRecords.vitalSigns?.blood_pressure || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            blood_pressure: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>mmHg</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Temperature */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Temperature <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.1"
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 36.6"
+                                                    value={consultationRecords.vitalSigns?.temperature || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            temperature: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>°C</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Weight */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>
+                                                Weight <span style={{color: '#ef4444'}}>*</span>
+                                            </label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 70"
+                                                    value={consultationRecords.vitalSigns?.weight || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            weight: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>kg</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Respiratory Rate */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>Respiratory Rate</label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 16"
+                                                    value={consultationRecords.vitalSigns?.respiratory_rate || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            respiratory_rate: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>breaths/min</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Oxygen Saturation */}
+                                        <div style={s.formGroup}>
+                                            <label style={s.inputLabel}>O₂ Saturation</label>
+                                            <div style={{position: 'relative'}}>
+                                                <input 
+                                                    type="number" 
+                                                    style={s.inputField} 
+                                                    placeholder="e.g. 98"
+                                                    min="0"
+                                                    max="100"
+                                                    value={consultationRecords.vitalSigns?.oxygen_saturation || ''}
+                                                    onChange={e => setConsultationRecords({
+                                                        ...consultationRecords,
+                                                        vitalSigns: {
+                                                            ...consultationRecords.vitalSigns,
+                                                            oxygen_saturation: e.target.value
+                                                        }
+                                                    })}
+                                                />
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    right: '10px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '12px'
+                                                }}>%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Additional Notes Section */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <FileText size={18} /> Additional Information
+                                    </div>
+                                    
+                                    {/* Pain Assessment */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Pain Assessment (0-10)</label>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="10" 
+                                                step="1"
+                                                style={{flex: 1, height: '6px', borderRadius: '3px', backgroundColor: '#e2e8f0'}}
+                                                value={consultationRecords.pain_level || 0}
+                                                onChange={e => setConsultationRecords({
+                                                    ...consultationRecords,
+                                                    pain_level: parseInt(e.target.value)
+                                                })}
+                                            />
+                                            <span style={{
+                                                minWidth: '30px',
+                                                fontWeight: '600',
+                                                color: consultationRecords.pain_level > 7 ? '#dc2626' : 
+                                                    consultationRecords.pain_level > 4 ? '#f59e0b' : '#22c55e'
+                                            }}>
+                                                {consultationRecords.pain_level || 0}/10
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            fontSize: '11px',
+                                            color: '#94a3b8',
+                                            marginTop: '4px'
+                                        }}>
+                                            <span>No pain</span>
+                                            <span>Moderate</span>
+                                            <span>Severe</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Follow-up Date */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Recommended Follow-up Date</label>
+                                        <input 
+                                            type="date" 
+                                            style={s.inputField} 
+                                            value={consultationRecords.follow_up_date || ''}
+                                            onChange={e => setConsultationRecords({
+                                                ...consultationRecords,
+                                                follow_up_date: e.target.value
+                                            })}
+                                        />
+                                    </div>
+                                    
+                                    {/* Referral */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Referral (if any)</label>
+                                        <select 
+                                            style={s.inputField}
+                                            value={consultationRecords.referral || ''}
+                                            onChange={e => setConsultationRecords({
+                                                ...consultationRecords,
+                                                referral: e.target.value
+                                            })}
+                                        >
+                                            <option value="">No referral</option>
+                                            <option value="physiotherapy">Physiotherapy</option>
+                                            <option value="specialist">Specialist Consultation</option>
+                                            <option value="imaging">Imaging Center</option>
+                                            <option value="lab">Laboratory Tests</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    {/* Doctor's Notes */}
+                                    <div style={s.formGroup}>
+                                        <label style={s.inputLabel}>Doctor's Notes</label>
+                                        <textarea 
+                                            style={s.textAreaField} 
+                                            placeholder="Additional notes, observations, or recommendations..."
+                                            value={consultationRecords.notes || ''}
+                                            onChange={e => setConsultationRecords({...consultationRecords, notes: e.target.value})}
+                                            rows={4}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div style={{display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, paddingTop: '20px'}}>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, paddingTop: '20px', overflowY: 'auto', maxHeight: '400px'}}>
                                 <div style={{fontSize: '13px', color: '#64748b'}}>Select an order type:</div>
-                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#4361ee', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowMedicationModal(true)}>
+                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#4361ee', color: 'white', justifyContent: 'center', fontSize: '14px'}} 
+                                    onClick={() => setShowMedicationModal(true)}>
                                     <Pill size={18} /> Prescribe Medication
                                 </button>
-                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#059669', color: 'white', justifyContent: 'center', fontSize: '14px'}} onClick={() => setShowScanOrderModal(true)}>
+                                <button style={{...s.actionButton, padding: '16px', backgroundColor: '#059669', color: 'white', justifyContent: 'center', fontSize: '14px'}} 
+                                    onClick={() => setShowScanOrderModal(true)}>
                                     <Activity size={18} /> Order New Scan
                                 </button>
+                                
+                                {/* Additional Order Options */}
+                                <div style={{marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '15px'}}>
+                                    <div style={{fontSize: '13px', color: '#64748b', marginBottom: '12px'}}>Other Order Options:</div>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Physical Therapy Referral - Feature coming soon')}>
+                                        📋 Physical Therapy Referral
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Laboratory Tests - Feature coming soon')}>
+                                        🧪 Laboratory Tests
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Medical Certificate - Feature coming soon')}>
+                                        📄 Medical Certificate
+                                    </button>
+                                    
+                                    <button style={{...s.actionButton, padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', justifyContent: 'center', fontSize: '13px', border: '1px solid #e2e8f0'}} 
+                                        onClick={() => alert('Sick Leave - Feature coming soon')}>
+                                        🏥 Sick Leave
+                                    </button>
+                                </div>
                             </div>
                         )}
                         
                         {tab === 'records' && (
-                            <button style={{...s.actionButton, backgroundColor: '#1e293b', color: 'white', marginTop: 'auto', padding: '12px', justifyContent: 'center'}}>
+                            <button 
+                                style={{...s.actionButton, backgroundColor: '#1e293b', color: 'white', marginTop: 'auto', padding: '12px', justifyContent: 'center'}}
+                                onClick={handleSaveVisitRecord}
+                            >
                                 Save Records & End Visit
                             </button>
                         )}
@@ -769,7 +1991,19 @@ export default function DoctorDashboard() {
     const [reportText, setReportText] = useState('');
     
     const [consultationRecords, setConsultationRecords] = useState({
-        complaint: '', diagnosis: '', treatment: '', physicalExam: ''
+        complaint: '',
+        diagnosis: '',
+        treatment: '',
+        physicalExam: '',
+        notes: '',
+        vitalSigns: {
+            heart_rate: '',
+            blood_pressure: '',
+            temperature: '',
+            weight: '',
+            respiratory_rate: '',
+            oxygen_saturation: ''
+        }
     });
 
     // Profile Data State
@@ -1437,20 +2671,28 @@ export default function DoctorDashboard() {
         setShowReportModal(true);
     };
 
-    const handleSubmitReport = () => {
-        if (selectedScan && selectedScan.scanId) {
-            const scanId = selectedScan.scanId.replace('SCN-', '');
-            updateScanReport(parseInt(scanId), {
+    // Update handleSubmitReport function in main component
+    const handleSubmitReport = async () => {
+        if (selectedScan && selectedScan.id) {
+            const success = await updateScanReport(selectedScan.id, {
                 doctor_notes: reportText,
                 final_diagnosis: reportText,
-                is_verified: true
+                is_verified: true,
+                status: 'completed'
             });
+            
+            if (success) {
+                // Refresh pending scans
+                fetchPendingScans();
+            }
         }
         setShowReportModal(false);
         setReportText('');
     };
 
+    // Update the handlePatientClick function in the main component
     const handlePatientClick = async (patientNameOrId) => {
+        // First try to find in patientsList (real data)
         if (patientsList.length > 0) {
             const patient = patientsList.find(p => 
                 p.patient_name === patientNameOrId || 
@@ -1468,19 +2710,37 @@ export default function DoctorDashboard() {
                     diagnosis: patient.diagnosis,
                     lastVisitDate: patient.last_visit_date,
                     nextVisitDate: patient.next_visit_date,
-                    history: []
+                    history: patient.chronic_conditions ? patient.chronic_conditions.split(',') : []
                 };
                 
                 setSelectedPatient(formattedPatient);
                 setActiveTab('profile');
+                
+                // Reset consultation records for new patient
+                setConsultationRecords({
+                    complaint: '',
+                    diagnosis: '',
+                    treatment: '',
+                    physicalExam: ''
+                });
+                
                 return;
             }
         }
         
+        // Fallback to mock data
         const patient = allPatientsData.find(p => p.patientName === patientNameOrId);
         if (patient) {
             setSelectedPatient(patient);
             setActiveTab('profile');
+            
+            // Reset consultation records for new patient
+            setConsultationRecords({
+                complaint: '',
+                diagnosis: '',
+                treatment: '',
+                physicalExam: ''
+            });
         }
     };
 
@@ -2352,7 +3612,6 @@ export default function DoctorDashboard() {
                     />
                 )}
             </div>
-
             {/* MODALS */}
             <RenderReportModal 
                 show={showReportModal} 
@@ -2364,11 +3623,25 @@ export default function DoctorDashboard() {
             />
             <RenderMedicationModal 
                 show={showMedicationModal} 
-                onClose={() => setShowMedicationModal(false)} 
+                onClose={() => setShowMedicationModal(false)}
+                selectedPatient={selectedPatient}
+                onPrescribeSuccess={() => {
+                    // Optional: Refresh patient data or show confirmation
+                    if (selectedPatient) {
+                        // You could trigger a refetch of patient data here
+                    }
+                }}
             />
             <RenderScanOrderModal 
                 show={showScanOrderModal} 
-                onClose={() => setShowScanOrderModal(false)} 
+                onClose={() => setShowScanOrderModal(false)}
+                selectedPatient={selectedPatient}
+                onOrderSuccess={() => {
+                    // Optional: Refresh scans data or show confirmation
+                    if (selectedPatient) {
+                        // You could trigger a refetch of patient scans here
+                    }
+                }}
             />
         </div>
     );
