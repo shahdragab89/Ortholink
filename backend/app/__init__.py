@@ -128,4 +128,9 @@ def create_app():
             os.makedirs(dir_path, exist_ok=True)
     
     print("✅ App created successfully")
+    @app.route('/scan_folders/<path:filename>')
+    def serve_scan_files(filename):
+        folder_path = os.path.join(app.root_path, "scan_folders")
+        return send_from_directory(folder_path, filename)
+    
     return app
