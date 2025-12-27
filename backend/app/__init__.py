@@ -97,6 +97,22 @@ def create_app():
     except Exception as e:
         print(f"⚠️ Could not register Admin Dashboard blueprint: {e}")
 
+    # Admin Appointments
+    try:
+        from .AdminAppointmentsRoutes import admin_appointments_bp as admin_appts_blueprint
+        app.register_blueprint(admin_appts_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Appointments blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Appointments blueprint: {e}")
+
+    # Admin Scans
+    try:
+        from .AdminScansRoutes import admin_scans_bp as admin_scans_blueprint
+        app.register_blueprint(admin_scans_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Scans blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Scans blueprint: {e}")
+
     
     # ===== Simple test routes =====
     
