@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { adminStyles } from "../styles/AdminStyles";
 import AdminHome from "./AdminHome";
+import { useEffect } from "react";
 
 export default function AdminPage() {
 
@@ -51,6 +52,67 @@ export default function AdminPage() {
   const [appointmentCapacity, setAppointmentCapacity] = useState(0);
   const [totalReports, setTotalReports] = useState(0);
   const [avgVisitDuration, setAvgVisitDuration] = useState(0);
+
+ 
+
+// Fetch all doctors from backend on load
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/doctors")
+    .then((res) => res.json())
+    .then((data) => {
+      setDoctorsList(data);
+      setTotalDoctors(data.length);
+    })
+    .catch((err) => console.error("Error fetching doctors:", err));
+}, []);
+
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/api/admin/doctors/stats")
+    .then(res => res.json())
+    .then(data => {
+      setTotalDoctors(data.total_doctors);
+      setAppointmentCapacity(data.appointment_capacity);
+      setTotalReports(data.total_reports);
+      setAvgVisitDuration(data.avg_visit_duration);
+    })
+    .catch(err => console.error("Error fetching doctor stats:", err));
+}, []);
+
+
+const saveDoctor = (doctorData, isEdit = false) => {
+  const formData = new FormData();
+  for (const key in doctorData) {
+    if (key !== "photo" && key !== "photoFile" && doctorData[key])
+      formData.append(key, doctorData[key]);
+  }
+  if (doctorData.photoFile) formData.append("photo", doctorData.photoFile);
+
+  const url = isEdit
+    ? `http://127.0.0.1:5000/api/admin/doctors/${doctorData.id}`
+    : "http://127.0.0.1:5000/api/admin/doctors";
+
+  fetch(url, {
+    method: isEdit ? "PUT" : "POST",
+    body: formData,
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.message) {
+        alert("✅ Doctor saved successfully!");
+        fetch("http://127.0.0.1:5000/api/admin/doctors")
+          .then((r) => r.json())
+          .then((docs) => setDoctorsList(docs));
+        setSelectedDoctor(null);
+        setShowAddDoctor(false);
+      } else {
+        alert("⚠️ " + (data.error || "Operation failed"));
+      }
+    })
+    .catch((err) => console.error(err));
+};
+
+
+
   
 
 
@@ -376,7 +438,7 @@ const [activeReport, setActiveReport] = useState(null);
                       </h3>
 
                       <p style={{ margin: "10px 0px", color: "#444", fontWeight: "600"}}>
-                        {doctor.specialty}   &nbsp; • &nbsp;  {doctor.status}
+                        {doctor.professional_title}   &nbsp; • &nbsp;  {doctor.status}
                       </p>
 
                       <p style={{ margin: "10px 0", color: "#444",fontWeight: "600" }}>
@@ -384,7 +446,7 @@ const [activeReport, setActiveReport] = useState(null);
                       </p>
 
                       <p style={{ margin: "10px 0", color: "#444" ,fontWeight: "600"}}>
-                        Patients (30d): {doctor.patients30d} &nbsp; • &nbsp; Reports (30d): {doctor.reports30d} &nbsp; • &nbsp; Revenue (30d):{" "}
+                        Patients (30d): {doctor.patients30d} &nbsp; • &nbsp;  Revenue (30d):{" "}
                         {doctor.revenue30d}  
                       </p>
 
@@ -451,7 +513,17 @@ const [activeReport, setActiveReport] = useState(null);
       {/* PROFILE PICTURE */}
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <img
-          src={selectedDoctor.photo || "/placeholder-doctor.png"}
+        src={
+  selectedDoctor.photo?.startsWith("blob:")
+    ? selectedDoctor.photo
+    : selectedDoctor.photo?.startsWith("http")
+    ? selectedDoctor.photo
+    : selectedDoctor.photo
+    ? `http://127.0.0.1:5000/${selectedDoctor.photo}`
+    : "/placeholder-doctor.png"
+}
+
+
           alt={selectedDoctor.name}
           style={{
             width: "120px",
@@ -467,14 +539,13 @@ const [activeReport, setActiveReport] = useState(null);
           <input
             type="file"
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = () =>
-                  setSelectedDoctor({ ...selectedDoctor, photo: reader.result });
-                reader.readAsDataURL(file);
-              }
-            }}
+  const file = e.target.files[0];
+  if (file) {
+    const previewURL = URL.createObjectURL(file);
+    setSelectedDoctor({ ...selectedDoctor, photoFile: file, photo: previewURL });
+  }
+}}
+
           />
         )}
       </div>
@@ -648,7 +719,7 @@ const [activeReport, setActiveReport] = useState(null);
               <span>
                 {showPassword
                   ? selectedDoctor.password_hash || "—"
-                  : "—"}
+                  : "••••••••"}
                 <button
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
@@ -771,22 +842,20 @@ const [activeReport, setActiveReport] = useState(null);
         ) : (
           <>
             <button
-              onClick={() => {
-                setEditMode(false);
-                alert("Changes saved (DB update will happen in backend)");
-              }}
-              style={{
-                backgroundColor: "#0A7C88",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "6px",
-                color: "white",
-                cursor: "pointer",
-                marginRight: "10px",
-              }}
-            >
-              Save
-            </button>
+ onClick={() => saveDoctor(selectedDoctor, true)}
+  style={{
+    backgroundColor: "#0A7C88",
+    border: "none",
+    padding: "10px 20px",
+    borderRadius: "6px",
+    color: "white",
+    cursor: "pointer",
+    marginRight: "10px",
+  }}
+>
+  Save
+</button>
+
             <button
               onClick={() => setEditMode(false)}
               style={{
@@ -826,7 +895,17 @@ const [activeReport, setActiveReport] = useState(null);
       {/* PROFILE PICTURE */}
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <img
-          src={newDoctor.photo || "/placeholder-doctor.png"}
+         src={
+              newDoctor.photo?.startsWith("blob:")
+                ? newDoctor.photo
+                : newDoctor.photo?.startsWith("http")
+                ? newDoctor.photo
+                : newDoctor.photo
+                ? `http://127.0.0.1:5000/${newDoctor.photo}`
+                : "/placeholder-doctor.png"
+            }
+
+
           alt="Doctor"
           style={{
             width: "120px",
@@ -842,14 +921,14 @@ const [activeReport, setActiveReport] = useState(null);
           type="file"
           accept="image/*"
           onChange={(e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () =>
-                setNewDoctor({ ...newDoctor, photo: reader.result });
-              reader.readAsDataURL(file);
-            }
-          }}
+  const file = e.target.files[0];
+  if (file) {
+    const previewURL = URL.createObjectURL(file);
+    setNewDoctor({ ...newDoctor, photoFile: file, photo: previewURL });
+  }
+}}
+
+
         />
       </div>
 
@@ -1065,10 +1144,9 @@ const [activeReport, setActiveReport] = useState(null);
         }}
       >
         <button
-          onClick={() => {
-            alert("New doctor added (backend will handle DB insertion)");
-            setShowAddDoctor(false);
-          }}
+  onClick={() => saveDoctor(newDoctor, false)}
+
+
           style={{
             backgroundColor: "#0A7C88",
             border: "none",
@@ -1591,9 +1669,30 @@ const [activeReport, setActiveReport] = useState(null);
           <>
             <button
               onClick={() => {
-                setEditMode(false);
-                alert("Changes saved (DB update will happen in backend)");
-              }}
+  fetch(`http://127.0.0.1:5000/api/admin/doctors/${selectedDoctor.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(selectedDoctor),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.message) {
+        alert("✅ Doctor updated successfully!");
+        setEditMode(false);
+        // Refresh list to show new data
+        fetch("http://127.0.0.1:5000/api/admin/doctors")
+          .then((r) => r.json())
+          .then((docs) => setDoctorsList(docs));
+      } else {
+        alert("⚠️ Failed: " + (data.error || "Unknown error"));
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("❌ Error updating doctor");
+    });
+}}
+
               style={{
                 backgroundColor: "#0A7C88",
                 border: "none",
