@@ -104,7 +104,14 @@ def patients_stats():
         .count()
     )
     pending_bills = db.session.query(Bill).filter(Bill.payment_status == "pending").count()
-    followups = db.session.query(Appointment).filter(Appointment.appointment_date > now).count()
+
+    # Follow-ups = upcoming appointments explicitly marked as "follow up"
+    followups = (
+        db.session.query(Appointment)
+        .filter(Appointment.appointment_date > now)
+        .filter(func.lower(Appointment.reason).like("%follow%"))
+        .count()
+    )
 
     return jsonify({
         "total": total_patients,
