@@ -1,19 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { dicomViewerStyles } from "../styles/DicomViewerStyles";
-
-// Mock Data for different series
-const seriesData = [
-  { id: 1, name: 'Coronal View', count: 1, type: 'Localizer' },
-  { id: 2, name: 'Axial Bone 2.0', count: 120, type: 'Bone' },
-  { id: 3, name: 'Sagittal Reformat', count: 85, type: 'Soft Tissue' },
-  { id: 4, name: '3D Volume View', count: 1, type: 'Volume' },
-];
 
 export default function DicomViewerPage() {
   // --- STATE MANAGEMENT ---
-  const [currentView, setCurrentView] = useState('single'); // default single-plane view
-  const [currentPane, setCurrentPane] = useState('axial'); // default axial
-
+  const [currentView, setCurrentView] = useState('single');
+  const [currentPane, setCurrentPane] = useState('axial');
   const [activeTool, setActiveTool] = useState('pan');
   const [activeSeries, setActiveSeries] = useState(2);
   
@@ -43,8 +34,11 @@ export default function DicomViewerPage() {
   const [isAdjustingWL, setIsAdjustingWL] = useState(false);
   const [wlStart, setWlStart] = useState({ x: 0, y: 0 });
 
-  // --- NEW STATE FOR CDSS ---
-  const [sidebarMode, setSidebarMode] = useState('viewer'); // 'viewer' or 'cdss'
+  // --- NEW STATE FOR PATIENT DATA ---
+  const [sidebarMode, setSidebarMode] = useState('viewer');
+  const [patientData, setPatientData] = useState(null);
+  const [seriesData, setSeriesData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [cdssData, setCdssData] = useState({
     overallConfidence: 94,
@@ -57,6 +51,97 @@ export default function DicomViewerPage() {
     recommendations: 'Surgical reconstruction of ACL recommended. Meniscal repair vs meniscectomy to be determined intra-operatively.',
     differential: 'Partial ACL tear, tibial spine avulsion, isolated MCL injury.'
   });
+
+  // --- USE EFFECT FOR LOADING PATIENT DATA ---
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get patient ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientIdParam = urlParams.get('patientId');
+        
+        if (!patientIdParam) {
+          console.error('No patient ID in URL');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Extract numeric ID from "P-31" format
+        const patientId = patientIdParam.replace('P-', '');
+        
+        // Get token for authentication
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.error('No authentication token found');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Fetch patient DICOM data
+        const response = await fetch(`http://127.0.0.1:5000/api/dicom/patient-data/${patientId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success) {
+            setPatientData(data.patient);
+            setSeriesData(data.series || []);
+            
+            // If CDSS data is available from API, use it
+            if (data.cdss_data) {
+              setCdssData(data.cdss_data);
+            }
+            
+            console.log('Patient data loaded:', data.patient);
+          } else {
+            console.error('Failed to load patient data:', data.error);
+            // Fallback to mock data
+            setFallbackData();
+          }
+        } else {
+          console.error('API error:', response.status);
+          setFallbackData();
+        }
+      } catch (error) {
+        console.error('Error fetching patient data:', error);
+        setFallbackData();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    const setFallbackData = () => {
+      // Get patient from localStorage as fallback
+      const storedPatient = localStorage.getItem('selectedPatientForDicom');
+      if (storedPatient) {
+        try {
+          const parsedPatient = JSON.parse(storedPatient);
+          setPatientData(parsedPatient);
+        } catch (e) {
+          console.error('Error parsing stored patient:', e);
+        }
+      }
+      
+      // Set fallback series data
+      setSeriesData([
+        { id: 1, name: 'Coronal View', count: 1, type: 'Localizer' },
+        { id: 2, name: 'Axial Bone 2.0', count: 120, type: 'Bone' },
+        { id: 3, name: 'Sagittal Reformat', count: 85, type: 'Soft Tissue' },
+        { id: 4, name: '3D Volume View', count: 1, type: 'Volume' },
+      ]);
+    };
+    
+    fetchPatientData();
+  }, []);
 
   // --- HANDLERS ---
   const handleBackToDashboard = () => {
@@ -143,7 +228,7 @@ export default function DicomViewerPage() {
   const toggleSidebarMode = (mode) => {
     setSidebarMode(mode);
     if (mode === 'cdss') {
-      setCurrentView('mpr'); // Automatically switch to MPR mode
+      setCurrentView('mpr');
     }
   };
 
@@ -173,10 +258,100 @@ export default function DicomViewerPage() {
     }));
   };
 
+  // Update the handleSaveCdssData function in DicomViewerPage.jsx
+  const handleSaveCdssData = async () => {
+    try {
+      // Get patient ID from URL or state
+      const urlParams = new URLSearchParams(window.location.search);
+      const patientIdParam = urlParams.get('patientId');
+      const patientId = patientIdParam ? patientIdParam.replace('P-', '') : patientData?.patient_id?.replace('P-', '');
+      
+      if (!patientId) {
+        alert('No patient ID available');
+        return;
+      }
+      
+      // First, fetch the patient's scans to find the right scan ID
+      const token = localStorage.getItem('token');
+      
+      // Fetch patient data to get scans
+      const response = await fetch(`http://127.0.0.1:5000/api/dicom/patient-data/${patientId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch patient data');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.scans || data.scans.length === 0) {
+        alert('No scans found for this patient');
+        return;
+      }
+      
+      // Use the first scan or let user select one
+      // For now, use the first scan that matches the current modality/body part
+      let targetScan = data.scans[0];
+      
+      // Try to find a scan matching the current view
+      if (patientData?.modality && patientData?.body_part) {
+        const matchingScan = data.scans.find(scan => 
+          scan.modality === patientData.modality && 
+          scan.body_part === patientData.body_part
+        );
+        if (matchingScan) targetScan = matchingScan;
+      }
+      
+      const scanId = targetScan.scan_id;
+      
+      console.log('Saving CDSS data to scan ID:', scanId, 'for patient ID:', patientId);
+      
+      // Now save the CDSS data
+      const saveResponse = await fetch(`http://127.0.0.1:5000/api/dicom/update-cdss/${scanId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          doctor_notes: cdssData.summary,
+          final_diagnosis: cdssData.summary,
+          ai_recommendations: cdssData.recommendations,
+          cdss_result: cdssData.differential,
+          is_verified: true,
+          confidence_score: cdssData.overallConfidence
+        })
+      });
+      
+      if (saveResponse.ok) {
+        const result = await saveResponse.json();
+        alert('CDSS data saved successfully!');
+        console.log('Save response:', result);
+        
+        // Update local state to reflect saved changes
+        setCdssData(prev => ({
+          ...prev,
+          is_verified: true
+        }));
+      } else {
+        const error = await saveResponse.json();
+        alert(`Failed to save: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error saving CDSS data:', error);
+      alert('Error saving CDSS data: ' + error.message);
+    }
+  };
+
   // --- SUB-COMPONENTS ---
   
   const ViewportContent = ({ plane, sliceNumber }) => {
-    const activeSeriesData = seriesData.find(s => s.id === activeSeries);
+    const activeSeriesItem = seriesData.find(s => s.id === activeSeries);
     const viewportRef = useRef(null);
     
     const handleMouseDown = (e) => {
@@ -250,13 +425,14 @@ export default function DicomViewerPage() {
       cursor: activeTool === 'pan' ? 'grab' : activeTool === 'window' ? 'crosshair' : activeTool === 'measure' || activeTool === 'angle' ? 'crosshair' : 'default'
     };
 
+    // Use patient-specific images if available
     let imageUrl = '';
     if (plane === 'axial') {
-      imageUrl = '/axial.jpeg';
+      imageUrl = patientData?.scanImage || '/axial.jpeg';
     } else if (plane === 'sagittal') {
-      imageUrl = '/sagittal.jpg';
+      imageUrl = patientData?.scanImage || '/sagittal.jpg';
     } else if (plane === 'coronal') {
-      imageUrl = '/coronal.jpg';
+      imageUrl = patientData?.scanImage || '/coronal.jpg';
     }
 
     const measurements = measurePoints[plane] || [];
@@ -276,6 +452,16 @@ export default function DicomViewerPage() {
             alt={plane}
             style={filterStyle}
             draggable={false}
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              if (plane === 'axial') {
+                e.target.src = '/axial.jpeg';
+              } else if (plane === 'sagittal') {
+                e.target.src = '/sagittal.jpg';
+              } else if (plane === 'coronal') {
+                e.target.src = '/coronal.jpg';
+              }
+            }}
           />
           
           {currentView === 'mpr' && (
@@ -345,7 +531,7 @@ export default function DicomViewerPage() {
           <div style={dicomViewerStyles.planeLabel}>{plane.toUpperCase()}</div>
           
           <div style={dicomViewerStyles.sliceInfo}>
-            <div>Slice: {sliceNumber}/{activeSeriesData.count}</div>
+            <div>Slice: {sliceNumber}/{activeSeriesItem?.count || 120}</div>
             <div>WL: {windowLevel.center} / WW: {windowLevel.width}</div>
             <div>Zoom: {zoomLevel}%</div>
             {enableSmoothing && <div style={{color: '#10b981'}}>Smooth: ON</div>}
@@ -362,7 +548,7 @@ export default function DicomViewerPage() {
         <input
           type="range"
           min="1"
-          max={activeSeriesData.count}
+          max={activeSeriesItem?.count || 120}
           value={sliceNumber}
           onChange={(e) => setCurrentSlice(prev => ({...prev, [plane]: parseInt(e.target.value)}))}
           style={dicomViewerStyles.sliceSlider}
@@ -417,6 +603,24 @@ export default function DicomViewerPage() {
     );
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div style={dicomViewerStyles.container}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          backgroundColor: '#111827',
+          color: 'white'
+        }}>
+          Loading DICOM viewer for patient...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={dicomViewerStyles.container}>
       
@@ -432,7 +636,7 @@ export default function DicomViewerPage() {
           <div style={dicomViewerStyles.toolbarTitle}>
             <span style={{fontSize: '18px', fontWeight: '700'}}>DICOM Viewer</span>
             <span style={{fontSize: '12px', color: '#9ca3af', marginLeft: '12px'}}>
-              Ahmed Ali • P-105
+              {patientData ? `${patientData.patient_name} • ${patientData.patient_id}` : 'Loading...'}
             </span>
           </div>
         </div>
@@ -477,7 +681,7 @@ export default function DicomViewerPage() {
           <button style={dicomViewerStyles.zoomBtn} onClick={handleZoomOut}>−</button>
           <span style={dicomViewerStyles.zoomDisplay}>{zoomLevel}%</span>
           <button style={dicomViewerStyles.zoomBtn} onClick={handleZoomIn}>+</button>
-          <button style={dicomViewerStyles.logoutBtn} onClick={handleLogout}>Logout</button>
+          {/* <button style={dicomViewerStyles.logoutBtn} onClick={handleLogout}>Logout</button> */}
         </div>
       </div>
 
@@ -493,23 +697,47 @@ export default function DicomViewerPage() {
               style={sidebarMode === 'viewer' ? {...dicomViewerStyles.sidebarTab, ...dicomViewerStyles.sidebarTabActive} : dicomViewerStyles.sidebarTab}
               onClick={() => toggleSidebarMode('viewer')}
             >
-              👁️ Viewer
+               Viewer
             </button>
             <button 
               style={sidebarMode === 'cdss' ? {...dicomViewerStyles.sidebarTab, ...dicomViewerStyles.sidebarTabActive} : dicomViewerStyles.sidebarTab}
               onClick={() => toggleSidebarMode('cdss')}
             >
-              🤖 CDSS Analysis
+               CDSS Analysis
             </button>
           </div>
           {/* ------------------------- */}
           
           <div style={dicomViewerStyles.patientCard}>
             <div style={dicomViewerStyles.cardTitle}>Patient Information</div>
-            <div style={dicomViewerStyles.infoRow}><span style={dicomViewerStyles.infoLabel}>Name:</span><span>Ahmed Ali</span></div>
-            <div style={dicomViewerStyles.infoRow}><span style={dicomViewerStyles.infoLabel}>ID:</span><span>P-105</span></div>
-            <div style={dicomViewerStyles.infoRow}><span style={dicomViewerStyles.infoLabel}>Modality:</span><span style={dicomViewerStyles.infoBadge}>CT</span></div>
-            <div style={dicomViewerStyles.infoRow}><span style={dicomViewerStyles.infoLabel}>Body Part:</span><span>Knee</span></div>
+            {patientData ? (
+              <>
+                <div style={dicomViewerStyles.infoRow}>
+                  <span style={dicomViewerStyles.infoLabel}>Name:</span>
+                  <span>{patientData.patient_name}</span>
+                </div>
+                <div style={dicomViewerStyles.infoRow}>
+                  <span style={dicomViewerStyles.infoLabel}>ID:</span>
+                  <span>{patientData.patient_id}</span>
+                </div>
+                <div style={dicomViewerStyles.infoRow}>
+                  <span style={dicomViewerStyles.infoLabel}>Modality:</span>
+                  <span style={dicomViewerStyles.infoBadge}>{patientData.modality}</span>
+                </div>
+                <div style={dicomViewerStyles.infoRow}>
+                  <span style={dicomViewerStyles.infoLabel}>Body Part:</span>
+                  <span>{patientData.body_part}</span>
+                </div>
+                <div style={dicomViewerStyles.infoRow}>
+                  <span style={dicomViewerStyles.infoLabel}>Diagnosis:</span>
+                  <span style={{color: '#ef4444', fontSize: '12px'}}>{patientData.diagnosis}</span>
+                </div>
+              </>
+            ) : (
+              <div style={{padding: '20px', textAlign: 'center', color: '#9ca3af'}}>
+                Loading patient data...
+              </div>
+            )}
           </div>
 
           {/* --- CONDITION 1: STANDARD VIEWER MODE --- */}
@@ -641,8 +869,8 @@ export default function DicomViewerPage() {
               />
 
               <div style={{display:'flex', gap:'8px', marginTop:'8px'}}>
+                 <button style={dicomViewerStyles.cdssActionBtn} onClick={handleSaveCdssData}>💾 Save Record</button>
                  <button style={dicomViewerStyles.cdssActionBtn}>📄 Export Report</button>
-                 <button style={dicomViewerStyles.cdssActionBtn}>💾 Save Record</button>
               </div>
             </div>
           )}
@@ -678,7 +906,7 @@ export default function DicomViewerPage() {
         </div>
         <div style={dicomViewerStyles.statusRight}>
           <span style={dicomViewerStyles.statusItem}>🛠️ Active Tool: {activeTool.toUpperCase()}</span>
-          <span style={dicomViewerStyles.statusItem}>📊 {seriesData.find(s=>s.id === activeSeries).type}</span>
+          <span style={dicomViewerStyles.statusItem}>📊 {seriesData.find(s=>s.id === activeSeries)?.type || 'N/A'}</span>
         </div>
       </div>
 
