@@ -81,6 +81,14 @@ def create_app():
     except Exception as e:
         print(f"⚠️ Could not register Admin Radiologists blueprint: {e}")
 
+    # Register the main Admin Dashboard Blueprint
+    try:
+        from .AdminHomeRoutes import admin_bp as admin_dashboard_blueprint  # <--- NEW NAME
+        app.register_blueprint(admin_dashboard_blueprint, url_prefix="/api/admin")
+        print("✓ Admin Dashboard blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register Admin Dashboard blueprint: {e}")
+
     
     # ===== Simple test routes =====
     
