@@ -4,6 +4,8 @@ import { MdOutlineAssignment } from "react-icons/md"; // report/test icon
 
 
 import { patientStyles } from '../styles/patientStyles';
+const IMAGE_BASE = "http://127.0.0.1:5000/uploads";
+
 
 export default function PatientPage() {
 
@@ -42,6 +44,8 @@ useEffect(() => {
 
 
   const [personalInfo, setPersonalInfo] = useState({});
+  const [profilePhoto, setProfilePhoto] = useState(null);
+
   const [contactInfo, setContactInfo] = useState({});
   const [emergencyInfo, setEmergencyInfo] = useState({});
   const [insuranceInfo, setInsuranceInfo] = useState({});
@@ -63,6 +67,7 @@ useEffect(() => {
         insurance_number: insuranceInfo.id,
         emergency_contact_name: emergencyInfo.name,
         emergency_contact_phone: emergencyInfo.number,
+        profile_image: personalInfo.photo, 
       };
 
       const res = await fetch(`http://127.0.0.1:5000/api/auth/edit_patient/${userId}`, {
@@ -140,11 +145,18 @@ const fetchMedications = async () => {
           bloodType: data.blood_type,
           allergies: data.allergies || "N/A",
           chronic: data.chronic_conditions || "N/A",
-          photo: "/default-avatar.png"
+          photo: data.profile_image ? `${IMAGE_BASE}/profile_images/${data.profile_image}`
+    : "/default-avatar.png"
         });
        setContactInfo({ phone: data.phone, address: data.address });
         setEmergencyInfo({ name: data.emergency_contact_name, number: data.emergency_contact_phone });
         setInsuranceInfo({ provider: data.insurance_provider, id: data.insurance_number, coverage: "N/A", validUntil: "N/A" });
+
+        setProfilePhoto(
+                    data.profile_image
+                        ? `${IMAGE_BASE}/profile_images/${data.profile_image}`
+                        : DEFAULT_AVATAR
+                );
 
       } catch (error) {
         console.error("Error fetching patient data:", error);
@@ -217,7 +229,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 //   coverage: "Orthopedic treatments up to 80%",
 //   validUntil: "2026-12-31",
 // });
-
+const DEFAULT_AVATAR = "https://via.placeholder.com/150?text=Dr+Image";
 const [scans, setScans] = useState([]);
 
 useEffect(() => {
@@ -240,7 +252,7 @@ useEffect(() => {
       const data = await res.json();
       console.log("scans:", data);
 
-      setScans(data); // ✅ الصح
+      setScans(data); 
 
     } catch (err) {
       console.error(err);
@@ -630,7 +642,8 @@ useEffect(() => {
                    onClick={() => {
   setSelectedTest({
     ...r,
-    images: ["/Background.png", "/xray.jpg"], 
+    images: r.scan_folder,
+
     report:
       r.report ||
       "Scan report shows no abnormal findings. Normal spinal alignment and disc hydration preserved.",
@@ -790,10 +803,7 @@ useEffect(() => {
                     doctor: scan.radiologist,
                     date: scan.scan_date,
                   });
-                  setScanPhotos([
-                    "/Background.png",
-                    "/xray.jpg",
-                  ]);
+                  setScanPhotos(scan.scan_folder);
                   setCurrentScanIndex(0);
                 }}
               >
@@ -812,7 +822,7 @@ useEffect(() => {
                   );
                 }}
               >
-                {scan.report}
+                view
               </td>
               <td
   style={patientStyles.clickableCell}
