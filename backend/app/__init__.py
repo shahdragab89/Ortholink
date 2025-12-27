@@ -54,7 +54,16 @@ def create_app():
         print("✓ Radiologist blueprint registered")
     except:
         print("⚠️ Could not register radiologist blueprint")
-    
+
+    # Add DICOM routes
+    try:
+        from .dicom_routes import dicom_bp as dicom_blueprint
+        app.register_blueprint(dicom_blueprint, url_prefix='/api/dicom')
+        print("✓ DICOM blueprint registered")
+    except Exception as e:
+        print(f"⚠️ Could not register DICOM blueprint: {e}")
+        
+        
     # ===== Simple test routes =====
     
     @app.route('/')
