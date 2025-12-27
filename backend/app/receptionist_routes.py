@@ -6,10 +6,27 @@ from .models.visit_record import VisitRecord
 from .models.user import User
 from .models.dicom_scan import DicomScan
 from .models.patient import Patient
+from .models.bill import Bill
+from .models.bill_item import BillItem
+from .models.payment import Payment
+from datetime import datetime
+from decimal import Decimal
 
 
 
 reception_bp = Blueprint("reception", __name__)
+
+@reception_bp.route("/me", methods=["GET"])
+def get_receptionist_username():
+    user_id = request.args.get("user_id", type=int)
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
+    user = User.query.get(user_id)
+    if not user or user.role.value.lower() != "receptionist":
+        return jsonify({"error": "Receptionist not found"}), 404
+
+    return jsonify({"username": user.username}), 200
 
 # -----------------------
 # GET ALL APPOINTMENTS
@@ -17,12 +34,19 @@ reception_bp = Blueprint("reception", __name__)
 @reception_bp.route("/appointments", methods=["GET"])
 def get_appointments():
     appointments = Appointment.query.all()
-
     data = []
+
     for a in appointments:
         user = User.query.get(a.patient.user_id)
         staff = Staff.query.get(a.staff_id)
 
+        # --- check billing state dynamically ---
+        bill = Bill.query.filter_by(appointment_id=a.appointment_id).first()
+        billing_status = "Pending"
+        if bill and bill.payment_status and bill.payment_status.lower() == "paid":
+            billing_status = "Paid"
+
+        # --- format status and append record ---
         data.append({
             "id": a.appointment_id,
             "name": f"{user.f_name} {user.l_name}",
@@ -31,12 +55,11 @@ def get_appointments():
             "date": str(a.appointment_date),
             "time": str(a.appointment_time),
             "doctor": f"Dr. {staff.f_name}",
-            "status": a.status,
-            "billing": "Pending"
+            "status": a.status.capitalize() if a.status else "Pending",
+            "billing": billing_status
         })
 
     return jsonify(data), 200
-
 
 # -----------------------
 # RESCHEDULE APPOINTMENT
@@ -73,19 +96,24 @@ def reschedule_appointment(id):
 
 @reception_bp.route("/doctors", methods=["GET"])
 def get_doctors():
-    doctors = Staff.query.all()
-    result = []
+    # Join Staff ↔ User and check role case-insensitively
+    doctors = (
+        db.session.query(Staff)
+        .join(User, User.user_id == Staff.user_id)
+        .filter(db.func.lower(User.role) == "doctor")  # ✅ works with "DOCTOR" or "doctor"
+        .all()
+    )
 
+    result = []
     for d in doctors:
         user = User.query.get(d.user_id)
-        # if user.role in ["DOCTOR", "Orthopedics", "ORTHOPEDICS"]:
-        if d.department and d.department.lower() in ["orthopedics", "orthopedic"]:
-            result.append({
-                "staff_id": d.staff_id,
-                "name": f"Dr. {d.f_name}",
-            })
+        result.append({
+            "staff_id": d.staff_id,
+            "name": f"Dr. {user.f_name or d.f_name}",
+        })
 
     return jsonify(result), 200
+
 
 from .models.dicom_scan import DicomScan
 
@@ -95,7 +123,7 @@ def get_scans():
     data = []
 
     for s in scans:
-        # Get patient from patient_id → then get user
+        # Get patient
         pat = Patient.query.get(s.patient_id)
         if not pat:
             continue
@@ -104,7 +132,7 @@ def get_scans():
         if not user:
             continue
 
-        # Get radiologist (staff)
+        # Get radiologist
         radiologist = Staff.query.get(s.staff_id)
         if radiologist:
             radiologist_user = User.query.get(radiologist.user_id)
@@ -112,13 +140,18 @@ def get_scans():
         else:
             radiologist_name = "Unknown"
 
-        # scan_date is a timestamp, you stored it as DATE → convert safely
-        scan_date = (
-            s.scan_date.strftime("%Y-%m-%d") if s.scan_date else None
-        )
-        scan_time = (
-            s.scan_date.strftime("%H:%M") if s.scan_date else None
-        )
+        # Format date/time
+        scan_date = s.scan_date.strftime("%Y-%m-%d") if s.scan_date else None
+        scan_time = s.scan_date.strftime("%H:%M") if s.scan_date else None
+
+        # --- ✅ Billing check ---
+        bill = Bill.query.filter_by(patient_id=s.patient_id).first()
+        billing_status = "Pending"
+        if bill and bill.payment_status and bill.payment_status.lower() == "paid":
+            billing_status = "Paid"
+
+        # --- ✅ Normalize status (capitalize) ---
+        status = s.status.capitalize() if s.status else "Pending"
 
         data.append({
             "id": s.scan_id,
@@ -129,8 +162,8 @@ def get_scans():
             "time": scan_time,
             "modality": s.modality,
             "radiologist": radiologist_name,
-            "billing": "Pending",
-            "status": s.status
+            "billing": billing_status,
+            "status": status
         })
 
     return jsonify(data), 200
@@ -173,4 +206,123 @@ def reschedule_scan(id):
 
     return jsonify({"message": "New scan created"})
 
+@reception_bp.route("/billing/<string:source>/<int:ref_id>/confirm", methods=["PUT"])
+def confirm_billing(source, ref_id):
+    """
+    source = 'appointment' or 'scan'
+    ref_id = appointment_id or scan_id
+    """
+
+    data = request.get_json()
+    payment_method = data.get("payment_method", "cash").lower()
+    amount = Decimal(data.get("amount", 0))
+    staff_id = data.get("staff_id", None)
+
+    if source == "appointment":
+        appointment = Appointment.query.get(ref_id)
+        if not appointment:
+            return jsonify({"error": "Appointment not found"}), 404
+
+        bill = Bill.query.filter_by(appointment_id=appointment.appointment_id).first()
+        if not bill:
+            return jsonify({"error": "No bill linked"}), 404
+
+        # Mark consult-type (non-scan) items as paid
+        for item in bill.bill_items:
+            if not item.service_name.lower().startswith("scan"):
+                item.total_price = item.total_price
+
+        bill.payment_status = "paid"
+        bill.paid_amount = bill.total_amount
+        bill.balance = 0
+
+        payment = Payment(
+            bill_id=bill.bill_id,
+            staff_id=staff_id,
+            amount=bill.total_amount,
+            payment_method=payment_method,
+            notes=f"Appointment payment confirmed on {datetime.utcnow().date()}",
+        )
+
+        db.session.add(payment)
+        db.session.commit()
+        return jsonify({"message": "Appointment billing updated"}), 200
+
+    elif source == "scan":
+        scan = DicomScan.query.get(ref_id)
+        if not scan:
+            return jsonify({"error": "Scan not found"}), 404
+
+        bills = Bill.query.filter_by(patient_id=scan.patient_id).all()
+        matched_bill = None
+        for b in bills:
+            for item in b.bill_items:
+                if "scan" in item.service_name.lower():
+                    matched_bill = b
+                    break
+
+        if not matched_bill:
+            return jsonify({"error": "No scan bill found"}), 404
+
+        matched_bill.payment_status = "paid"
+        matched_bill.paid_amount = matched_bill.total_amount
+        matched_bill.balance = 0
+
+        payment_method = data.get("payment_method", "").lower()
+
+        new_payment = Payment(
+            bill_id=matched_bill.bill_id,
+            staff_id=data.get("staff_id"),
+            payment_date=datetime.now(),
+            transaction_id=None,
+            amount=Decimal(str(amount)),
+            payment_method=payment_method.lower(),
+            notes=f"Scan payment confirmed on {datetime.now().date()}",
+        )
+
+        db.session.add(new_payment)
+        db.session.commit()
+        return jsonify({"message": "Scan billing updated"}), 200
+
+    else:
+        return jsonify({"error": "Invalid source"}), 400
+
+# -----------------------
+# UPDATE STATUS (Appointments / Scans)
+# -----------------------
+
+@reception_bp.route("/appointment/<int:id>/status", methods=["PUT"])
+def update_appointment_status(id):
+    data = request.get_json()
+    new_status = data.get("status", "").lower().replace(" ", "_")
+
+
+    appt = Appointment.query.get(id)
+    if not appt:
+        return jsonify({"error": "Appointment not found"}), 404
+
+    appt.status = new_status
+    db.session.commit()
+
+    return jsonify({"message": "Appointment status updated"}), 200
+
+
+@reception_bp.route("/scan/<int:id>/status", methods=["PUT"])
+def update_scan_status(id):
+    data = request.get_json()
+    new_status = data.get("status", "").lower()
+
+
+    scan = DicomScan.query.get(id)
+    if not scan:
+        return jsonify({"error": "Scan not found"}), 404
+
+    # Enforce only Pending/Completed
+    if new_status.lower() not in ["pending", "completed"]:
+        return jsonify({"error": "Invalid scan status"}), 400
+
+    scan.status = new_status.lower()
+    db.session.commit()
+
+    return jsonify({"message": "Scan status updated"}), 200
 
