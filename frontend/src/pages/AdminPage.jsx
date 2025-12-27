@@ -2804,7 +2804,35 @@ useEffect(() => {
             ) : (
               <>
                 <button
-                  onClick={() => setEditPatientMode(false)}
+                   onClick={async () => {
+  try {
+    // 1️⃣ Update text fields
+    await fetch(`http://127.0.0.1:5000/api/admin/patients/${selectedPatient.patient_id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(selectedPatient),
+    });
+
+    // 2️⃣ Upload photo if new
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput && fileInput.files.length > 0) {
+      const formData = new FormData();
+      formData.append("photo", fileInput.files[0]);
+
+      await fetch(`http://127.0.0.1:5000/api/admin/patients/${selectedPatient.patient_id}/photo`, {
+        method: "POST",
+        body: formData,
+      });
+    }
+
+    alert("✅ Patient info (and photo) saved!");
+    setEditPatientMode(false);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error updating patient info");
+  }
+}}
+
                   style={{
                     backgroundColor: "#0A7C88",
                     border: "none",
