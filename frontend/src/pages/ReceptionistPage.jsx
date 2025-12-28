@@ -47,7 +47,21 @@ const filteredScans = filterRows(scans, searchScan);
 const [showCalendar, setShowCalendar] = useState(false);
 
 
-  const receptionist = { name: "Lina Fathi", avatar: "👩‍💼" };
+const [receptionistName, setReceptionistName] = useState("Receptionist");
+
+useEffect(() => {
+  const uid = localStorage.getItem("user_id");
+  if (!uid) return;
+
+  fetch(`http://localhost:5000/api/receptionist/me?user_id=${uid}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.username) setReceptionistName(data.username);
+    })
+    .catch(err => console.error("Error fetching username:", err));
+}, []);
+
+
 
   const openPopup = (type, row, source = null) => {
   setActivePopup(type);
@@ -65,20 +79,44 @@ const [showCalendar, setShowCalendar] = useState(false);
     setSelectedTime("");
   };
 
-  const handleConfirmPayment = () => {
-  const update = (arr, setArr) =>
-    setArr(
-      arr.map((r) =>
-        r.id === selectedRow.id ? { ...r, billing: "Paid" } : r
-      )
-    );
+const handleConfirmPayment = async () => {
+  try {
+    const payload = {
+      payment_method: paymentMethod,
+      amount: selectedRow.amount || 2500,
+      staff_id: 1, // Replace with receptionist id if available
+    };
 
-  if (selectedRow.source === "appointments")
-    update(appointments, setAppointments);
-  else if (selectedRow.source === "scans")
-    update(scans, setScans);
+    const endpoint =
+      selectedRow.source === "appointments"
+        ? `http://localhost:5000/api/receptionist/billing/appointment/${selectedRow.id}/confirm`
+        : `http://localhost:5000/api/receptionist/billing/scan/${selectedRow.id}/confirm`;
 
-  closePopup();
+    await fetch(endpoint, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    // Update UI
+    const update = (arr, setArr) =>
+      setArr(
+        arr.map((r) =>
+          r.id === selectedRow.id ? { ...r, billing: "Paid" } : r
+        )
+      );
+
+    if (selectedRow.source === "appointments")
+      update(appointments, setAppointments);
+    else if (selectedRow.source === "scans")
+      update(scans, setScans);
+
+    alert("✅ Payment confirmed!");
+    closePopup();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error confirming payment");
+  }
 };
 
   const convertTime = (t) => {
@@ -204,7 +242,7 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
           fontSize: "20px",      
       fontWeight: "600",      
       color: "white",         
-    }}>{receptionist.name}</span>
+    }}>{receptionistName}</span>
               <button
   onClick={() => (window.location.href = "/login")}
   style={{
@@ -320,24 +358,32 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
 </td>
 
                     <td>
-                 <select
+     <select
   value={item.status}
-  onChange={(e) => {
-    const newStatus = e.target.value;
+  onChange={async (e) => {
+  const newStatus = e.target.value;
 
-    // Update status first
-    setAppointments((prev) =>
-      prev.map((r) =>
-        r.id === item.id ? { ...r, status: newStatus } : r
-      )
-    );
+  // Update UI immediately
+  setAppointments((prev) =>
+    prev.map((r) =>
+      r.id === item.id ? { ...r, status: newStatus } : r
+    )
+  );
 
-    // Open popup if Cancelled
-    if (newStatus === "Cancelled") {
-      setShowCalendar(false);
-      setTimeout(() => openPopup("reschedule-appointment", item), 0);
-    }
-  }}
+  // Update backend
+  await fetch(`http://localhost:5000/api/receptionist/appointment/${item.id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus }),
+  });
+
+  // Reschedule logic
+  if (newStatus === "Cancelled") {
+    setShowCalendar(false);
+    setTimeout(() => openPopup("reschedule-appointment", item), 0);
+  }
+}}
+         
   style={{
     borderRadius: 12,
     fontWeight: 600,
@@ -351,21 +397,17 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
         ? "rgba(34,197,94,0.15)"
         : item.status === "Cancelled"
         ? "rgba(239,68,68,0.15)"
-        : item.status === "No Show"
-        ? "rgba(59,130,246,0.15)"
         : "rgba(10,88,108,0.08)",
     color:
       item.status === "Completed"
         ? "#14532d"
         : item.status === "Cancelled"
         ? "#991b1b"
-        : item.status === "No Show"
-        ? "#1e3a8a"
         : "#0a586c",
     cursor: "pointer",
   }}
 >
-  {["Pending", "Completed", "Cancelled", "No Show"].map((s) => (
+  {["Pending", "Completed", "Cancelled"].map((s) => (
     <option key={s} value={s}>
       {s}
     </option>
@@ -478,22 +520,29 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
                     <td>
              <select
   value={item.status}
-  onChange={(e) => {
-    const newStatus = e.target.value;
+  onChange={async (e) => {
+  const newStatus = e.target.value;
 
-    // Update scans table first
-    setScans((prev) =>
-      prev.map((r) =>
-        r.id === item.id ? { ...r, status: newStatus } : r
-      )
-    );
+  // Update UI immediately
+  setScans((prev) =>
+    prev.map((r) =>
+      r.id === item.id ? { ...r, status: newStatus } : r
+    )
+  );
 
-    // Show the popup for rescheduling
-    if (newStatus === "Cancelled") {
-      setShowCalendar(false);
-      setTimeout(() => openPopup("reschedule-scan", item), 0);
-    }
-  }}
+  // Update backend
+  await fetch(`http://localhost:5000/api/receptionist/scan/${item.id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus }),
+  });
+
+  if (newStatus === "Cancelled") {
+    setShowCalendar(false);
+    setTimeout(() => openPopup("reschedule-scan", item), 0);
+  }
+}}
+
   style={{
     borderRadius: 12,
     fontWeight: 600,
@@ -507,21 +556,17 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
         ? "rgba(34,197,94,0.15)"
         : item.status === "Cancelled"
         ? "rgba(239,68,68,0.15)"
-        : item.status === "No Show"
-        ? "rgba(59,130,246,0.15)"
         : "rgba(10,88,108,0.08)",
     color:
       item.status === "Completed"
         ? "#14532d"
         : item.status === "Cancelled"
         ? "#991b1b"
-        : item.status === "No Show"
-        ? "#1e3a8a"
         : "#0a586c",
     cursor: "pointer",
   }}
 >
-  {["Pending", "Completed", "Cancelled", "No Show"].map((s) => (
+  {["Pending", "Completed"].map((s) => (
     <option key={s} value={s}>
       {s}
     </option>
@@ -540,7 +585,7 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
       {/* BILLING POPUP */}
 {activePopup === "billing" && (
   <div style={patientStyles.popupContainer}>
-    <div style={{ ...patientStyles.popup, width: 320, height: 230 }}>
+    <div style={{ ...patientStyles.popup, width: 320, height: 280 }}>
       <button onClick={closePopup} style={patientStyles.closeBtn}>
         ×
       </button>
@@ -555,9 +600,28 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
         Billing Information
       </h3>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* <div style={{ marginBottom: 16 }}>
         <strong>Amount:</strong> {selectedRow.amount || "EGP 2500"}
+      </div> */}
+            <div style={{ marginBottom: 16 }}>
+        <strong>Amount (EGP):</strong>
+        <input
+          type="number"
+          value={selectedRow?.amount || 2500}
+          onChange={(e) =>
+            setSelectedRow({ ...selectedRow, amount: e.target.value })
+          }
+          style={{
+            width: "100%",
+            border: "1px solid #d0f2fb",
+            borderRadius: 8,
+            padding: "6px 10px",
+            marginTop: 6,
+            fontSize: 14,
+          }}
+        />
       </div>
+
 
       <div style={{ marginBottom: 12 }}>
         <strong>Way of Payment:</strong>
