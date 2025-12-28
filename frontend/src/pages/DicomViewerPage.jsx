@@ -640,6 +640,18 @@ export default function DicomViewerPage() {
                   <label style={dicomViewerStyles.sliderLabel}><span>◐ Contrast</span><span style={dicomViewerStyles.sliderValue}>{contrast}%</span></label>
                   <input type="range" min="0" max="200" value={contrast} onChange={(e) => setContrast(parseInt(e.target.value))} style={dicomViewerStyles.slider} />
                 </div>
+
+                 <div style={dicomViewerStyles.sliderGroup}>
+                                  <label style={dicomViewerStyles.sliderLabel}><span>✨ Sharpness</span><span style={dicomViewerStyles.sliderValue}>{sharpness}%</span></label>
+                                  <input type="range" min="0" max="200" value={sharpness} onChange={(e) => setSharpness(parseInt(e.target.value))} style={dicomViewerStyles.slider} />
+                                </div>
+                
+                                <div style={dicomViewerStyles.sliderGroup}>
+                                  <label style={dicomViewerStyles.sliderLabel}><span>🔇 Noise Reduct.</span><span style={dicomViewerStyles.sliderValue}>{noiseReduction}%</span></label>
+                                  <input type="range" min="0" max="100" value={noiseReduction} onChange={(e) => setNoiseReduction(parseInt(e.target.value))} style={dicomViewerStyles.slider} />
+                                </div>
+                
+
                 {/* Smoothing toggle */}
                 <div style={{...dicomViewerStyles.infoRow, marginTop: '12px'}}>
                   <span style={dicomViewerStyles.infoLabel}>☁️ Smooth Filter</span>
@@ -650,77 +662,114 @@ export default function DicomViewerPage() {
           )}
 
           {/* CDSS MODE: ANALYSIS */}
-          {sidebarMode === 'cdss' && (
-             <div style={dicomViewerStyles.cdssContainer}>
-              <button style={dicomViewerStyles.cdssRunBtn} onClick={handleRunAIAnalysis} disabled={isAnalyzing}>
-                {isAnalyzing ? '🔄 Analyzing...' : '🚀 Run AI Analysis'}
-              </button>
-
-              <div style={dicomViewerStyles.confidenceWidget}>
-                <div style={dicomViewerStyles.confidenceHeader}>
-                  <span>AI Confidence Level</span>
-                  <span style={dicomViewerStyles.confidenceScoreBig}>{cdssData.overallConfidence}%</span>
-                </div>
-                <div style={dicomViewerStyles.progressBarBg}>
-                  <div style={{...dicomViewerStyles.progressBarFill, width: `${cdssData.overallConfidence}%`}}></div>
-                </div>
-              </div>
-
-              <div style={dicomViewerStyles.sectionTitle}>Detected Findings</div>
-              <div>
-                {cdssData.findings.map(finding => (
-                  <div key={finding.id} style={dicomViewerStyles.findingBox}>
-                    <div style={dicomViewerStyles.findingHeaderBar}>
-                      <input type="text" value={finding.title} onChange={(e) => handleFindingEdit(finding.id, e.target.value)} style={dicomViewerStyles.findingTitleInput} />
-                      <button onClick={() => deleteFinding(finding.id)} style={{background:'none', border:'none', color:'#ef4444', cursor:'pointer'}}>✕</button>
-                    </div>
-                    <div style={dicomViewerStyles.findingMeta}><span style={dicomViewerStyles.confidenceTag}>AI Conf: {finding.confidence}%</span></div>
+          {/* --- CONDITION 2: CDSS ANALYSIS MODE --- */}
+                    {sidebarMode === 'cdss' && (
+                       <div style={dicomViewerStyles.cdssContainer}>
+                        <button 
+                          style={dicomViewerStyles.cdssRunBtn}
+                          onClick={handleRunAIAnalysis}
+                          disabled={isAnalyzing}
+                        >
+                          {isAnalyzing ? '🔄 Analyzing...' : '🚀 Run AI Analysis'}
+                        </button>
+          
+                        <div style={dicomViewerStyles.confidenceWidget}>
+                          <div style={dicomViewerStyles.confidenceHeader}>
+                            <span>AI Confidence Level</span>
+                            <span style={dicomViewerStyles.confidenceScoreBig}>{cdssData.overallConfidence}%</span>
+                          </div>
+                          <div style={dicomViewerStyles.progressBarBg}>
+                            <div style={{...dicomViewerStyles.progressBarFill, width: `${cdssData.overallConfidence}%`}}></div>
+                          </div>
+                        </div>
+          
+                        <div style={dicomViewerStyles.sectionTitle}>Detected Findings (Editable)</div>
+                        <div>
+                          {cdssData.findings.map(finding => (
+                            <div key={finding.id} style={dicomViewerStyles.findingBox}>
+                              <div style={dicomViewerStyles.findingHeaderBar}>
+                                <input 
+                                  type="text" 
+                                  value={finding.title}
+                                  onChange={(e) => handleFindingEdit(finding.id, e.target.value)}
+                                  style={dicomViewerStyles.findingTitleInput}
+                                />
+                                <button 
+                                  onClick={() => deleteFinding(finding.id)}
+                                  style={{background:'none', border:'none', color:'#ef4444', cursor:'pointer'}}
+                                >✕</button>
+                              </div>
+                              <div style={dicomViewerStyles.findingMeta}>
+                                <span style={dicomViewerStyles.confidenceTag}>AI Conf: {finding.confidence}%</span>
+                              </div>
+                            </div>
+                          ))}
+                          <button style={dicomViewerStyles.addFindingBtn} onClick={addNewFinding}>+ Add New Finding</button>
+                        </div>
+          
+                        <div style={dicomViewerStyles.sectionTitle}>Key Findings Summary</div>
+                        <textarea 
+                          style={dicomViewerStyles.cdssTextArea} 
+                          value={cdssData.summary}
+                          onChange={(e) => handleCdssTextChange('summary', e.target.value)}
+                        />
+          
+                        <div style={dicomViewerStyles.sectionTitle}>Recommendations</div>
+                        <textarea 
+                          style={dicomViewerStyles.cdssTextArea} 
+                          value={cdssData.recommendations}
+                          onChange={(e) => handleCdssTextChange('recommendations', e.target.value)}
+                        />
+          
+                        <div style={dicomViewerStyles.sectionTitle}>Differential Diagnosis</div>
+                        <textarea 
+                          style={dicomViewerStyles.cdssTextArea} 
+                          value={cdssData.differential}
+                          onChange={(e) => handleCdssTextChange('differential', e.target.value)}
+                        />
+          
+                        <div style={{display:'flex', gap:'8px', marginTop:'8px'}}>
+                           <button style={dicomViewerStyles.cdssActionBtn} onClick={handleSaveCdssData}>💾 Save Record</button>
+                           <button style={dicomViewerStyles.cdssActionBtn}>📄 Export Report</button>
+                        </div>
+                      </div>
+                    )}
+          
                   </div>
-                ))}
-                <button style={dicomViewerStyles.addFindingBtn} onClick={addNewFinding}>+ Add New Finding</button>
+          
+                  {/* VIEWPORT GRID */}
+                  <div style={dicomViewerStyles.viewportGrid}>
+                    {currentView === 'mpr' ? (
+                      <>
+                        <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('axial')}><ViewportContent plane="axial" sliceNumber={currentSlice.axial} /></div>
+                        <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('sagittal')}><ViewportContent plane="sagittal" sliceNumber={currentSlice.sagittal} /></div>
+                        <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('coronal')}><ViewportContent plane="coronal" sliceNumber={currentSlice.coronal} /></div>
+                        <div style={dicomViewerStyles.viewport}><VolumeView /></div>
+                      </>
+                    ) : (
+                      <div style={{...dicomViewerStyles.viewport, gridColumn: '1 / -1', gridRow: '1 / -1'}}>
+                        {currentPane === '3d' ? (
+                          <VolumeView />
+                        ) : (
+                          <ViewportContent plane={currentPane} sliceNumber={currentSlice[currentPane]} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+          
+                {/* STATUS BAR */}
+                <div style={dicomViewerStyles.statusBar}>
+                  <div style={dicomViewerStyles.statusLeft}>
+                    <span style={dicomViewerStyles.statusItem}>🖼️ Slice: {currentSlice.axial}</span>
+                    <span style={dicomViewerStyles.statusItem}>⚪ W/L: {windowLevel.center}/{windowLevel.width}</span>
+                  </div>
+                  <div style={dicomViewerStyles.statusRight}>
+                    <span style={dicomViewerStyles.statusItem}>🛠️ Active Tool: {activeTool.toUpperCase()}</span>
+                    <span style={dicomViewerStyles.statusItem}>📊 {seriesData.find(s=>s.id === activeSeries)?.type || 'N/A'}</span>
+                  </div>
+                </div>
+          
               </div>
-
-              <div style={{display:'flex', gap:'8px', marginTop:'8px'}}>
-                 <button style={dicomViewerStyles.cdssActionBtn} onClick={handleSaveCdssData}>💾 Save Record</button>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* VIEWPORT GRID */}
-        <div style={dicomViewerStyles.viewportGrid}>
-          {currentView === 'mpr' ? (
-            <>
-              <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('axial')}><ViewportContent plane="axial" sliceNumber={currentSlice.axial} /></div>
-              <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('sagittal')}><ViewportContent plane="sagittal" sliceNumber={currentSlice.sagittal} /></div>
-              <div style={dicomViewerStyles.viewport} onClick={() => setCurrentPane('coronal')}><ViewportContent plane="coronal" sliceNumber={currentSlice.coronal} /></div>
-              <div style={dicomViewerStyles.viewport}><VolumeView /></div>
-            </>
-          ) : (
-            <div style={{...dicomViewerStyles.viewport, gridColumn: '1 / -1', gridRow: '1 / -1'}}>
-              {currentPane === '3d' ? (
-                <VolumeView />
-              ) : (
-                <ViewportContent plane={currentPane} sliceNumber={currentSlice[currentPane]} />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* STATUS BAR */}
-      <div style={dicomViewerStyles.statusBar}>
-        <div style={dicomViewerStyles.statusLeft}>
-          <span style={dicomViewerStyles.statusItem}>🖼️ Slice: {currentSlice.axial + 1}</span>
-          <span style={dicomViewerStyles.statusItem}>⚪ W/L: {windowLevel.center}/{windowLevel.width}</span>
-        </div>
-        <div style={dicomViewerStyles.statusRight}>
-          <span style={dicomViewerStyles.statusItem}>🛠️ Active Tool: {activeTool.toUpperCase()}</span>
-          <span style={dicomViewerStyles.statusItem}>📊 {seriesData.find(s=>s.id === activeSeries)?.type || 'N/A'}</span>
-        </div>
-      </div>
-
-    </div>
-  );
-}
+            );
+          }
