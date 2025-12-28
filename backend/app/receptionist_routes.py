@@ -144,8 +144,8 @@ def get_scans():
         scan_date = s.scan_date.strftime("%Y-%m-%d") if s.scan_date else None
         scan_time = s.scan_date.strftime("%H:%M") if s.scan_date else None
 
-        # --- ✅ Billing check ---
-        bill = Bill.query.filter_by(patient_id=s.patient_id).first()
+        # --- ✅ Billing check (specific to this scan) ---
+        bill = Bill.query.filter_by(scan_id=s.scan_id).first()
         billing_status = "Pending"
         if bill and bill.payment_status and bill.payment_status.lower() == "paid":
             billing_status = "Paid"
@@ -212,37 +212,23 @@ def confirm_billing(source, ref_id):
     source = 'appointment' or 'scan'
     ref_id = appointment_id or scan_id
     """
-
-    print("🔍 Confirm Billing Triggered")
-    print("🔹 Source:", source, "Ref ID:", ref_id)
-
     data = request.get_json() or {}
     payment_method = data.get("payment_method", "cash").lower()
     amount = Decimal(data.get("amount", 0))
-    user_id = data.get("staff_id")  # Receptionist's user_id
+    user_id = data.get("user_id")  # 👈 from frontend, the receptionist's user_id
 
-    # ✅ Step 1: Get receptionist staff_id
+    # ✅ Step 1: get receptionist's staff_id
     staff = Staff.query.filter_by(user_id=user_id).first()
     if not staff:
-        print("❌ Receptionist staff not found for user_id:", user_id)
         return jsonify({"error": "Receptionist staff record not found"}), 404
-
     staff_id = staff.staff_id
-    print("✅ Receptionist staff_id:", staff_id)
 
-    # ---------------------------
-    # Case 1: Appointment Billing
-    # ---------------------------
+    # --------------------------- CASE 1: Appointment Billing ---------------------------
     if source == "appointment":
         appointment = Appointment.query.get(ref_id)
-        print("🧾 Found appointment:", appointment)
-
         if not appointment:
-            existing_ids = [a.appointment_id for a in Appointment.query.all()]
-            print("❌ Appointment not found. Available IDs:", existing_ids)
             return jsonify({"error": "Appointment not found"}), 404
 
-        # Create Bill
         bill = Bill.query.filter_by(appointment_id=appointment.appointment_id).first()
         if not bill:
             bill = Bill(
@@ -253,11 +239,10 @@ def confirm_billing(source, ref_id):
                 paid_amount=amount,
                 balance=0,
                 payment_status="paid",
-                due_date=None,
                 notes=f"Auto-generated bill for appointment {appointment.appointment_id}",
             )
             db.session.add(bill)
-            db.session.flush()  # get bill_id
+            db.session.flush()
 
             item = BillItem(
                 bill_id=bill.bill_id,
@@ -272,7 +257,7 @@ def confirm_billing(source, ref_id):
             bill.paid_amount = amount
             bill.balance = 0
 
-        # Add Payment
+        # ✅ Record payment with correct staff_id
         payment = Payment(
             bill_id=bill.bill_id,
             staff_id=staff_id,
@@ -283,17 +268,12 @@ def confirm_billing(source, ref_id):
         )
         db.session.add(payment)
         db.session.commit()
-        print("✅ Appointment billing completed.")
         return jsonify({"message": "Appointment billing updated"}), 200
 
-    # ---------------------------
-    # Case 2: Scan Billing
-    # ---------------------------
+    # --------------------------- CASE 2: Scan Billing ---------------------------
     elif source == "scan":
         scan = DicomScan.query.get(ref_id)
         if not scan:
-            existing_scans = [s.scan_id for s in DicomScan.query.all()]
-            print("❌ Scan not found. Available scan IDs:", existing_scans)
             return jsonify({"error": "Scan not found"}), 404
 
         matched_bill = None
@@ -307,6 +287,7 @@ def confirm_billing(source, ref_id):
         if not matched_bill:
             matched_bill = Bill(
                 patient_id=scan.patient_id,
+                scan_id=scan.scan_id, 
                 bill_date=datetime.utcnow(),
                 total_amount=amount,
                 paid_amount=amount,
@@ -330,6 +311,7 @@ def confirm_billing(source, ref_id):
             matched_bill.paid_amount = amount
             matched_bill.balance = 0
 
+        # ✅ Record payment with correct staff_id
         payment = Payment(
             bill_id=matched_bill.bill_id,
             staff_id=staff_id,
@@ -340,11 +322,9 @@ def confirm_billing(source, ref_id):
         )
         db.session.add(payment)
         db.session.commit()
-        print("✅ Scan billing completed.")
         return jsonify({"message": "Scan billing updated"}), 200
 
-    else:
-        return jsonify({"error": "Invalid source"}), 400
+    return jsonify({"error": "Invalid source"}), 400
 
 # -----------------------
 # UPDATE STATUS (Appointments / Scans)

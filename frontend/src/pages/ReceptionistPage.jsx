@@ -35,19 +35,20 @@ const filterRows = (rows, term) =>
 const filteredAppointments = filterRows(appointments, searchAppointment);
 const filteredScans = filterRows(scans, searchScan);
 
+const [receptionistName, setReceptionistName] = useState("Receptionist");
 
-  const [activePopup, setActivePopup] = useState(null);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [selectedModality, setSelectedModality] = useState("MRI");
-  const [reason, setReason] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
+// ================= POPUP AND SELECTION STATES =================
+const [activePopup, setActivePopup] = useState(null);
+const [selectedAppointment, setSelectedAppointment] = useState(null);
+const [selectedScan, setSelectedScan] = useState(null);
+const [paymentMethod, setPaymentMethod] = useState("");
+const [selectedModality, setSelectedModality] = useState("MRI");
+const [reason, setReason] = useState("");
+const [selectedDate, setSelectedDate] = useState("");
+const [selectedTime, setSelectedTime] = useState("");
+const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
 const [showCalendar, setShowCalendar] = useState(false);
 
-
-const [receptionistName, setReceptionistName] = useState("Receptionist");
 
 useEffect(() => {
   const uid = localStorage.getItem("user_id");
@@ -63,53 +64,73 @@ useEffect(() => {
 
 
 
-  const openPopup = (type, row, source = null) => {
+  // ================= POPUP OPEN/CLOSE =================
+const openPopup = (type, row) => {
+  if (type === "billing-appointment") setSelectedAppointment(row);
+  else if (type === "billing-scan") setSelectedScan(row);
   setActivePopup(type);
-  setSelectedRow({ ...row, source });
-  setShowCalendar(false);     
-  setCalendarMonthOffset(0);    
+  setShowCalendar(false);
+  setCalendarMonthOffset(0);
 };
 
-  const closePopup = () => {
-    setActivePopup(null);
-    setSelectedRow(null);
-    setPaymentMethod("");
-    setReason("");
-    setSelectedDate("");
-    setSelectedTime("");
-  };
+const closePopup = () => {
+  setActivePopup(null);
+  setSelectedAppointment(null);
+  setSelectedScan(null);
+  setPaymentMethod("");
+  setReason("");
+  setSelectedDate("");
+  setSelectedTime("");
+};
 
+// ================= BILLING CONFIRMATION =================
 const handleConfirmPayment = async () => {
   try {
+    const currentRow =
+      activePopup === "billing-appointment" ? selectedAppointment : selectedScan;
+
+    const uid = localStorage.getItem("user_id");
     const payload = {
       payment_method: paymentMethod,
-      amount: selectedRow.amount || 2500,
-      staff_id: 1, // Replace with receptionist id if available
+      amount: Number(currentRow.amount) || 2500,
+      user_id: uid ? parseInt(uid) : 1,
     };
 
     const endpoint =
-      selectedRow.source === "appointments"
-        ? `http://localhost:5000/api/receptionist/billing/appointment/${selectedRow.id}/confirm`
-        : `http://localhost:5000/api/receptionist/billing/scan/${selectedRow.id}/confirm`;
+      activePopup === "billing-appointment"
+        ? `http://localhost:5000/api/receptionist/billing/appointment/${currentRow.id}/confirm`
+        : `http://localhost:5000/api/receptionist/billing/scan/${currentRow.id}/confirm`;
 
-    await fetch(endpoint, {
+    const res = await fetch(endpoint, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    // Update UI
-    const update = (arr, setArr) =>
-      setArr(
-        arr.map((r) =>
-          r.id === selectedRow.id ? { ...r, billing: "Paid" } : r
+    if (!res.ok) {
+      console.error(await res.text());
+      alert("❌ Error confirming payment");
+      return;
+    }
+
+    // Update UI IMMEDIATELY
+    if (activePopup === "billing-appointment") {
+      setAppointments((prev) =>
+        prev.map((r) =>
+          String(r.id) === String(currentRow.id)
+            ? { ...r, billing: "Paid" }
+            : r
         )
       );
-
-    if (selectedRow.source === "appointments")
-      update(appointments, setAppointments);
-    else if (selectedRow.source === "scans")
-      update(scans, setScans);
+    } else {
+      setScans((prev) =>
+        prev.map((r) =>
+          String(r.id) === String(currentRow.id)
+            ? { ...r, billing: "Paid" }
+            : r
+        )
+      );
+    }
 
     alert("✅ Payment confirmed!");
     closePopup();
@@ -328,7 +349,7 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
               </thead>
               <tbody>
                 {filteredAppointments.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={`appt-${item.id}`}>
                     <td style={{ padding: "10px 16px" }}>{item.name}</td>
                     <td style={{ padding: "10px 16px" }}>{item.patientId}</td>
                     <td style={{ padding: "10px 16px" }}>{item.phone}</td>
@@ -336,7 +357,12 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
                     <td style={{ padding: "10px 16px" }}>{item.time}</td>
                     <td style={{ padding: "10px 16px" }}>{item.doctor}</td>
                     <td
-  onClick={() => item.billing !== "Paid" && openPopup("billing", item, "appointments")}
+  onClick={() => {
+  if (item.billing !== "Paid") {
+    openPopup("billing-appointment", item);
+  }
+}}
+
   style={{
     borderRadius: 12,
     background:
@@ -487,7 +513,7 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
               <tbody>
                 {filteredScans.map((item) => (
 
-                  <tr key={item.id}>
+                  <tr key={`scan-${item.id}`}>
                     <td style={{ padding: "10px 16px" }}>{item.name}</td>
                     <td style={{ padding: "10px 16px" }}>{item.patientId}</td>
                     <td style={{ padding: "10px 16px" }}>{item.phone}</td>
@@ -496,7 +522,13 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
                     <td style={{ padding: "10px 16px" }}>{item.modality}</td>
                     <td style={{ padding: "10px 16px" }}>{item.radiologist}</td>
                     <td
-  onClick={() => item.billing !== "Paid" && openPopup("billing", item, "scans")}
+  onClick={() => {
+  if (item.billing !== "Paid") {
+    openPopup("billing-scan", item);
+  }
+}}
+
+
   style={{
     borderRadius: 12,
     background:
@@ -582,98 +614,101 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
         </div>
       </div>
 
-      {/* BILLING POPUP */}
-{activePopup === "billing" && (
-  <div style={patientStyles.popupContainer}>
-    <div style={{ ...patientStyles.popup, width: 320, height: 280 }}>
-      <button onClick={closePopup} style={patientStyles.closeBtn}>
-        ×
-      </button>
+    {/* BILLING POPUP */}
+{(activePopup === "billing-appointment" || activePopup === "billing-scan") && (() => {
+  const currentRow =
+    activePopup === "billing-appointment" ? selectedAppointment : selectedScan;
 
-      <h3
-        style={{
-          color: "#0a586c",
-          marginBottom: 16,
-          textAlign: "",
-        }}
-      >
-        Billing Information
-      </h3>
+  return (
+    <div style={patientStyles.popupContainer}>
+      <div style={{ ...patientStyles.popup, width: 320, height: 280 }}>
+        <button onClick={closePopup} style={patientStyles.closeBtn}>
+          ×
+        </button>
 
-      {/* <div style={{ marginBottom: 16 }}>
-        <strong>Amount:</strong> {selectedRow.amount || "EGP 2500"}
-      </div> */}
-            <div style={{ marginBottom: 16 }}>
-        <strong>Amount (EGP):</strong>
-        <input
-          type="number"
-          value={selectedRow?.amount || 2500}
-          onChange={(e) =>
-            setSelectedRow({ ...selectedRow, amount: e.target.value })
-          }
+        <h3
           style={{
-            width: "100%",
-            border: "1px solid #d0f2fb",
-            borderRadius: 8,
-            padding: "6px 10px",
-            marginTop: 6,
-            fontSize: 14,
-          }}
-        />
-      </div>
-
-
-      <div style={{ marginBottom: 12 }}>
-        <strong>Way of Payment:</strong>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 20,
-          marginBottom: 20,
-          marginLeft: 10,
-        }}
-      >
-        <label>
-          <input
-            type="radio"
-            value="Cash"
-            checked={paymentMethod === "Cash"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />{" "}
-          Cash
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="Credit"
-            checked={paymentMethod === "Credit"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />{" "}
-          Credit
-        </label>
-      </div>
-
-      <div style={{ textAlign: "right" }}>
-        <button
-          onClick={handleConfirmPayment}
-          style={{
-            background: "#0a586c",
-            color: "white",
-            border: "none",
-            borderRadius: 12,
-            padding: "8px 16px",
-            cursor: "pointer",
+            color: "#0a586c",
+            marginBottom: 16,
+            textAlign: "",
           }}
         >
-          Confirm
-        </button>
+          Billing Information
+        </h3>
+
+        <div style={{ marginBottom: 16 }}>
+          <strong>Amount (EGP):</strong>
+          <input
+            type="number"
+            value={currentRow?.amount || 2500}
+            onChange={(e) => {
+              const updated = { ...currentRow, amount: e.target.value };
+              if (activePopup === "billing-appointment")
+                setSelectedAppointment(updated);
+              else setSelectedScan(updated);
+            }}
+            style={{
+              width: "100%",
+              border: "1px solid #d0f2fb",
+              borderRadius: 8,
+              padding: "6px 10px",
+              marginTop: 6,
+              fontSize: 14,
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <strong>Way of Payment:</strong>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 20,
+            marginBottom: 20,
+            marginLeft: 10,
+          }}
+        >
+          <label>
+            <input
+              type="radio"
+              value="Cash"
+              checked={paymentMethod === "Cash"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />{" "}
+            Cash
+          </label>
+          <label>
+            <input
+              type="radio"
+              value="Credit"
+              checked={paymentMethod === "Credit"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />{" "}
+            Credit
+          </label>
+        </div>
+
+        <div style={{ textAlign: "right" }}>
+          <button
+            onClick={handleConfirmPayment}
+            style={{
+              background: "#0a586c",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              padding: "8px 16px",
+              cursor: "pointer",
+            }}
+          >
+            Confirm
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-)}
-
+  );
+})()}
 
       {/* RESCHEDULE POPUPS */}
      {(activePopup === "reschedule-appointment" ||
