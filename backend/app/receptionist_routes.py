@@ -213,30 +213,38 @@ def confirm_billing(source, ref_id):
     ref_id = appointment_id or scan_id
     """
 
-    data = request.get_json()
+    print("🔍 Confirm Billing Triggered")
+    print("🔹 Source:", source, "Ref ID:", ref_id)
+
+    data = request.get_json() or {}
     payment_method = data.get("payment_method", "cash").lower()
     amount = Decimal(data.get("amount", 0))
-    user_id = data.get("staff_id")  # from frontend (receptionist's user_id)
+    user_id = data.get("staff_id")  # Receptionist's user_id
 
-    # ✅ Lookup staff_id from user_id (Receptionist)
+    # ✅ Step 1: Get receptionist staff_id
     staff = Staff.query.filter_by(user_id=user_id).first()
-    staff_id = staff.staff_id if staff else None
-
-    if not staff_id:
+    if not staff:
+        print("❌ Receptionist staff not found for user_id:", user_id)
         return jsonify({"error": "Receptionist staff record not found"}), 404
+
+    staff_id = staff.staff_id
+    print("✅ Receptionist staff_id:", staff_id)
 
     # ---------------------------
     # Case 1: Appointment Billing
     # ---------------------------
     if source == "appointment":
         appointment = Appointment.query.get(ref_id)
+        print("🧾 Found appointment:", appointment)
+
         if not appointment:
+            existing_ids = [a.appointment_id for a in Appointment.query.all()]
+            print("❌ Appointment not found. Available IDs:", existing_ids)
             return jsonify({"error": "Appointment not found"}), 404
 
-        # Check for existing bill
+        # Create Bill
         bill = Bill.query.filter_by(appointment_id=appointment.appointment_id).first()
         if not bill:
-            # ✅ Create new Bill safely (exclude generated columns)
             bill = Bill(
                 patient_id=appointment.patient_id,
                 appointment_id=appointment.appointment_id,
@@ -251,7 +259,6 @@ def confirm_billing(source, ref_id):
             db.session.add(bill)
             db.session.flush()  # get bill_id
 
-            # ✅ Add related BillItem
             item = BillItem(
                 bill_id=bill.bill_id,
                 service_name="Consultation Fee",
@@ -260,23 +267,23 @@ def confirm_billing(source, ref_id):
                 total_price=amount,
             )
             db.session.add(item)
-
         else:
             bill.payment_status = "paid"
             bill.paid_amount = amount
             bill.balance = 0
 
-        # ✅ Record Payment
+        # Add Payment
         payment = Payment(
             bill_id=bill.bill_id,
             staff_id=staff_id,
+            payment_date=datetime.utcnow(),
             amount=amount,
             payment_method=payment_method,
             notes=f"Appointment payment confirmed by receptionist {staff_id} on {datetime.utcnow().date()}",
         )
-
         db.session.add(payment)
         db.session.commit()
+        print("✅ Appointment billing completed.")
         return jsonify({"message": "Appointment billing updated"}), 200
 
     # ---------------------------
@@ -285,10 +292,12 @@ def confirm_billing(source, ref_id):
     elif source == "scan":
         scan = DicomScan.query.get(ref_id)
         if not scan:
+            existing_scans = [s.scan_id for s in DicomScan.query.all()]
+            print("❌ Scan not found. Available scan IDs:", existing_scans)
             return jsonify({"error": "Scan not found"}), 404
 
-        bills = Bill.query.filter_by(patient_id=scan.patient_id).all()
         matched_bill = None
+        bills = Bill.query.filter_by(patient_id=scan.patient_id).all()
         for b in bills:
             for item in b.bill_items:
                 if "scan" in item.service_name.lower():
@@ -296,7 +305,6 @@ def confirm_billing(source, ref_id):
                     break
 
         if not matched_bill:
-            # ✅ Create new Bill for scan
             matched_bill = Bill(
                 patient_id=scan.patient_id,
                 bill_date=datetime.utcnow(),
@@ -322,19 +330,17 @@ def confirm_billing(source, ref_id):
             matched_bill.paid_amount = amount
             matched_bill.balance = 0
 
-        # ✅ Record Payment
-        new_payment = Payment(
+        payment = Payment(
             bill_id=matched_bill.bill_id,
             staff_id=staff_id,
             payment_date=datetime.utcnow(),
-            transaction_id=None,
             amount=amount,
             payment_method=payment_method,
             notes=f"Scan payment confirmed by receptionist {staff_id} on {datetime.utcnow().date()}",
         )
-
-        db.session.add(new_payment)
+        db.session.add(payment)
         db.session.commit()
+        print("✅ Scan billing completed.")
         return jsonify({"message": "Scan billing updated"}), 200
 
     else:
