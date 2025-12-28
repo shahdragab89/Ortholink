@@ -209,80 +209,103 @@ def reschedule_scan(id):
 @reception_bp.route("/billing/<string:source>/<int:ref_id>/confirm", methods=["PUT"])
 def confirm_billing(source, ref_id):
     """
-    source = 'appointment' or 'scan'
-    ref_id = appointment_id or scan_id
+    Handles billing creation for both appointments and scans.
+    Creates Bill, BillItem, and Payment entries if they don't exist.
     """
 
     data = request.get_json()
     payment_method = data.get("payment_method", "cash").lower()
-    amount = Decimal(data.get("amount", 0))
-    staff_id = data.get("staff_id", None)
+    amount = Decimal(str(data.get("amount", 0)))
+    staff_id = data.get("staff_id")
 
+    # ---------- APPOINTMENT BILL ----------
     if source == "appointment":
         appointment = Appointment.query.get(ref_id)
         if not appointment:
             return jsonify({"error": "Appointment not found"}), 404
 
+        patient_id = appointment.patient_id
+
+        # Create a new Bill if not existing
         bill = Bill.query.filter_by(appointment_id=appointment.appointment_id).first()
         if not bill:
-            return jsonify({"error": "No bill linked"}), 404
+            bill = Bill(
+                appointment_id=appointment.appointment_id,
+                patient_id=patient_id,
+                total_amount=amount,
+                paid_amount=amount,
+                balance=0,
+                payment_status="paid"
+            )
+            db.session.add(bill)
+            db.session.flush()
 
-        # Mark consult-type (non-scan) items as paid
-        for item in bill.bill_items:
-            if not item.service_name.lower().startswith("scan"):
-                item.total_price = item.total_price
+            # Add BillItem
+            item = BillItem(
+                bill_id=bill.bill_id,
+                service_name="Consultation",
+                quantity=1,
+                unit_price=amount,
+                total_price=amount
+            )
+            db.session.add(item)
 
-        bill.payment_status = "paid"
-        bill.paid_amount = bill.total_amount
-        bill.balance = 0
-
+        # Add Payment record
         payment = Payment(
             bill_id=bill.bill_id,
             staff_id=staff_id,
-            amount=bill.total_amount,
+            amount=amount,
             payment_method=payment_method,
-            notes=f"Appointment payment confirmed on {datetime.utcnow().date()}",
+            notes=f"Appointment payment confirmed on {datetime.utcnow().date()}"
         )
 
         db.session.add(payment)
         db.session.commit()
-        return jsonify({"message": "Appointment billing updated"}), 200
+        return jsonify({"message": "Appointment billing created/updated"}), 200
 
+    # ---------- SCAN BILL ----------
     elif source == "scan":
         scan = DicomScan.query.get(ref_id)
         if not scan:
             return jsonify({"error": "Scan not found"}), 404
 
-        bills = Bill.query.filter_by(patient_id=scan.patient_id).all()
-        matched_bill = None
-        for b in bills:
-            for item in b.bill_items:
-                if "scan" in item.service_name.lower():
-                    matched_bill = b
-                    break
+        patient_id = scan.patient_id
 
-        if not matched_bill:
-            return jsonify({"error": "No scan bill found"}), 404
+        # Create a new Bill if not existing
+        bill = Bill.query.filter_by(patient_id=patient_id).first()
+        if not bill:
+            bill = Bill(
+                patient_id=patient_id,
+                total_amount=amount,
+                paid_amount=amount,
+                balance=0,
+                payment_status="paid"
+            )
+            db.session.add(bill)
+            db.session.flush()
 
-        matched_bill.payment_status = "paid"
-        matched_bill.paid_amount = matched_bill.total_amount
-        matched_bill.balance = 0
+            # Add BillItem
+            item = BillItem(
+                bill_id=bill.bill_id,
+                service_name=f"{scan.modality or 'Imaging'} Scan",
+                quantity=1,
+                unit_price=amount,
+                total_price=amount
+            )
+            db.session.add(item)
 
-        payment_method = data.get("payment_method", "").lower()
-
-        new_payment = Payment(
-            bill_id=matched_bill.bill_id,
-            staff_id=data.get("staff_id"),
-            payment_date=datetime.now(),
-            transaction_id=None,
-            amount=Decimal(str(amount)),
-            payment_method=payment_method.lower(),
-            notes=f"Scan payment confirmed on {datetime.now().date()}",
+        # Add Payment record
+        payment = Payment(
+            bill_id=bill.bill_id,
+            staff_id=staff_id,
+            amount=amount,
+            payment_method=payment_method,
+            notes=f"Scan payment confirmed on {datetime.utcnow().date()}"
         )
 
-        db.session.add(new_payment)
+        db.session.add(payment)
         db.session.commit()
-        return jsonify({"message": "Scan billing updated"}), 200
+        return jsonify({"message": "Scan billing created/updated"}), 200
 
     else:
         return jsonify({"error": "Invalid source"}), 400

@@ -585,7 +585,7 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
       {/* BILLING POPUP */}
 {activePopup === "billing" && (
   <div style={patientStyles.popupContainer}>
-    <div style={{ ...patientStyles.popup, width: 320, height: 230 }}>
+    <div style={{ ...patientStyles.popup, width: 320, height: 280 }}>
       <button onClick={closePopup} style={patientStyles.closeBtn}>
         ×
       </button>
@@ -600,9 +600,28 @@ await fetch(`http://localhost:5000/api/receptionist/scan/${selectedRow.id}/resch
         Billing Information
       </h3>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* <div style={{ marginBottom: 16 }}>
         <strong>Amount:</strong> {selectedRow.amount || "EGP 2500"}
+      </div> */}
+            <div style={{ marginBottom: 16 }}>
+        <strong>Amount (EGP):</strong>
+        <input
+          type="number"
+          value={selectedRow?.amount || 2500}
+          onChange={(e) =>
+            setSelectedRow({ ...selectedRow, amount: e.target.value })
+          }
+          style={{
+            width: "100%",
+            border: "1px solid #d0f2fb",
+            borderRadius: 8,
+            padding: "6px 10px",
+            marginTop: 6,
+            fontSize: 14,
+          }}
+        />
       </div>
+
 
       <div style={{ marginBottom: 12 }}>
         <strong>Way of Payment:</strong>
