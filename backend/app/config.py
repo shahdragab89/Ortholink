@@ -14,7 +14,7 @@ class Config:
     SCAN_FOLDERS_DIR = "scan_folders"
     
     # Add these new settings
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 16MB max file size
     JWT_SECRET_KEY = SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours in seconds
 

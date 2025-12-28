@@ -539,6 +539,28 @@ export default function RadiologistPage() {
                 </div>
 
                 <div style={radiologistStyles.profileSection}>
+                    {/* --- ADDED: DICOM VIEWER BUTTON --- */}
+                    <button 
+                        style={{
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: '#0A7C88',
+                            color: 'white',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            marginRight: '20px',
+                            fontSize: '14px',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onClick={() => window.location.href = '/dicom-viewer'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#086f7a'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A7C88'}
+                    >
+                        Open DICOM Viewer
+                    </button>
+                    {/* ---------------------------------- */}
+
                     <div 
                         style={radiologistStyles.profileCard} 
                         onClick={() => setCurrentView('profile')}
@@ -832,9 +854,9 @@ export default function RadiologistPage() {
                 </div>
             )}
 
-        </div> // <--- This closes the main container div
-    ); // <--- This closes the return statement
-} // <--- This closes the function
+        </div> 
+    ); 
+}
 
 // --- Sub-Component for Profile ---
 function ProfileEditor({ onBack, currentPhoto, onPhotoUpdate, stats, personalInfo, contactInfo, onContactInfoChange, onSaveProfile, loading }) {
