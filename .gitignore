@@ -2,3 +2,8 @@ node_modules/
 __pycache__/
 *.pyc
 .env
+node_modules
+
+# Ignore contents of scan_folders but keep the folder itself
+backend/app/scan_folders/*
+!backend/app/scan_folders/.gitkeep

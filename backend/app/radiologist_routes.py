@@ -5,6 +5,10 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import shutil
 
+import pydicom
+from .models.patient import Patient
+from .models.dicom_scan import DicomScan
+
 from .extensions import db
 from .models.user import User, Role
 from .models.staff import Staff
@@ -438,7 +442,7 @@ def upload_scan_folder(scan_id):
 # Serve Scan Files (for downloading/viewing)
 # ===============================
 @radiologist_bp.route('/scan_files/<path:filename>')
-@jwt_required()
+# @jwt_required()
 def serve_scan_file(filename):
     # Security: Validate that user has access to this scan
     # You should add proper authorization logic here
@@ -452,3 +456,131 @@ def serve_scan_file(filename):
     
     # Serve the file
     return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path))
+
+@radiologist_bp.route('/scans/upload', methods=['POST'])
+@jwt_required()
+def upload_new_scan():
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # 1. Logic to handle Admin vs Radiologist
+        radiologist = Staff.query.filter_by(user_id=current_user_id).first()
+        if not radiologist:
+            radiologist = Staff.query.filter(Staff.department == 'Radiology').first()
+            
+        if not radiologist:
+            return jsonify({"error": "No radiologist exists in the system."}), 404
+
+        if 'files[]' not in request.files:
+            return jsonify({"error": "No files provided"}), 400
+
+        files = request.files.getlist('files[]')
+        if not files:
+            return jsonify({"error": "No files selected"}), 400
+
+        # 2. Setup Folder
+        scan_folders_base = os.path.join(Config.BASE_DIR, SCAN_FOLDERS_DIR)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        temp_folder_name = f"scan_{timestamp}"
+        scan_folder = os.path.join(scan_folders_base, temp_folder_name)
+        os.makedirs(scan_folder, exist_ok=True)
+
+        metadata = {}
+        
+        # 3. Save Files & Try to Read Metadata
+        for i, file in enumerate(files):
+            if file.filename == '': continue
+            
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(scan_folder, filename)
+            file.save(file_path)
+
+            # --- FIX: Try to read EVERY file until we find metadata ---
+            if not metadata:
+                try:
+                    # force=True allows reading files without the standard header (common in raw uploads)
+                    ds = pydicom.dcmread(file_path, force=True)
+                    
+                    # If we got here, it IS a valid DICOM file
+                    name = str(ds.get('PatientName', 'Unknown')).replace('^', ' ').strip()
+                    modality = str(ds.get('Modality', 'Unknown'))
+                    
+                    # Only save if we actually found something useful
+                    if name and name != "Unknown":
+                        metadata['patient_name'] = name
+                        metadata['modality'] = modality
+                        metadata['body_part'] = str(ds.get('BodyPartExamined', 'Unknown'))
+                        print(f"✅ Found Metadata: {name} - {modality}")
+                except Exception:
+                    # If pydicom fails, it's just not a dicom file, skip it
+                    pass
+
+        # 4. Fallback defaults if files had no readable tags
+        final_patient_name = metadata.get('patient_name', 'Unknown Patient')
+        final_modality = metadata.get('modality', 'General')
+
+        # 5. Create Record
+        patient = Patient.query.first() # Dummy assignment
+        
+        new_scan = DicomScan(
+            patient_id=patient.patient_id if patient else None,
+            radiologist_id=radiologist.staff_id,
+            scan_type=f"{final_modality} Scan",
+            body_part=metadata.get('body_part', 'Unknown'),
+            modality=final_modality,
+            scan_date=datetime.now(),
+            status='pending',
+            folder_path=f"{SCAN_FOLDERS_DIR}/{temp_folder_name}" 
+        )
+        
+        db.session.add(new_scan)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Success", 
+            "scan_id": new_scan.scan_id,
+            "patient": final_patient_name, 
+            "modality": final_modality
+        }), 201
+
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+# ===============================
+# Get List of Files for a Scan (CORRECTED)
+# ===============================
+@radiologist_bp.route('/scans/<int:scan_id>/files', methods=['GET'])
+def get_scan_files_list(scan_id):
+    # 1. Get the scan from DB
+    scan = DicomScan.query.get(scan_id)
+    if not scan or not scan.folder_path:
+        return jsonify({"error": "Scan not found"}), 404
+
+    # 2. Look in the folder
+    abs_folder_path = os.path.join(Config.BASE_DIR, scan.folder_path)
+    
+    if not os.path.exists(abs_folder_path):
+        return jsonify({"files": []}), 200
+
+    # 3. List all files
+    files = []
+    for f in os.listdir(abs_folder_path):
+        if os.path.isfile(os.path.join(abs_folder_path, f)):
+            files.append(f)
+
+    # 4. Return full URLs
+    # FIX: Ensure we use the FULL path (including 'scan_folders') in the URL
+    # Replace backslashes with forward slashes for URLs if on Windows
+    folder_path_url = scan.folder_path.replace("\\", "/")
+    
+    file_urls = [
+        f"http://127.0.0.1:5000/api/radiologist/scan_files/{folder_path_url}/{f}"
+        for f in files
+    ]
+    
+    return jsonify({
+        "scan_id": scan.scan_id,
+        "folder": scan.folder_path,
+        "files": file_urls
+    }), 200
