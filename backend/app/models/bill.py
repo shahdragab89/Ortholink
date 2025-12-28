@@ -7,6 +7,7 @@ class Bill(db.Model):
     bill_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.patient_id'), nullable=False)
     appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.appointment_id'))
+    scan_id = db.Column(db.Integer, db.ForeignKey("dicom_scan.scan_id"))
     bill_date = db.Column(db.Date, default=datetime.utcnow)
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     insurance_covered = db.Column(db.Numeric(10, 2), default=0)
