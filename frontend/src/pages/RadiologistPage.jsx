@@ -507,19 +507,22 @@ export default function RadiologistPage() {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         
-        // Use only fields that actually exist in your data
+        // Helper to safely convert any value to lowercase string
+        // If val is null/undefined, it returns an empty string instead of crashing
+        const safeStr = (val) => (val ? String(val).toLowerCase() : '');
+
         const searchableText = `
-            ${scan.id.toString()} 
-            ${scan.date || ''} 
-            ${scan.time || ''} 
-            ${scan.patient.toLowerCase()} 
-            ${scan.pid.toLowerCase()} 
-            ${scan.doctor.toLowerCase()} 
-            ${scan.did.toLowerCase()} 
-            ${scan.bodyType.toLowerCase()} 
-            ${scan.module.toLowerCase()} 
-            ${scan.status.toLowerCase()}
-        `.toLowerCase();
+            ${safeStr(scan.id)} 
+            ${safeStr(scan.date)} 
+            ${safeStr(scan.time)} 
+            ${safeStr(scan.patient)} 
+            ${safeStr(scan.pid)} 
+            ${safeStr(scan.doctor)} 
+            ${safeStr(scan.did)} 
+            ${safeStr(scan.bodyType)} 
+            ${safeStr(scan.module)} 
+            ${safeStr(scan.status)}
+        `;
 
         return searchableText.includes(term);
     });
