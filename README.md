@@ -4,10 +4,6 @@
 
 Ortholink connects doctors, radiologists, receptionists and patients in one web platform: book appointments, share scans and reports securely, and keep patient records in one place.
 
-🔗 **Live demo:** _coming soon_ &nbsp;|&nbsp; 🎥 **Demo video:** _coming soon_
-
-![Ortholink screenshot](docs/screenshot.png)
-
 ---
 
 ## Features
@@ -68,7 +64,3 @@ cd frontend && npm start
 | **Receptionist** | Manage appointments and patient registration |
 | **Radiologist** | Upload scans and write reports |
 | **Doctor** | Review scans and reports, manage patient records |
-
-## Author
-
-**Shahd Ragab**, [GitHub](https://github.com/shahdragab89) · [LinkedIn](https://www.linkedin.com/in/shahd-ragab-7b32aa266)
