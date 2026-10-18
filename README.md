@@ -21,8 +21,7 @@ Ortholink connects doctors, radiologists, receptionists and patients in one web 
 | Frontend | React |
 | Backend | Node.js |
 | Database | SQL |
-| Medical imaging | cornerstone-core, cornerstone-wado-image-loader, dicom-parser |
-| Testing | `tests/` folder |
+| Medical imaging | dicom-parser |
 
 ## Project Structure
 
@@ -30,8 +29,7 @@ Ortholink connects doctors, radiologists, receptionists and patients in one web 
 Ortholink/
 ├── backend/     # Node.js API and database logic
 ├── frontend/    # React app
-├── tests/       # Tests
-└── package.json # Root dependencies (DICOM viewer libraries)
+└── package.json # Root dependencies 
 ```
 
 ## Getting Started
